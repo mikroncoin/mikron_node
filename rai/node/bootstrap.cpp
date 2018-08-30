@@ -278,7 +278,7 @@ void rai::frontier_req_client::received_frontier (boost::system::error_code cons
 		double blocks_per_sec = (double)count / elapsed_sec;
 		if (elapsed_sec > bootstrap_connection_warmup_time_sec && blocks_per_sec < bootstrap_minimum_frontier_blocks_per_sec)
 		{
-			BOOST_LOG (connection->node->log) << boost::str (boost::format ("Aborting frontier req because it was too slow"));
+			BOOST_LOG (connection->node->log) << boost::str (boost::format ("Aborting frontier req because it was too slow, %1% blocks in %2% sec") % std::to_string (count) % std::to_string (elapsed_sec));
 			promise.set_value (true);
 			return;
 		}
