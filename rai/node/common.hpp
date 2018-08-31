@@ -165,7 +165,10 @@ public:
 	void block_type_set (rai::block_type);
 	bool ipv4_only ();
 	void ipv4_only_set (bool);
-	static std::array<uint8_t, 2> constexpr magic_number = rai::rai_network == rai::rai_networks::rai_test_network ? std::array<uint8_t, 2>{ { 'R', 'A' } } : rai::rai_network == rai::rai_networks::rai_beta_network ? std::array<uint8_t, 2>{ { 'R', 'B' } } : std::array<uint8_t, 2>{ { 'R', 'C' } };
+	static std::array<uint8_t, 2> constexpr magic_number =
+		rai::rai_network == rai::rai_networks::rai_test_network ? std::array<uint8_t, 2>{ { 'M', 'T' } } :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? std::array<uint8_t, 2>{ { 'M', 'B' } } :
+		std::array<uint8_t, 2>{ { 'M', 'I' } };
 	uint8_t version_max;
 	uint8_t version_using;
 	uint8_t version_min;
