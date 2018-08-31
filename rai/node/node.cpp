@@ -1863,6 +1863,7 @@ stats (config.stat_config)
 			// Store was empty meaning we just created it, add the genesis block
 			rai::genesis genesis;
 			genesis.initialize (transaction, store);
+			BOOST_LOG (log) << "Performed genesis";
 		}
 		node_id = rai::keypair (store.get_node_id (transaction));
 		BOOST_LOG (log) << "Node ID: " << node_id.pub.to_account ();
