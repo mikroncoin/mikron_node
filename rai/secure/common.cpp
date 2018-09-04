@@ -14,10 +14,10 @@
 // Genesis keys for network variants
 namespace
 {
-char const * test_private_key_data = "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4";
-char const * test_public_key_data = "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
-char const * beta_public_key_data = "A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"; // xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp
-char const * live_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
+char const * test_genesis_private_key_data = "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4";
+char const * test_genesis_public_key_data = "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
+char const * beta_genesis_public_key_data = "A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"; // xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp
+char const * live_genesis_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
 char const * test_genesis_data = R"%%%({
 	"type": "open",
 	"source": "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0",
@@ -50,16 +50,28 @@ class ledger_constants
 public:
 	ledger_constants () :
 	zero_key ("0"),
-	test_genesis_key (test_private_key_data),
-	rai_test_account (test_public_key_data),
-	rai_beta_account (beta_public_key_data),
-	rai_live_account (live_public_key_data),
+	test_genesis_key (test_genesis_private_key_data),
+	rai_test_genesis_account (test_genesis_public_key_data),
+	rai_beta_genesis_account (beta_genesis_public_key_data),
+	rai_live_genesis_account (live_genesis_public_key_data),
 	rai_test_genesis (test_genesis_data),
 	rai_beta_genesis (beta_genesis_data),
 	rai_live_genesis (live_genesis_data),
-	genesis_account (rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_account : rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_account : rai_live_account),
-	genesis_block (rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis : rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis : rai_live_genesis),
-	genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
+	rai_test_genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
+	rai_beta_genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
+	rai_live_genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
+	genesis_account (
+		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis_account :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis_account :
+		rai_live_genesis_account),
+	genesis_block (
+		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis :
+		rai_live_genesis),
+	genesis_amount (
+		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis_amount :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis_amount :
+		rai_live_genesis_amount),
 	burn_account (0)
 	{
 		CryptoPP::AutoSeededRandomPool random_pool;
@@ -69,12 +81,15 @@ public:
 	}
 	rai::keypair zero_key;
 	rai::keypair test_genesis_key;
-	rai::account rai_test_account;
-	rai::account rai_beta_account;
-	rai::account rai_live_account;
+	rai::account rai_test_genesis_account;
+	rai::account rai_beta_genesis_account;
+	rai::account rai_live_genesis_account;
 	std::string rai_test_genesis;
 	std::string rai_beta_genesis;
 	std::string rai_live_genesis;
+	rai::uint128_t rai_test_genesis_amount;
+	rai::uint128_t rai_beta_genesis_amount;
+	rai::uint128_t rai_live_genesis_amount;
 	rai::account genesis_account;
 	std::string genesis_block;
 	rai::uint128_t genesis_amount;
@@ -93,9 +108,9 @@ size_t constexpr rai::state_block::size;
 
 rai::keypair const & rai::zero_key (globals.zero_key);
 rai::keypair const & rai::test_genesis_key (globals.test_genesis_key);
-rai::account const & rai::rai_test_account (globals.rai_test_account);
-rai::account const & rai::rai_beta_account (globals.rai_beta_account);
-rai::account const & rai::rai_live_account (globals.rai_live_account);
+rai::account const & rai::rai_test_genesis_account (globals.rai_test_genesis_account);
+rai::account const & rai::rai_beta_genesis_account (globals.rai_beta_genesis_account);
+rai::account const & rai::rai_live_genesis_account (globals.rai_live_genesis_account);
 std::string const & rai::rai_test_genesis (globals.rai_test_genesis);
 std::string const & rai::rai_beta_genesis (globals.rai_beta_genesis);
 std::string const & rai::rai_live_genesis (globals.rai_live_genesis);
@@ -515,7 +530,7 @@ void rai::amount_visitor::compute (rai::block_hash const & block_hash)
 			{
 				if (block_hash == rai::genesis_account)
 				{
-					amount = std::numeric_limits<rai::uint128_t>::max ();
+					amount = rai::genesis_amount;
 					current_amount = 0;
 				}
 				else
@@ -917,8 +932,8 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 	assert (store_a.latest_v0_begin (transaction_a) == store_a.latest_v0_end ());
 	assert (store_a.latest_v1_begin (transaction_a) == store_a.latest_v1_end ());
 	store_a.block_put (transaction_a, hash_l, *open);
-	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), std::numeric_limits<rai::uint128_t>::max (), rai::seconds_since_epoch (), 1, rai::epoch::epoch_0 });
-	store_a.representation_put (transaction_a, genesis_account, std::numeric_limits<rai::uint128_t>::max ());
+	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), rai::genesis_amount, rai::seconds_since_epoch (), 1, rai::epoch::epoch_0 });
+	store_a.representation_put (transaction_a, genesis_account, rai::genesis_amount);
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
 }
