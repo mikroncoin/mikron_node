@@ -34,8 +34,8 @@ char const * beta_genesis_data = R"%%%({
         "source": "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C",
         "representative": "xrb_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
         "account": "xrb_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
-        "work": "000000000f0aaeeb",
-        "signature": "A726490E3325E4FA59C1C900D5B6EEBB15FE13D99F49D475B93F0AACC5635929A0614CF3892764A04D1C6732A0D716FFEB254D4154C6F544D11E6630F201450B"
+        "work": "2f29619a0c86d97a",
+        "signature": "BD350A4DC04C2F84BFEAA68FA984F046A7DA2067F306E72AFBF8DE6C991D603FBEE7F4E45EA4CBCF158CAF4916183FD7F45D2F82C4588269047B36AF093C6C05"
 })%%%";
 
 char const * live_genesis_data = R"%%%({
