@@ -502,7 +502,7 @@ TEST (wallet, startup_work)
 		ASSERT_TRUE (wallet->wallet_m->store.work_get (transaction, rai::test_genesis_key.pub, work1));
 	}
 	QTest::mouseClick (wallet->accounts_button, Qt::LeftButton);
-	QTest::keyClicks (wallet->accounts.account_key_line, "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4");
+	QTest::keyClicks (wallet->accounts.account_key_line, "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9");
 	QTest::mouseClick (wallet->accounts.account_key_button, Qt::LeftButton);
 	system.deadline_set (10s);
 	auto again (true);

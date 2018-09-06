@@ -85,7 +85,7 @@ int main (int argc, char * const * argv)
 						          << "Public: " << rep.pub.to_string () << std::endl
 						          << "Account: " << rep.pub.to_account () << std::endl;
 					}
-					rai::uint128_t balance (std::numeric_limits<rai::uint128_t>::max ());
+					rai::uint128_t balance (rai::genesis_amount);
 					rai::open_block genesis_block (genesis.pub, genesis.pub, genesis.pub, genesis.prv, genesis.pub, work.generate (genesis.pub));
 					std::cout << genesis_block.to_json ();
 					rai::block_hash previous (genesis_block.hash ());
