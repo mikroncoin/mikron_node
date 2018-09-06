@@ -17,8 +17,9 @@ namespace
 char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
 char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // xrb_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 char const * beta_genesis_public_key_data = "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"; // xrb_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
-char const * live_genesis_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
+char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final xrb_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
 const rai::uint128_t beta_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
+const rai::uint128_t live_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 
 char const * test_genesis_data = R"%%%({
 	"type": "open",
@@ -38,13 +39,14 @@ char const * beta_genesis_data = R"%%%({
         "signature": "BD350A4DC04C2F84BFEAA68FA984F046A7DA2067F306E72AFBF8DE6C991D603FBEE7F4E45EA4CBCF158CAF4916183FD7F45D2F82C4588269047B36AF093C6C05"
 })%%%";
 
+// Non-final
 char const * live_genesis_data = R"%%%({
 	"type": "open",
-	"source": "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA",
-	"representative": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
-	"account": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
-	"work": "62f05417dd3fb691",
-	"signature": "9F0C933C8ADE004D808EA1985FA746A7E95BA2A38F867640F53EC8F180BDFE9E2C1268DEAD7C2664F356E37ABA362BC58E46DBA03E523A7B5A19E4B6EB12BB02"
+	"source": "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353",
+	"representative": "xrb_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
+	"account": "xrb_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
+	"work": "744f96cdce4c96a8",
+	"signature": "9EDBC55F4EEA81D5748B9C31FA7269DC1C2C133BC603B85D51DE5EC25B1C56DA137E22FA6722C17658C02C67E9E8C5DC7F5F8DC591428416A8032CD99F0F2603"
 })%%%";
 
 class ledger_constants
@@ -61,7 +63,7 @@ public:
 	rai_live_genesis (live_genesis_data),
 	rai_test_genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
 	rai_beta_genesis_amount (beta_genesis_amount),
-	rai_live_genesis_amount (std::numeric_limits<rai::uint128_t>::max ()),
+	rai_live_genesis_amount (live_genesis_amount),
 	genesis_account (
 		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis_account :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis_account :
