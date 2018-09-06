@@ -14,19 +14,19 @@
 // Genesis keys for network variants
 namespace
 {
-char const * test_genesis_private_key_data = "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4";
-char const * test_genesis_public_key_data = "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
+char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
+char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // xrb_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 char const * beta_genesis_public_key_data = "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"; // xrb_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
 char const * live_genesis_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
 const rai::uint128_t beta_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 
 char const * test_genesis_data = R"%%%({
 	"type": "open",
-	"source": "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0",
-	"representative": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
-	"account": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
-	"work": "9680625b39d3363d",
-	"signature": "ECDA914373A2F0CA1296475BAEE40500A7F0A7AD72A5A80C81D7FAB7F6C802B2CC7DB50F5DD0FB25B2EF11761FA7344A158DD5A700B21BD47DE5BD0F63153A02"
+	"source": "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980",
+	"representative": "xrb_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
+	"account": "xrb_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
+	"work": "2fa557bd2cec318e",
+	"signature": "863BBC1C4686C8A1F4C17997ABF6C18A655A82A5272D692CA0889140B3F8250666A6161D2900756F206414DA7820C591B8124833F785E6AA7FE1258A840F7D00"
 })%%%";
 
 char const * beta_genesis_data = R"%%%({
