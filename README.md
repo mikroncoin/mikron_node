@@ -1,8 +1,14 @@
 <hr />
 <div align="center">
-    <img src="images/logo.svg" alt="Logo" width='300px' height='auto'/>
+    <img src="images/mikron_logo_white.svg" alt="Logo" width='200px' height='auto' bgcolor="black"/>
 </div>
 <hr />
+
+### What is Mikron?
+
+Mikron is a digital currency with fast and cheap transactions, over a secure decentralized network.  It is based on the Nano cryptocurrency (formerly known as RaiBlocks).
+
+### TODO Update Readme
 
 [![Build Status](https://travis-ci.org/nanocurrency/raiblocks.svg?branch=master)](https://travis-ci.org/nanocurrency/raiblocks)
 [![Build status](https://ci.appveyor.com/api/projects/status/uwdcxi87h2y6jx94/branch/master?svg=true)](https://ci.appveyor.com/project/argakiig/raiblocks/branch/master)
