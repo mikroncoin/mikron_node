@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="Layer_1"
+   data-name="Layer 1"
+   viewBox="0 0 1940 522"
+   version="1.1"
+   sodipodi:docname="mikron_logo_black.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata29">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>logo_white_2</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs27" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     id="namedview25"
+     showgrid="false"
+     inkscape:zoom="0.51866647"
+     inkscape:cx="898.59452"
+     inkscape:cy="300.70072"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <title
+     id="title10">logo_white_2</title>
+  <rect
+     id="rect31"
+     width="2024.2919"
+     height="585.0968"
+     x="-45.554157"
+     y="-21.067963"
+     style="stroke-width:0.65050799" />
+  <path
+     d="M511.6,24.53a76.54,76.54,0,0,1,1.69,35.57H1899.62V483.43H217.1V258.3L277.29,393.2h64.46L401.94,258.3V422.23H488.6V123h-105L309.74,279.22,235.46,123h-105V483.43H35.57V60.1H361.82a76.54,76.54,0,0,1,1.69-35.57H0V519H1935.19V24.53Z"
+     style="fill:#fff"
+     id="path12" />
+  <path
+     d="M437.55,89.75A44,44,0,1,0,396.08,60.1,43.86,43.86,0,0,0,437.55,89.75Z"
+     style="fill:#fff"
+     id="path14" />
+  <polygon
+     points="531.29 122.98 531.29 422.23 630.32 422.23 630.32 349.66 658.5 318.07 721.68 422.23 839.92 422.23 726.37 242.51 833.52 122.98 719.54 122.98 630.32 232.27 630.32 122.98 531.29 122.98"
+     style="fill:#fff"
+     id="polygon16" />
+  <path
+     d="M1121.45,286.69q12.17-24.11,12.17-56.56,0-51.23-33.3-79.19T1006,123H861.26V422.23h99V344.54h37.14l35.86,77.69h111.84l-58.91-97.33A93,93,0,0,0,1121.45,286.69Zm-90.5-26.89q-8.75,9.61-25,9.6H960.3V198.11H1006q16.22,0,25,9.18t8.75,25.83Q1039.7,250.2,1030.95,259.8Z"
+     style="fill:#fff"
+     id="path18" />
+  <path
+     d="M1235.63,408.78q37.56,20.27,84.52,20.28t84.52-20.28q37.56-20.27,58.7-56.13T1484.5,272q0-44.39-21.13-79.82t-58.7-55.5q-37.57-20.06-84.52-20.06t-84.52,19.85q-37.57,19.85-58.7,55.28T1155.81,272q0,44.82,21.13,80.68T1235.63,408.78Zm30.52-174a68.87,68.87,0,0,1,23.48-26.25,57.11,57.11,0,0,1,31.8-9.6,55,55,0,0,1,31.16,9.39q14.09,9.39,22.2,26.25t8.11,37.78q0,20.92-8.11,38t-22.2,26.68a54.12,54.12,0,0,1-31.16,9.6,56.2,56.2,0,0,1-31.8-9.82,70.12,70.12,0,0,1-23.48-26.68q-8.75-16.86-8.75-37.78T1266.16,234.83Z"
+     style="fill:#f9b214"
+     id="path20" />
+  <polygon
+     points="1720.14 422.23 1802.95 422.23 1802.95 122.98 1713.31 122.98 1713.31 276.66 1595.06 122.98 1512.25 122.98 1512.25 422.23 1602.32 422.23 1602.32 269.4 1720.14 422.23"
+     style="fill:#f9b214"
+     id="polygon22" />
+</svg>
