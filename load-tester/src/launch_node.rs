@@ -18,8 +18,8 @@ use errors::*;
 
 use rpc::RpcClient;
 
-const RPC_PORT_START: u64 = 55000;
-const PEERING_PORT_START: u64 = 54000;
+const RPC_PORT_START: u64 = 54300;
+const PEERING_PORT_START: u64 = 54200;
 
 pub fn launch_node(
     rai_node: &Path,
