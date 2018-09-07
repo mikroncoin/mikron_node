@@ -1,37 +1,34 @@
 <hr />
 <div align="center">
-    <img src="images/mikron_logo_white.svg" alt="Logo" width='200px' height='auto' bgcolor="black"/>
+    <img src="images/mikron_logo_white.svg" alt="Logo" width='250px' height='auto' bgcolor="black"/>
 </div>
 <hr />
 
 ### What is Mikron?
 
-Mikron is a digital currency with fast and cheap transactions, over a secure decentralized network.  It is based on the Nano cryptocurrency (formerly known as RaiBlocks).
+**Mikron** is a decentralized block-lattice digital currency with fast and cheap transactions,
+mainly targeting reward points handling.
+
+Mikron is based on the great **Nano** (by Colin LeMahieu; formerly known as RaiBlocks; http://nano.org).
 
 ### TODO Update Readme
 
 [![Build Status](https://travis-ci.org/nanocurrency/raiblocks.svg?branch=master)](https://travis-ci.org/nanocurrency/raiblocks)
 [![Build status](https://ci.appveyor.com/api/projects/status/uwdcxi87h2y6jx94/branch/master?svg=true)](https://ci.appveyor.com/project/argakiig/raiblocks/branch/master)
-### What is Nano?
-
----
-
-Nano's goal is to become _"a global currency with instantaneous transactions and zero fees over a secure, decentralized network."_
-
-We've applied the philosophy of _"do one thing and do it well"_, we are focused on building the best medium for value exchange in the world.
-
----
 
 ### Key Features
 
-* Nano utilizes a novel [block-lattice](https://github.com/nanocurrency/raiblocks/wiki/Block-lattice) architecture, unlike conventional blockchains used in many other cryptocurrencies.
+* Mikron utilizes a [block-lattice](https://github.com/mikroncoin/mikron_node/wiki/Block-lattice) architecture, unlike conventional blockchains used in many other cryptocurrencies.
 * The network requires minimal resources, no high-power mining hardware, and can process high transaction throughput.
-* Offers instantaneous transactions with zero fees and unlimited scalability, making Nano an ideal solution for peer-to-peer transactions.
+* Offers instantaneous transactions with zero fees and unlimited scalability, making Mikron an ideal solution for peer-to-peer transactions.
+
+### Key Features -- Nano
+
 * As of May 2018, the Nano network has processed over ten million transactions with an unpruned ledger size of only 3.8GB.
 
 For more information, see [Nano.org](https://nano.org/) or read the [whitepaper](https://nano.org/en/whitepaper).
 
-### Guides & Documentation
+### Guides & Documentation -- Nano
 
 * [White Paper](https://nano.org/en/whitepaper)
 * [Build Instructions](https://github.com/nanocurrency/raiblocks/wiki/Build-Instructions)
@@ -43,6 +40,17 @@ For more information, see [Nano.org](https://nano.org/) or read the [whitepaper]
 
 ### Links & Resources
 
+* [Mikron Website](https://mikron.io)
+* Nano Roadmap
+* Discord Chat
+* Reddit
+* Medium
+* Twitter
+* Forum
+* [GitHub wiki](https://github.com/mikroncoin/mikron_node/wiki)
+
+### Links & Resources -- Nano
+
 * [Nano Website](https://nano.org)
 * [Nano Roadmap](https://developers.nano.org/roadmap)
 * [Discord Chat](https://chat.nano.org/)
@@ -52,11 +60,11 @@ For more information, see [Nano.org](https://nano.org/) or read the [whitepaper]
 * [Forum](https://forum.raiblocks.net/)
 * [GitHub wiki](https://github.com/nanocurrency/raiblocks/wiki)
 
-### Want to Contribute?
+### Want to Contribute? -- Nano
 
 Please see the [contributors guide](https://github.com/nanocurrency/raiblocks/wiki/Contributing).
 
-### Contact us
+### Contact us -- Nano
 
 We want to hear about any trouble, success, delight, or pain you experience when
 using Nano. Let us know by [filing an issue](https://github.com/nanocurrency/raiblocks/issues), joining us in [reddit](https://reddit.com/r/nanocurrency), or joining us in [Discord](https://chat.nano.org/).
