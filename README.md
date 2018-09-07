@@ -1,6 +1,6 @@
 <hr />
 <div align="center">
-    <img src="images/mikron_logo_black.svg" alt="Logo" width='250px' height='auto' bgcolor="black"/>
+    <img src="images/mikron_logo_white.svg" alt="Logo" width='250px' height='auto' bgcolor="black"/>
 </div>
 <hr />
 
