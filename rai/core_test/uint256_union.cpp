@@ -310,8 +310,7 @@ TEST (uint256_union, big_endian_union_function)
 TEST (uint256_union, decode_nano_variant)
 {
 	rai::uint256_union key;
-	ASSERT_FALSE (key.decode_account ("xrb_1111111111111111111111111111111111111111111111111111hifc8npp"));
-	ASSERT_FALSE (key.decode_account ("nano_1111111111111111111111111111111111111111111111111111hifc8npp"));
+	ASSERT_FALSE (key.decode_account ("mik_1111111111111111111111111111111111111111111111111111hifc8npp"));
 }
 
 TEST (uint256_union, decode_account_variations)
@@ -326,7 +325,7 @@ TEST (uint256_union, decode_account_variations)
 		char account[65] = { 0 };
 		xrb_uint256_to_address (pub.bytes.data (), account);
 
-		// Replace first digit after xrb_ with '0'..'9', make sure only one of them is valid
+		// Replace first digit after mik_ with '0'..'9', make sure only one of them is valid
 		int errors = 0;
 		for (int variation = 0; variation < 10; variation++)
 		{

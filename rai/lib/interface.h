@@ -29,7 +29,7 @@ int xrb_uint256_from_string (const char * source, xrb_uint256 destination);
 // Return 0 on success, nonzero on error
 int xrb_uint512_from_string (const char * source, xrb_uint512 destination);
 
-// Check if the null-terminated string 'account' is a valid xrb account number
+// Check if the null-terminated string 'account' is a valid mik account number
 // Return 0 on correct, nonzero on invalid
 int xrb_valid_address (const char * account);
 

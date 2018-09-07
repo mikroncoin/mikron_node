@@ -62,7 +62,7 @@ struct Parameters {
 }
 
 // found in secure.cpp
-const GENESIS_ACCOUNT: &str = "xrb_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk";
+const GENESIS_ACCOUNT: &str = "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk";
 const GENESIS_PRIVKEY: &str = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
 
 fn run(params: Parameters) -> Result<()> {
