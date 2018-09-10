@@ -191,7 +191,7 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 {
 	rai_qt::eventloop_processor processor;
 	boost::filesystem::create_directories (data_path);
-	QPixmap pixmap (":/logo.png");
+	QPixmap pixmap (":/wallet_logo.png");
 	QSplashScreen * splash = new QSplashScreen (pixmap);
 	splash->show ();
 	application.processEvents ();
