@@ -3114,7 +3114,7 @@ std::vector<rai::peer_information> rai::peer_container::purge_list (std::chrono:
 		result.assign (pivot, peers.get<1> ().end ());
 		for (auto i (peers.get<1> ().begin ()); i != pivot; ++i)
 		{
-			if (i->network_version < rai::node_id_version)
+			if (i->network_version < rai::protocol_version_legacy_min)
 			{
 				if (legacy_peers > 0)
 				{
@@ -3265,7 +3265,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 {
 	assert (endpoint_a.address ().is_v6 ());
 	auto unknown (false);
-	auto is_legacy (version_a < rai::node_id_version);
+	auto is_legacy (version_a < rai::protocol_version_legacy_min);
 	auto result (not_a_peer (endpoint_a, false));
 	if (!result)
 	{
@@ -3306,7 +3306,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 					while (i != n)
 					{
 						++ip_peers;
-						if (i->network_version < rai::node_id_version)
+						if (i->network_version < rai::protocol_version_legacy_min)
 						{
 							++legacy_ip_peers;
 						}
@@ -3484,7 +3484,7 @@ bool rai::peer_container::contacted (rai::endpoint const & endpoint_a, unsigned 
 {
 	auto endpoint_l (rai::map_endpoint_to_v6 (endpoint_a));
 	auto should_handshake (false);
-	if (version_a < rai::node_id_version)
+	if (version_a < rai::protocol_version_legacy_min)
 	{
 		insert (endpoint_l, version_a);
 	}
