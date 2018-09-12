@@ -2146,18 +2146,13 @@ rai::endpoint rai::peer_container::bootstrap_peer ()
 	;
 	for (auto i (peers.get<4> ().begin ()), n (peers.get<4> ().end ()); i != n;)
 	{
-		if (i->network_version >= 0x5)
-		{
-			result = i->endpoint;
-			peers.get<4> ().modify (i, [](rai::peer_information & peer_a) {
-				peer_a.last_bootstrap_attempt = std::chrono::steady_clock::now ();
-			});
-			i = n;
-		}
-		else
-		{
-			++i;
-		}
+		// No special handling for legacy peers (legacy protocol version) after protocol version reset
+		//if (i->network_version >= 0x5)
+		result = i->endpoint;
+		peers.get<4> ().modify (i, [](rai::peer_information & peer_a) {
+			peer_a.last_bootstrap_attempt = std::chrono::steady_clock::now ();
+		});
+		i = n;
 	}
 	return result;
 }
