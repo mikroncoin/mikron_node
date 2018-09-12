@@ -922,9 +922,10 @@ lmdb_max_dbs (128)
 			preconfigured_representatives.push_back (rai::genesis_account);
 			break;
 		case rai::rai_networks::rai_beta_network:
-			preconfigured_peers.push_back ("betanode.mikron.io");
 			// until well-known node URL exists, keep localnode also
 			preconfigured_peers.push_back ("::ffff:127.0.0.1");
+			preconfigured_peers.push_back ("betanode.mikron.io");
+			preconfigured_peers.push_back ("betanode2.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"));
 			preconfigured_representatives.push_back (rai::account ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071"));
 			preconfigured_representatives.push_back (rai::account ("259A40656144FAA16D2A8516F7BE9C74A63C6CA399960EDB747D144ABB0F7ABD"));
@@ -932,9 +933,10 @@ lmdb_max_dbs (128)
 			preconfigured_representatives.push_back (rai::account ("259A40FF3262E273EC451E873C4CDF8513330425B38860D882A16BCC74DA9B73"));
 			break;
 		case rai::rai_networks::rai_live_network:
-			preconfigured_peers.push_back ("node.mikron.io");
 			// until well-known node URL exists, keep localnode also
 			preconfigured_peers.push_back ("::ffff:127.0.0.1");
+			preconfigured_peers.push_back ("node.mikron.io");
+			preconfigured_peers.push_back ("node2.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF"));
 			preconfigured_representatives.push_back (rai::account ("67556D31DDFC2A440BF6147501449B4CB9572278D034EE686A6BEE29851681DF"));
 			preconfigured_representatives.push_back (rai::account ("5C2FBB148E006A8E8BA7A75DD86C9FE00C83F5FFDBFD76EAA09531071436B6AF"));
@@ -2144,18 +2146,13 @@ rai::endpoint rai::peer_container::bootstrap_peer ()
 	;
 	for (auto i (peers.get<4> ().begin ()), n (peers.get<4> ().end ()); i != n;)
 	{
-		if (i->network_version >= 0x5)
-		{
-			result = i->endpoint;
-			peers.get<4> ().modify (i, [](rai::peer_information & peer_a) {
-				peer_a.last_bootstrap_attempt = std::chrono::steady_clock::now ();
-			});
-			i = n;
-		}
-		else
-		{
-			++i;
-		}
+		// No special handling for legacy peers (legacy protocol version) after protocol version reset
+		//if (i->network_version >= 0x5)
+		result = i->endpoint;
+		peers.get<4> ().modify (i, [](rai::peer_information & peer_a) {
+			peer_a.last_bootstrap_attempt = std::chrono::steady_clock::now ();
+		});
+		i = n;
 	}
 	return result;
 }
@@ -3114,7 +3111,7 @@ std::vector<rai::peer_information> rai::peer_container::purge_list (std::chrono:
 		result.assign (pivot, peers.get<1> ().end ());
 		for (auto i (peers.get<1> ().begin ()); i != pivot; ++i)
 		{
-			if (i->network_version < rai::node_id_version)
+			if (i->network_version < rai::protocol_version_legacy_min)
 			{
 				if (legacy_peers > 0)
 				{
@@ -3265,7 +3262,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 {
 	assert (endpoint_a.address ().is_v6 ());
 	auto unknown (false);
-	auto is_legacy (version_a < rai::node_id_version);
+	auto is_legacy (version_a < rai::protocol_version_legacy_min);
 	auto result (not_a_peer (endpoint_a, false));
 	if (!result)
 	{
@@ -3306,7 +3303,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 					while (i != n)
 					{
 						++ip_peers;
-						if (i->network_version < rai::node_id_version)
+						if (i->network_version < rai::protocol_version_legacy_min)
 						{
 							++legacy_ip_peers;
 						}
@@ -3484,7 +3481,7 @@ bool rai::peer_container::contacted (rai::endpoint const & endpoint_a, unsigned 
 {
 	auto endpoint_l (rai::map_endpoint_to_v6 (endpoint_a));
 	auto should_handshake (false);
-	if (version_a < rai::node_id_version)
+	if (version_a < rai::protocol_version_legacy_min)
 	{
 		insert (endpoint_l, version_a);
 	}
