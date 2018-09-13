@@ -29,8 +29,8 @@
 *.DS_Store
 core_test
 qt_test
-rai_node
-rai_wallet
+mikron_node
+mikron_dwallet
 slow_test
 
 # IDEs
