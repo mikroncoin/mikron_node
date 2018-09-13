@@ -15,6 +15,6 @@
 	<key>CFBundleIconFile</key>
 	<string>RaiBlocks.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>net.raiblocks.rai_wallet</string>
+	<string>net.raiblocks.mikron_wallet</string>
 </dict>
 </plist>
