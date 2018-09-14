@@ -6,7 +6,7 @@ export PATH
 set -euo pipefail
 IFS=$'\n\t'
 
-network="$(cat /etc/nano-network)"
+network="$(cat /etc/mikron-network)"
 case "${network}" in
         live|'')
                 network='live'
@@ -20,12 +20,12 @@ case "${network}" in
                 ;;
 esac
 
-nanodir="${HOME}/Mikron${dirSuffix}"
-dbFile="${nanodir}/data.ldb"
-mkdir -p "${nanodir}"
-if [ ! -f "${nanodir}/config.json" ]; then
+mikrondir="${HOME}/MikronNode${dirSuffix}"
+dbFile="${mikrondir}/data.ldb"
+mkdir -p "${mikrondir}"
+if [ ! -f "${mikrondir}/config.json" ]; then
         echo "Config File not found, adding default."
-        cp "/usr/share/raiblocks/config/${network}.json" "${nanodir}/config.json"
+        cp "/usr/share/raiblocks/config/${network}.json" "${mikrondir}/config.json"
 fi
 
 pid=''
