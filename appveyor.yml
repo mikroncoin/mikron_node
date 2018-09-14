@@ -41,9 +41,9 @@ after_build:
 - cmd: >-
     cpack -NSIS --verbose
 
-    7z a nano.zip %APPVEYOR_BUILD_FOLDER%\Release\*.exe
+    7z a mikron.zip %APPVEYOR_BUILD_FOLDER%\Release\*.exe
 artifacts:
-- path: nano.zip
-  name: nano_release_%network%
-- path: Nano_Installer-*.exe
-  name: Nano_Installer_%network%
+- path: mikron.zip
+  name: mikron_release_%network%
+- path: Mikron_Installer-*.exe
+  name: Mikron_Installer_%network%

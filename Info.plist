@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>mikron_dwallet</string>
 	<key>CFBundleName</key>
-	<string>Nano</string>
+	<string>Mikron</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleIconFile</key>

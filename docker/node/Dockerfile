@@ -20,11 +20,11 @@ RUN mkdir /tmp/build && \
     cmake /tmp/src -DBOOST_ROOT=${BOOST_ROOT} -DACTIVE_NETWORK=rai_${NETWORK}_network && \
     make mikron_node && \
     cd .. && \
-    echo ${NETWORK} > /etc/nano-network
+    echo ${NETWORK} > /etc/mikron-network
 
 FROM ubuntu:16.04
 COPY --from=0 /tmp/build/mikron_node /usr/bin
-COPY --from=0 /etc/nano-network /etc
+COPY --from=0 /etc/mikron-network /etc
 COPY docker/node/entry.sh /entry.sh
 COPY docker/node/config /usr/share/raiblocks/config
 RUN chmod +x /entry.sh
