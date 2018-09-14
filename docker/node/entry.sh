@@ -20,7 +20,7 @@ case "${network}" in
                 ;;
 esac
 
-mikrondir="${HOME}/Mikron${dirSuffix}"
+mikrondir="${HOME}/MikronNode${dirSuffix}"
 dbFile="${mikrondir}/data.ldb"
 mkdir -p "${mikrondir}"
 if [ ! -f "${mikrondir}/config.json" ]; then
