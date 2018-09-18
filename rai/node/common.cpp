@@ -4,8 +4,12 @@
 #include <rai/lib/work.hpp>
 #include <rai/node/wallet.hpp>
 
+size_t constexpr rai::protocol_information::query_flag_position;
+size_t constexpr rai::protocol_information::response_flag_position;
 size_t constexpr rai::protocol_information::ipv4_only_position;
 size_t constexpr rai::protocol_information::bootstrap_server_position;
+size_t constexpr rai::protocol_information::full_node_position;
+size_t constexpr rai::protocol_information::validating_node_position;
 std::bitset<16> constexpr rai::protocol_information::block_type_mask;
 std::array<uint8_t, 2> constexpr rai::message_header::magic_number;
 
@@ -40,15 +44,31 @@ bool rai::protocol_information::ipv4_only () const
 	return extensions.test (ipv4_only_position);
 }
 
+void rai::protocol_information::ipv4_only_set (bool value_a)
+{
+	extensions.set (ipv4_only_position, value_a);
+}
+
 bool rai::protocol_information::is_bootstrap_server () const
 {
 	return extensions.test (bootstrap_server_position);
+}
+
+bool rai::protocol_information::is_full_node () const
+{
+	return extensions.test (full_node_position);
+}
+
+void rai::protocol_information::set_full_node (bool value_a)
+{
+	extensions.set (full_node_position, value_a);
 }
 
 rai::message_header::message_header (rai::message_type message_type_a) :
 protocol_info (rai::protocol_version, rai::protocol_version_min, rai::protocol_version, std::bitset<16> ()),
 message_type (message_type_a)
 {
+	protocol_info.set_full_node (true);
 }
 
 rai::message_header::message_header (bool & error_a, rai::stream & stream_a)
@@ -105,16 +125,6 @@ rai::block_type rai::message_header::block_type () const
 void rai::message_header::block_type_set (rai::block_type type_a)
 {
 	protocol_info.block_type_set (type_a);
-}
-
-bool rai::message_header::ipv4_only () const
-{
-	return protocol_info.ipv4_only ();
-}
-
-void rai::message_header::ipv4_only_set (bool value_a)
-{
-	protocol_info.extensions.set (protocol_info.ipv4_only_position, value_a);
 }
 
 // MTU - IP header - UDP header
@@ -680,9 +690,6 @@ void rai::bulk_push::visit (rai::message_visitor & visitor_a) const
 	visitor_a.bulk_push (*this);
 }
 
-size_t constexpr rai::node_id_handshake::query_flag;
-size_t constexpr rai::node_id_handshake::response_flag;
-
 rai::node_id_handshake::node_id_handshake (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a) :
 message (header_a),
 query (boost::none),
@@ -698,11 +705,11 @@ response (response)
 {
 	if (query)
 	{
-		header.protocol_info.extensions.set (query_flag);
+		header.protocol_info.extensions.set (rai::protocol_information::query_flag_position);
 	}
 	if (response)
 	{
-		header.protocol_info.extensions.set (response_flag);
+		header.protocol_info.extensions.set (rai::protocol_information::response_flag_position);
 	}
 }
 
@@ -710,7 +717,7 @@ bool rai::node_id_handshake::deserialize (rai::stream & stream_a)
 {
 	auto result (false);
 	assert (header.message_type == rai::message_type::node_id_handshake);
-	if (!result && header.protocol_info.extensions.test (query_flag))
+	if (!result && header.protocol_info.extensions.test (rai::protocol_information::query_flag_position))
 	{
 		rai::uint256_union query_hash;
 		result = read (stream_a, query_hash);
@@ -719,7 +726,7 @@ bool rai::node_id_handshake::deserialize (rai::stream & stream_a)
 			query = query_hash;
 		}
 	}
-	if (!result && header.protocol_info.extensions.test (response_flag))
+	if (!result && header.protocol_info.extensions.test (rai::protocol_information::response_flag_position))
 	{
 		rai::account response_account;
 		result = read (stream_a, response_account);
