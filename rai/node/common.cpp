@@ -6,8 +6,6 @@
 
 size_t constexpr rai::protocol_information::query_flag_position;
 size_t constexpr rai::protocol_information::response_flag_position;
-size_t constexpr rai::protocol_information::ipv4_only_position;
-size_t constexpr rai::protocol_information::bootstrap_server_position;
 size_t constexpr rai::protocol_information::full_node_position;
 size_t constexpr rai::protocol_information::validating_node_position;
 std::bitset<16> constexpr rai::protocol_information::block_type_mask;
@@ -37,21 +35,6 @@ void rai::protocol_information::block_type_set (rai::block_type type_a)
 {
 	extensions &= ~block_type_mask;
 	extensions |= std::bitset<16> (static_cast<unsigned long long> (type_a) << 8);
-}
-
-bool rai::protocol_information::ipv4_only () const
-{
-	return extensions.test (ipv4_only_position);
-}
-
-void rai::protocol_information::ipv4_only_set (bool value_a)
-{
-	extensions.set (ipv4_only_position, value_a);
-}
-
-bool rai::protocol_information::is_bootstrap_server () const
-{
-	return extensions.test (bootstrap_server_position);
 }
 
 bool rai::protocol_information::is_full_node () const

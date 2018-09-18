@@ -161,9 +161,6 @@ public:
 	protocol_information ();
 	rai::block_type block_type () const;
 	void block_type_set (rai::block_type);
-	bool ipv4_only () const;
-	void ipv4_only_set (bool value_a);
-	bool is_bootstrap_server () const;
 	bool is_full_node () const;
 	void set_full_node (bool value_a);
 	uint8_t version;
@@ -172,10 +169,8 @@ public:
 	std::bitset<16> extensions;
 	static size_t constexpr query_flag_position = 0;
 	static size_t constexpr response_flag_position = 1;
-	static size_t constexpr ipv4_only_position = 2;
-	static size_t constexpr bootstrap_server_position = 3;
-	static size_t constexpr full_node_position = 4;
-	static size_t constexpr validating_node_position = 5;
+	static size_t constexpr full_node_position = 2;
+	static size_t constexpr validating_node_position = 3;
 	static std::bitset<16> constexpr block_type_mask = std::bitset<16> (0x0f00);
 };
 class message_header
