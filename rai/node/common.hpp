@@ -174,8 +174,8 @@ public:
 	uint8_t version_min;
 	rai::message_type type;
 	std::bitset<16> extensions;
-	static size_t constexpr ipv4_only_position = 1;
-	static size_t constexpr bootstrap_server_position = 2;
+	static size_t constexpr ipv4_only_position = 2;
+	static size_t constexpr bootstrap_server_position = 3;
 	static std::bitset<16> constexpr block_type_mask = std::bitset<16> (0x0f00);
 };
 class message
