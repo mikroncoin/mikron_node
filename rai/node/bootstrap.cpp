@@ -1151,7 +1151,7 @@ void rai::bootstrap_initiator::bootstrap (rai::endpoint const & endpoint_a, bool
 {
 	if (add_to_peers)
 	{
-		node.peers.insert (rai::map_endpoint_to_v6 (endpoint_a), rai::protocol_version);
+		node.peers.insert (rai::map_endpoint_to_v6 (endpoint_a), rai::protocol_information ());
 	}
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped)
@@ -1338,7 +1338,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 		rai::message_header header (error, type_stream);
 		if (!error)
 		{
-			switch (header.type)
+			switch (header.message_type)
 			{
 				case rai::message_type::bulk_pull:
 				{
@@ -1386,7 +1386,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					if (node->config.logging.network_logging ())
 					{
-						BOOST_LOG (node->log) << boost::str (boost::format ("Received invalid type from bootstrap connection %1%") % static_cast<uint8_t> (header.type));
+						BOOST_LOG (node->log) << boost::str (boost::format ("Received invalid type from bootstrap connection %1%") % static_cast<uint8_t> (header.message_type));
 					}
 					break;
 				}

@@ -1944,12 +1944,21 @@ void rai::rpc_handler::password_valid (bool wallet_locked)
 void rai::rpc_handler::peers ()
 {
 	boost::property_tree::ptree peers_l;
-	auto peers_list (node.peers.list_version ());
-	for (auto i (peers_list.begin ()), n (peers_list.end ()); i != n; ++i)
+	auto peers_vector (node.peers.list_vector ());
+	for (auto i (peers_vector.begin ()), n (peers_vector.end ()); i != n; ++i)
 	{
-		std::stringstream text;
-		text << i->first;
-		peers_l.push_back (boost::property_tree::ptree::value_type (text.str (), boost::property_tree::ptree (std::to_string (i->second))));
+		boost::property_tree::ptree peer_l;
+		std::stringstream endpoint;
+		endpoint << i->endpoint;
+		peer_l.push_back (boost::property_tree::ptree::value_type ("endpoint", boost::property_tree::ptree (endpoint.str ())));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version", boost::property_tree::ptree (std::to_string (i->protocol_info.version))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_min", boost::property_tree::ptree (std::to_string (i->protocol_info.version_min))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_max", boost::property_tree::ptree (std::to_string (i->protocol_info.version_max))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("proto_extensions", boost::property_tree::ptree (std::to_string (i->protocol_info.extensions.to_ulong ()))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("is_ipv4_only", boost::property_tree::ptree (i->protocol_info.ipv4_only () ? "true" : "false")));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("is_bootstrap_server", boost::property_tree::ptree (i->protocol_info.is_bootstrap_server () ? "true" : "false")));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("rep_weight", boost::property_tree::ptree (i->rep_weight.to_string ())));
+		peers_l.push_back (std::make_pair ("", peer_l));
 	}
 	response_l.add_child ("peers", peers_l);
 	response_errors ();

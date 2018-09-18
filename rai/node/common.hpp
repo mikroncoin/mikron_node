@@ -154,6 +154,23 @@ enum class bulk_pull_account_flags : uint8_t
 	pending_address_only = 0x1
 };
 class message_visitor;
+class protocol_information
+{
+public:
+	protocol_information (unsigned, unsigned, unsigned, std::bitset<16>);
+	protocol_information ();
+	rai::block_type block_type () const;
+	void block_type_set (rai::block_type);
+	bool ipv4_only () const;
+	bool is_bootstrap_server () const;
+	uint8_t version;
+	uint8_t version_min;
+	uint8_t version_max;
+	std::bitset<16> extensions;
+	static size_t constexpr ipv4_only_position = 2;
+	static size_t constexpr bootstrap_server_position = 3;
+	static std::bitset<16> constexpr block_type_mask = std::bitset<16> (0x0f00);
+};
 class message_header
 {
 public:
@@ -163,20 +180,14 @@ public:
 	bool deserialize (rai::stream &);
 	rai::block_type block_type () const;
 	void block_type_set (rai::block_type);
-	bool ipv4_only ();
+	bool ipv4_only () const;
 	void ipv4_only_set (bool);
+	rai::message_type message_type;
+	protocol_information protocol_info;
 	static std::array<uint8_t, 2> constexpr magic_number =
 		rai::rai_network == rai::rai_networks::rai_test_network ? std::array<uint8_t, 2>{ { 'M', 'T' } } :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? std::array<uint8_t, 2>{ { 'M', 'B' } } :
 		std::array<uint8_t, 2>{ { 'M', 'I' } };
-	uint8_t version_max;
-	uint8_t version_using;
-	uint8_t version_min;
-	rai::message_type type;
-	std::bitset<16> extensions;
-	static size_t constexpr ipv4_only_position = 2;
-	static size_t constexpr bootstrap_server_position = 3;
-	static std::bitset<16> constexpr block_type_mask = std::bitset<16> (0x0f00);
 };
 class message
 {
