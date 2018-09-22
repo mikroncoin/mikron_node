@@ -236,18 +236,19 @@ enum class vote_code
 
 enum class process_result
 {
-	progress, // Hasn't been seen before, signed correctly
-	bad_signature, // Signature was bad, forged or transmission error
-	old, // Already seen and was valid
-	negative_spend, // Malicious attempt to spend a negative amount
-	fork, // Malicious fork based on previous
-	unreceivable, // Source block doesn't exist, has already been received, or requires an account upgrade (epoch blocks)
-	gap_previous, // Block marked as previous is unknown
-	gap_source, // Block marked as source is unknown
-	opened_burn_account, // The impossible happened, someone found the private key associated with the public key '0'.
-	balance_mismatch, // Balance and amount delta don't match
-	representative_mismatch, // Representative is changed when it is not allowed
-	block_position // This block cannot follow the previous block
+	progress = 0,  // Hasn't been seen before, signed correctly
+	bad_signature = 1,  // Signature was bad, forged or transmission error
+	old = 2,  // Already seen and was valid
+	negative_spend = 3,  // Malicious attempt to spend a negative amount
+	fork = 4,  // Malicious fork based on previous
+	unreceivable = 5,  // Source block doesn't exist, has already been received, or requires an account upgrade (epoch blocks)
+	gap_previous = 6,  // Block marked as previous is unknown
+	gap_source = 7,  // Block marked as source is unknown
+	opened_burn_account = 8,  // The impossible happened, someone found the private key associated with the public key '0'.
+	balance_mismatch = 9,  // Balance and amount delta don't match
+	representative_mismatch = 10,  // Representative is changed when it is not allowed
+	block_position = 11,  // This block cannot follow the previous block (e.g. due to epoch)
+	invalid_state_block = 12  // a state block with undefined subtype
 };
 class process_return
 {
@@ -256,7 +257,7 @@ public:
 	rai::account account;
 	rai::amount amount;
 	rai::account pending_account;
-	boost::optional<bool> state_is_send;
+	rai::state_block_subtype state_subtype;
 };
 enum class tally_result
 {
@@ -272,6 +273,7 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
+extern std::string const & rai_test_genesis_legacy;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
@@ -280,12 +282,24 @@ extern rai::uint128_t const & genesis_amount;
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
 extern rai::block_hash const & not_an_account;
+
 class genesis
 {
 public:
 	explicit genesis ();
 	void initialize (MDB_txn *, rai::block_store &) const;
 	rai::block_hash hash () const;
-	std::unique_ptr<rai::open_block> open;
+	rai::state_block const & block () const;
+	rai::block_hash root () const;
+	std::unique_ptr<rai::state_block> genesis_block;
 };
+
+class genesis_legacy_with_open
+{
+public:
+	explicit genesis_legacy_with_open();
+	void initialize(MDB_txn *, rai::block_store &) const;
+	rai::block_hash hash() const;
+	std::unique_ptr<rai::open_block> genesis_block;
+}; 
 }

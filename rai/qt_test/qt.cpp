@@ -464,7 +464,7 @@ TEST (history, short_text)
 	auto wallet (std::make_shared<rai_qt::wallet> (*test_application, processor, *system.nodes[0], system.wallet (0), account));
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::genesis genesis;
+	rai::genesis_legacy_with_open genesis;
 	rai::ledger ledger (store, system.nodes[0]->stats);
 	{
 		rai::transaction transaction (store.environment, nullptr, true);

@@ -86,7 +86,7 @@ int main (int argc, char * const * argv)
 						          << "Account: " << rep.pub.to_account () << std::endl;
 					}
 					rai::uint128_t balance (rai::genesis_amount);
-					rai::open_block genesis_block (genesis.pub, genesis.pub, genesis.pub, genesis.prv, genesis.pub, work.generate (genesis.pub));
+					rai::state_block genesis_block (genesis.pub, rai::block_hash (0), genesis.pub, balance, rai::uint256_union (0), genesis.prv, genesis.pub, work.generate (genesis.pub));
 					std::cout << genesis_block.to_json ();
 					rai::block_hash previous (genesis_block.hash ());
 					for (auto i (0); i != 8; ++i)

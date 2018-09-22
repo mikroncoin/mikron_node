@@ -1572,10 +1572,29 @@ public:
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
-		auto balance (block_a.hashables.balance.number ());
-		auto previous_balance (handler.node.ledger.balance (transaction, block_a.hashables.previous));
-		if (balance < previous_balance)
+		auto cur_balance (block_a.hashables.balance.number ());
+		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		rai::state_block_subtype subtype = block_a.get_subtype (previous_balance);
+		switch (subtype)
 		{
+		case rai::state_block_subtype::open:
+			if (raw)
+			{
+				tree.put ("subtype", "open");
+			}
+			else
+			{
+				tree.put ("type", "receive");
+			}
+			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+			if (!block_a.hashables.link.is_zero ())
+			{
+				tree.put ("account", block_a.hashables.link.to_string ());
+			}
+			break;
+
+		case rai::state_block_subtype::send:
+			// send
 			if (raw)
 			{
 				tree.put ("subtype", "send");
@@ -1585,38 +1604,32 @@ public:
 				tree.put ("type", "send");
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
-			tree.put ("amount", (previous_balance - balance).convert_to<std::string> ());
-		}
-		else
-		{
-			if (block_a.hashables.link.is_zero ())
+			tree.put ("amount", (previous_balance - cur_balance).convert_to<std::string> ());
+			break;
+
+		case rai::state_block_subtype::receive:
+			// receive
+			if (raw)
 			{
-				if (raw)
-				{
-					tree.put ("subtype", "change");
-				}
-			}
-			else if (balance == previous_balance && !handler.node.ledger.epoch_link.is_zero () && block_a.hashables.link == handler.node.ledger.epoch_link)
-			{
-				if (raw)
-				{
-					tree.put ("subtype", "epoch");
-					tree.put ("account", handler.node.ledger.epoch_signer.to_account ());
-				}
+				tree.put ("subtype", "receive");
 			}
 			else
 			{
-				if (raw)
-				{
-					tree.put ("subtype", "receive");
-				}
-				else
-				{
-					tree.put ("type", "receive");
-				}
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-				tree.put ("amount", (balance - previous_balance).convert_to<std::string> ());
+				tree.put ("type", "receive");
 			}
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("amount", (cur_balance - previous_balance).convert_to<std::string> ());
+			break;
+
+		case rai::state_block_subtype::change:
+			// change
+			if (raw)
+			{
+				tree.put ("subtype", "change");
+			}
+			break;
+
+			// epoch not handled
 		}
 	}
 	rai::rpc_handler & handler;

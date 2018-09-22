@@ -926,7 +926,7 @@ lmdb_max_dbs (128)
 			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"));
+			preconfigured_representatives.push_back (rai::account ("F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"));
 			preconfigured_representatives.push_back (rai::account ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071"));
 			preconfigured_representatives.push_back (rai::account ("259A40656144FAA16D2A8516F7BE9C74A63C6CA399960EDB747D144ABB0F7ABD"));
 			preconfigured_representatives.push_back (rai::account ("259A40A92FA42E2240805DE8618EC4627F0BA41937160B4CFF7F5335FD1933DF"));
@@ -1425,19 +1425,20 @@ bool rai::block_processor::full ()
 
 void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono::steady_clock::time_point origination)
 {
+	auto hash_l (block_a->hash ());
 	if (!rai::work_validate (block_a->root (), block_a->block_work ()))
 	{
 		std::lock_guard<std::mutex> lock (mutex);
-		if (blocks_hashes.find (block_a->hash ()) == blocks_hashes.end ())
+		if (blocks_hashes.find (hash_l) == blocks_hashes.end ())
 		{
 			blocks.push_back (std::make_pair (block_a, origination));
-			blocks_hashes.insert (block_a->hash ());
+			blocks_hashes.insert (hash_l);
 			condition.notify_all ();
 		}
 	}
 	else
 	{
-		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << block_a->hash ().to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
+		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
 		assert (false && "rai::block_processor::add called with invalid work");
 	}
 }
@@ -2883,7 +2884,7 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		rai::account pending_account (0);
 		if (auto state = dynamic_cast<rai::state_block *> (block_a.get ()))
 		{
-			is_state_send = ledger.is_send (transaction, *state);
+			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
 			pending_account = state->hashables.link;
 		}
 		if (auto send = dynamic_cast<rai::send_block *> (block_a.get ()))

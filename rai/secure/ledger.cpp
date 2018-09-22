@@ -108,20 +108,20 @@ public:
 		{
 			representative = ledger.representative (transaction, block_a.hashables.previous);
 		}
-		auto balance (ledger.balance (transaction, block_a.hashables.previous));
-		auto is_send (block_a.hashables.balance < balance);
+		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
+		auto subtype (block_a.get_subtype (previous_balance));
 		// Add in amount delta
 		ledger.store.representation_add (transaction, hash, 0 - block_a.hashables.balance.number ());
 		if (!representative.is_zero ())
 		{
 			// Move existing representation
-			ledger.store.representation_add (transaction, representative, balance);
+			ledger.store.representation_add (transaction, representative, previous_balance);
 		}
 
 		rai::account_info info;
 		auto error (ledger.store.account_get (transaction, block_a.hashables.account, info));
 
-		if (is_send)
+		if (subtype == rai::state_block_subtype::send)
 		{
 			rai::pending_key key (block_a.hashables.link, hash);
 			while (!ledger.store.pending_exists (transaction, key))
@@ -134,14 +134,14 @@ public:
 		else if (!block_a.hashables.link.is_zero () && block_a.hashables.link != ledger.epoch_link)
 		{
 			auto source_version (ledger.store.block_version (transaction, block_a.hashables.link));
-			rai::pending_info pending_info (ledger.account (transaction, block_a.hashables.link), block_a.hashables.balance.number () - balance, source_version);
+			rai::pending_info pending_info (ledger.account (transaction, block_a.hashables.link), block_a.hashables.balance.number () - previous_balance, source_version);
 			ledger.store.pending_put (transaction, rai::pending_key (block_a.hashables.account, block_a.hashables.link), pending_info);
 			ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::receive);
 		}
 
 		assert (!error);
 		auto previous_version (ledger.store.block_version (transaction, block_a.hashables.previous));
-		ledger.change_latest (transaction, block_a.hashables.account, block_a.hashables.previous, representative, balance, info.block_count - 1, false, previous_version);
+		ledger.change_latest (transaction, block_a.hashables.account, block_a.hashables.previous, representative, previous_balance, info.block_count - 1, false, previous_version);
 
 		auto previous (ledger.store.block_get (transaction, block_a.hashables.previous));
 		if (previous != nullptr)
@@ -221,7 +221,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 				rai::epoch epoch (rai::epoch::epoch_0);
 				rai::account_info info;
 				result.amount = block_a.hashables.balance;
-				auto is_send (false);
+				auto subtype (rai::state_block_subtype::undefined);
 				auto account_error (ledger.store.account_get (transaction, block_a.hashables.account, info));
 				if (!account_error)
 				{
@@ -233,9 +233,13 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 						result.code = ledger.store.block_exists (transaction, block_a.hashables.previous) ? rai::process_result::progress : rai::process_result::gap_previous; // Does the previous block exist in the ledger? (Unambigious)
 						if (result.code == rai::process_result::progress)
 						{
-							is_send = block_a.hashables.balance < info.balance;
-							result.amount = is_send ? (info.balance.number () - result.amount.number ()) : (result.amount.number () - info.balance.number ());
-							result.code = block_a.hashables.previous == info.head ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
+							subtype = block_a.get_subtype (info.balance.number ());
+							result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
+							if (result.code == rai::process_result::progress)
+							{
+								result.amount = (rai::state_block_subtype::send == subtype) ? (info.balance.number () - result.amount.number ()) : (result.amount.number () - info.balance.number ());
+								result.code = block_a.hashables.previous == info.head ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
+							}
 						}
 					}
 				}
@@ -250,7 +254,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 				}
 				if (result.code == rai::process_result::progress)
 				{
-					if (!is_send)
+					if (subtype != rai::state_block_subtype::send)
 					{
 						if (!block_a.hashables.link.is_zero ())
 						{
@@ -277,7 +281,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 				if (result.code == rai::process_result::progress)
 				{
 					ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
-					result.state_is_send = is_send;
+					result.state_subtype = subtype;
 					ledger.store.block_put (transaction, hash, block_a, 0, epoch);
 
 					if (!info.rep_block.is_zero ())
@@ -288,7 +292,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 					// Add in amount delta
 					ledger.store.representation_add (transaction, hash, block_a.hashables.balance.number ());
 
-					if (is_send)
+					if (subtype == rai::state_block_subtype::send)
 					{
 						rai::pending_key key (block_a.hashables.link, hash);
 						rai::pending_info info (block_a.hashables.account, result.amount.number (), epoch);
@@ -689,18 +693,11 @@ std::string rai::ledger::block_text (rai::block_hash const & hash_a)
 	return result;
 }
 
-bool rai::ledger::is_send (MDB_txn * transaction_a, rai::state_block const & block_a)
+rai::state_block_subtype rai::ledger::state_subtype (MDB_txn * transaction_a, rai::state_block const & block_a)
 {
-	bool result (false);
 	rai::block_hash previous (block_a.hashables.previous);
-	if (!previous.is_zero ())
-	{
-		if (block_a.hashables.balance < balance (transaction_a, previous))
-		{
-			result = true;
-		}
-	}
-	return result;
+	auto previous_balance = balance (transaction_a, previous);
+	return block_a.get_subtype (previous_balance);
 }
 
 rai::block_hash rai::ledger::block_destination (MDB_txn * transaction_a, rai::block const & block_a)
@@ -712,7 +709,7 @@ rai::block_hash rai::ledger::block_destination (MDB_txn * transaction_a, rai::bl
 	{
 		result = send_block->hashables.destination;
 	}
-	else if (state_block != nullptr && is_send (transaction_a, *state_block))
+	else if (state_block != nullptr && state_subtype (transaction_a, *state_block) == rai::state_block_subtype::send)
 	{
 		result = state_block->hashables.link;
 	}
@@ -725,7 +722,7 @@ rai::block_hash rai::ledger::block_source (MDB_txn * transaction_a, rai::block c
 	// However, universal blocks will always return zero.
 	rai::block_hash result (block_a.source ());
 	rai::state_block const * state_block (dynamic_cast<rai::state_block const *> (&block_a));
-	if (state_block != nullptr && !is_send (transaction_a, *state_block))
+	if (state_block != nullptr && state_subtype (transaction_a, *state_block) != rai::state_block_subtype::send)
 	{
 		result = state_block->hashables.link;
 	}
@@ -887,7 +884,7 @@ public:
 	void state_block (rai::state_block const & block_a) override
 	{
 		result = block_a.previous ().is_zero () || ledger.store.block_exists (transaction, block_a.previous ());
-		if (result && !ledger.is_send (transaction, block_a))
+		if (result && ledger.state_subtype (transaction, block_a) != rai::state_block_subtype::send)
 		{
 			result &= ledger.store.block_exists (transaction, block_a.hashables.link);
 		}

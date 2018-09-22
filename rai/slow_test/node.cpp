@@ -78,7 +78,7 @@ TEST (ledger, deep_account_compute)
 	ASSERT_FALSE (init);
 	rai::stat stats;
 	rai::ledger ledger (store, stats);
-	rai::genesis genesis;
+	rai::genesis_legacy_with_open genesis;
 	rai::transaction transaction (store.environment, nullptr, true);
 	genesis.initialize (transaction, store);
 	rai::keypair key;
