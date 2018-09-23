@@ -33,7 +33,7 @@ public:
 	bool block_exists (rai::block_hash const &);
 	std::string block_text (char const *);
 	std::string block_text (rai::block_hash const &);
-	bool is_send (MDB_txn *, rai::state_block const &);
+	rai::state_block_subtype state_subtype (MDB_txn *, rai::state_block const &);
 	rai::block_hash block_destination (MDB_txn *, rai::block const &);
 	rai::block_hash block_source (MDB_txn *, rai::block const &);
 	rai::process_return process (MDB_txn *, rai::block const &);

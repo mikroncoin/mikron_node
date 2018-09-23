@@ -32,7 +32,7 @@ TEST (message, keepalive_deserialize)
 	auto error (false);
 	rai::message_header header (error, stream);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::message_type::keepalive, header.type);
+	ASSERT_EQ (rai::message_type::keepalive, header.message_type);
 	rai::keepalive message2 (error, stream, header);
 	ASSERT_FALSE (error);
 	ASSERT_EQ (message1.peers, message2.peers);
@@ -64,10 +64,10 @@ TEST (message, publish_serialization)
 	auto error (false);
 	rai::message_header header (error, stream);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::protocol_version_min, header.version_min);
-	ASSERT_EQ (rai::protocol_version, header.version_using);
-	ASSERT_EQ (rai::protocol_version, header.version_max);
-	ASSERT_EQ (rai::message_type::publish, header.type);
+	ASSERT_EQ (rai::protocol_version_min, header.protocol_info.version_min);
+	ASSERT_EQ (rai::protocol_version, header.protocol_info.version);
+	ASSERT_EQ (rai::protocol_version, header.protocol_info.version_max);
+	ASSERT_EQ (rai::message_type::publish, header.message_type);
 }
 
 TEST (message, confirm_ack_serialization)
