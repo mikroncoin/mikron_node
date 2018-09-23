@@ -354,7 +354,7 @@ TEST (peer_container, random_set)
 	rai::peer_container container (rai::endpoint (loopback, 24000));
 	for (auto i (0); i < 200; ++i)
 	{
-		container.contacted (rai::endpoint (loopback, 24001 + i), 0);
+		container.contacted (rai::endpoint (loopback, 24001 + i), rai::protocol_information ());
 	}
 	auto old (std::chrono::steady_clock::now ());
 	for (auto i (0); i < 10000; ++i)

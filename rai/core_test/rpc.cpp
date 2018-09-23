@@ -13,14 +13,14 @@
 using namespace std::chrono_literals;
 
 // Helper methods introduced when switched from legacy block types to state block, to reduce the effort of test updates
-rai::state_block rpc_create_send_state_block_helper(rai::block_hash const & previous_a, rai::account const & destination_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
+rai::state_block rpc_create_send_state_block_helper (rai::block_hash const & previous_a, rai::account const & destination_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block(pub_a, previous_a, rai::genesis_account, balance_a, destination_a, prv_a, pub_a, work_a);
+	return rai::state_block (pub_a, previous_a, rai::genesis_account, balance_a, destination_a, prv_a, pub_a, work_a);
 }
 
 rai::state_block rpc_create_open_state_block_helper (rai::state_block const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block(account_a, 0, representative_a, balance_a, source_a.hash(), prv_a, pub_a, work_a);
+	return rai::state_block (account_a, 0, representative_a, balance_a, source_a.hash(), prv_a, pub_a, work_a);
 }
 
 class test_response
@@ -1361,7 +1361,7 @@ TEST (rpc, payment_wait)
 TEST (rpc, peers)
 {
 	rai::system system (24000, 2);
-	system.nodes[0]->peers.insert (rai::endpoint (boost::asio::ip::address_v6::from_string ("::ffff:80.80.80.80"), 4000), rai::protocol_version);
+	system.nodes[0]->peers.insert (rai::endpoint (boost::asio::ip::address_v6::from_string ("::ffff:80.80.80.80"), 4000), rai::protocol_information ());
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	rpc.start ();
 	boost::property_tree::ptree request;

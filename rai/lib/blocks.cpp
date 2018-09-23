@@ -1174,7 +1174,7 @@ bool rai::state_block::is_valid_open_subtype () const
 
 bool rai::state_block::is_valid_send_or_receive_subtype () const
 {
-	// balance is not known
+	// balance change is not known
 	if (hashables.account.is_zero ()) return false;
 	if (!has_previous ()) return false;
 	if (!has_link ()) return false;

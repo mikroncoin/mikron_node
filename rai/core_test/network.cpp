@@ -18,7 +18,7 @@ rai::state_block network_create_receive_state_block_helper (rai::block_hash cons
 
 rai::state_block network_create_open_state_block_helper (rai::block_hash const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block(account_a, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
+	return rai::state_block (account_a, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
 }
 
 
@@ -649,9 +649,9 @@ TEST (bootstrap_processor, pull_diamond)
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (*send1).code);
 	std::unique_ptr<rai::state_block> open (new rai::state_block (::network_create_open_state_block_helper (send1->hash (), 1, key.pub, rai::genesis_amount, key.prv, key.pub, system.work.generate (key.pub))));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (*open).code);
-	std::unique_ptr<rai::state_block> send2 (new rai::state_block(::network_create_send_state_block_helper (open->hash (), rai::test_genesis_key.pub, rai::genesis_amount - 100, rai::genesis_account, key.prv, key.pub, system.work.generate (open->hash ()))));
+	std::unique_ptr<rai::state_block> send2 (new rai::state_block (::network_create_send_state_block_helper (open->hash (), rai::test_genesis_key.pub, rai::genesis_amount - 100, rai::genesis_account, key.prv, key.pub, system.work.generate (open->hash ()))));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (*send2).code);
-	std::unique_ptr<rai::state_block> receive (new rai::state_block(::network_create_receive_state_block_helper (send1->hash (), send2->hash (), rai::genesis_account, rai::genesis_account, 100, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (send1->hash ()))));
+	std::unique_ptr<rai::state_block> receive (new rai::state_block (::network_create_receive_state_block_helper (send1->hash (), send2->hash (), rai::genesis_account, rai::genesis_account, 100, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (send1->hash ()))));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (*receive).code);
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24002, rai::unique_path (), system.alarm, system.logging, system.work));

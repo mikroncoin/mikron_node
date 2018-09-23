@@ -1629,7 +1629,7 @@ public:
 			}
 			break;
 
-			// epoch not handled
+			// epoch and undefined not handled
 		}
 	}
 	rai::rpc_handler & handler;
