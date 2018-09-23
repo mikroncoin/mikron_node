@@ -29,6 +29,7 @@ void write (rai::stream & stream_a, T const & value)
 	assert (amount_written == sizeof (value));
 }
 class block_visitor;
+
 enum class block_type : uint8_t
 {
 	invalid = 0,
@@ -39,6 +40,7 @@ enum class block_type : uint8_t
 	change = 5,
 	state = 6
 };
+
 class block
 {
 public:
@@ -232,6 +234,16 @@ public:
 	rai::signature signature;
 	uint64_t work;
 };
+
+enum class state_block_subtype : uint8_t
+{
+	undefined = 0,
+	send = 2,
+	receive = 3,
+	open = 4,
+	change = 5
+};
+
 class state_hashables
 {
 public:
@@ -254,6 +266,7 @@ public:
 	// Link field contains source block_hash if receiving, destination account if sending
 	rai::uint256_union link;
 };
+
 class state_block : public rai::block
 {
 public:
@@ -280,11 +293,19 @@ public:
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
 	bool valid_predecessor (rai::block const &) const override;
+	rai::state_block_subtype get_subtype (rai::uint128_t) const;
+	bool is_valid_open_subtype () const;
+	bool is_valid_send_or_receive_subtype () const;
+	bool is_valid_change_subtype () const;
+	bool has_previous () const;
+	bool has_link () const;
+	bool has_representative () const;
 	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
 	rai::signature signature;
 	uint64_t work;
 };
+
 class block_visitor
 {
 public:

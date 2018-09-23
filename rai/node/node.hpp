@@ -191,7 +191,7 @@ class work_pool;
 class peer_information
 {
 public:
-	peer_information (rai::endpoint const &, unsigned);
+	peer_information (rai::endpoint const &, rai::protocol_information);
 	peer_information (rai::endpoint const &, std::chrono::steady_clock::time_point const &, std::chrono::steady_clock::time_point const &);
 	rai::endpoint endpoint;
 	boost::asio::ip::address ip_address;
@@ -202,7 +202,7 @@ public:
 	std::chrono::steady_clock::time_point last_rep_response;
 	rai::amount rep_weight;
 	rai::account probable_rep_account;
-	unsigned network_version;
+	rai::protocol_information protocol_info;
 	boost::optional<rai::account> node_id;
 };
 class peer_attempt
@@ -226,13 +226,13 @@ public:
 	peer_container (rai::endpoint const &);
 	// We were contacted by endpoint, update peers
 	// Returns true if a Node ID handshake should begin
-	bool contacted (rai::endpoint const &, unsigned);
+	bool contacted (rai::endpoint const &, rai::protocol_information);
 	// Unassigned, reserved, self
 	bool not_a_peer (rai::endpoint const &, bool);
 	// Returns true if peer was already known
 	bool known_peer (rai::endpoint const &);
 	// Notify of peer we received from
-	bool insert (rai::endpoint const &, unsigned);
+	bool insert (rai::endpoint const &, rai::protocol_information);
 	std::unordered_set<rai::endpoint> random_set (size_t);
 	void random_fill (std::array<rai::endpoint, 8> &);
 	// Request a list of the top known representatives

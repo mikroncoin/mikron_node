@@ -32,7 +32,7 @@ TEST (message, keepalive_deserialize)
 	auto error (false);
 	rai::message_header header (error, stream);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::message_type::keepalive, header.type);
+	ASSERT_EQ (rai::message_type::keepalive, header.message_type);
 	rai::keepalive message2 (error, stream, header);
 	ASSERT_FALSE (error);
 	ASSERT_EQ (message1.peers, message2.peers);
@@ -42,9 +42,10 @@ TEST (message, publish_serialization)
 {
 	rai::publish publish (std::unique_ptr<rai::block> (new rai::send_block (0, 1, 2, rai::keypair ().prv, 4, 5)));
 	ASSERT_EQ (rai::block_type::send, publish.header.block_type ());
-	ASSERT_FALSE (publish.header.ipv4_only ());
-	publish.header.ipv4_only_set (true);
-	ASSERT_TRUE (publish.header.ipv4_only ());
+	publish.header.protocol_info.set_full_node (false);
+	ASSERT_FALSE (publish.header.protocol_info.is_full_node ());
+	publish.header.protocol_info.set_full_node (true);
+	ASSERT_TRUE (publish.header.protocol_info.is_full_node ());
 	std::vector<uint8_t> bytes;
 	{
 		rai::vectorstream stream (bytes);
@@ -57,16 +58,16 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::protocol_version, bytes[3]);
 	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::publish), bytes[5]);
-	ASSERT_EQ (0x02, bytes[6]);
+	ASSERT_EQ (0x04, bytes[6]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[7]);
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	auto error (false);
 	rai::message_header header (error, stream);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::protocol_version_min, header.version_min);
-	ASSERT_EQ (rai::protocol_version, header.version_using);
-	ASSERT_EQ (rai::protocol_version, header.version_max);
-	ASSERT_EQ (rai::message_type::publish, header.type);
+	ASSERT_EQ (rai::protocol_version_min, header.protocol_info.version_min);
+	ASSERT_EQ (rai::protocol_version, header.protocol_info.version);
+	ASSERT_EQ (rai::protocol_version, header.protocol_info.version_max);
+	ASSERT_EQ (rai::message_type::publish, header.message_type);
 }
 
 TEST (message, confirm_ack_serialization)

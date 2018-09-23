@@ -370,7 +370,7 @@ public:
 			BOOST_LOG (node.log) << boost::str (boost::format ("Received keepalive message from %1%") % sender);
 		}
 		node.stats.inc (rai::stat::type::message, rai::stat::detail::keepalive, rai::stat::dir::in);
-		if (node.peers.contacted (sender, message_a.header.version_using))
+		if (node.peers.contacted (sender, message_a.header.protocol_info))
 		{
 			auto endpoint_l (rai::map_endpoint_to_v6 (sender));
 			auto cookie (node.peers.assign_syn_cookie (endpoint_l));
@@ -388,7 +388,7 @@ public:
 			BOOST_LOG (node.log) << boost::str (boost::format ("Publish message from %1% for %2%") % sender % message_a.block->hash ().to_string ());
 		}
 		node.stats.inc (rai::stat::type::message, rai::stat::detail::publish, rai::stat::dir::in);
-		node.peers.contacted (sender, message_a.header.version_using);
+		node.peers.contacted (sender, message_a.header.protocol_info);
 		node.process_active (message_a.block);
 		node.active.publish (message_a.block);
 	}
@@ -399,7 +399,7 @@ public:
 			BOOST_LOG (node.log) << boost::str (boost::format ("Confirm_req message from %1% for %2%") % sender % message_a.block->hash ().to_string ());
 		}
 		node.stats.inc (rai::stat::type::message, rai::stat::detail::confirm_req, rai::stat::dir::in);
-		node.peers.contacted (sender, message_a.header.version_using);
+		node.peers.contacted (sender, message_a.header.protocol_info);
 		node.process_active (message_a.block);
 		node.active.publish (message_a.block);
 		rai::transaction transaction_a (node.store.environment, nullptr, false);
@@ -416,7 +416,7 @@ public:
 			BOOST_LOG (node.log) << boost::str (boost::format ("Received confirm_ack message from %1% for %2%sequence %3%") % sender % message_a.vote->hashes_string () % std::to_string (message_a.vote->sequence));
 		}
 		node.stats.inc (rai::stat::type::message, rai::stat::detail::confirm_ack, rai::stat::dir::in);
-		node.peers.contacted (sender, message_a.header.version_using);
+		node.peers.contacted (sender, message_a.header.protocol_info);
 		for (auto & vote_block : message_a.vote->blocks)
 		{
 			if (!vote_block.which ())
@@ -470,7 +470,7 @@ public:
 				validated_response = true;
 				if (message_a.response->first != node.node_id.pub)
 				{
-					node.peers.insert (endpoint_l, message_a.header.version_using);
+					node.peers.insert (endpoint_l, message_a.header.protocol_info);
 				}
 			}
 			else if (node.config.logging.network_node_id_handshake_logging ())
@@ -926,7 +926,7 @@ lmdb_max_dbs (128)
 			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"));
+			preconfigured_representatives.push_back (rai::account ("F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"));
 			preconfigured_representatives.push_back (rai::account ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071"));
 			preconfigured_representatives.push_back (rai::account ("259A40656144FAA16D2A8516F7BE9C74A63C6CA399960EDB747D144ABB0F7ABD"));
 			preconfigured_representatives.push_back (rai::account ("259A40A92FA42E2240805DE8618EC4627F0BA41937160B4CFF7F5335FD1933DF"));
@@ -1425,19 +1425,20 @@ bool rai::block_processor::full ()
 
 void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono::steady_clock::time_point origination)
 {
+	auto hash_l (block_a->hash ());
 	if (!rai::work_validate (block_a->root (), block_a->block_work ()))
 	{
 		std::lock_guard<std::mutex> lock (mutex);
-		if (blocks_hashes.find (block_a->hash ()) == blocks_hashes.end ())
+		if (blocks_hashes.find (hash_l) == blocks_hashes.end ())
 		{
 			blocks.push_back (std::make_pair (block_a, origination));
-			blocks_hashes.insert (block_a->hash ());
+			blocks_hashes.insert (hash_l);
 			condition.notify_all ();
 		}
 	}
 	else
 	{
-		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << block_a->hash ().to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
+		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
 		assert (false && "rai::block_processor::add called with invalid work");
 	}
 }
@@ -2122,7 +2123,7 @@ std::map<rai::endpoint, unsigned> rai::peer_container::list_version ()
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto i (peers.begin ()), j (peers.end ()); i != j; ++i)
 	{
-		result.insert (std::pair<rai::endpoint, unsigned> (i->endpoint, i->network_version));
+		result.insert (std::pair<rai::endpoint, unsigned> (i->endpoint, i->protocol_info.version));
 	}
 	return result;
 }
@@ -2883,7 +2884,7 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		rai::account pending_account (0);
 		if (auto state = dynamic_cast<rai::state_block *> (block_a.get ()))
 		{
-			is_state_send = ledger.is_send (transaction, *state);
+			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
 			pending_account = state->hashables.link;
 		}
 		if (auto send = dynamic_cast<rai::send_block *> (block_a.get ()))
@@ -3111,7 +3112,7 @@ std::vector<rai::peer_information> rai::peer_container::purge_list (std::chrono:
 		result.assign (pivot, peers.get<1> ().end ());
 		for (auto i (peers.get<1> ().begin ()); i != pivot; ++i)
 		{
-			if (i->network_version < rai::protocol_version_legacy_min)
+			if (i->protocol_info.version < rai::protocol_version_legacy_min)
 			{
 				if (legacy_peers > 0)
 				{
@@ -3258,15 +3259,15 @@ bool rai::peer_container::reachout (rai::endpoint const & endpoint_a)
 	return error;
 }
 
-bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned version_a)
+bool rai::peer_container::insert (rai::endpoint const & endpoint_a, rai::protocol_information protocol_info_a)
 {
 	assert (endpoint_a.address ().is_v6 ());
 	auto unknown (false);
-	auto is_legacy (version_a < rai::protocol_version_legacy_min);
+	auto is_legacy (protocol_info_a.version < rai::protocol_version_legacy_min);
 	auto result (not_a_peer (endpoint_a, false));
 	if (!result)
 	{
-		if (version_a >= rai::protocol_version_min)
+		if (protocol_info_a.version >= rai::protocol_version_min)
 		{
 			std::lock_guard<std::mutex> lock (mutex);
 			auto existing (peers.find (endpoint_a));
@@ -3303,7 +3304,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 					while (i != n)
 					{
 						++ip_peers;
-						if (i->network_version < rai::protocol_version_legacy_min)
+						if (i->protocol_info.version < rai::protocol_version_legacy_min)
 						{
 							++legacy_ip_peers;
 						}
@@ -3316,7 +3317,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, unsigned ver
 				}
 				if (!result)
 				{
-					peers.insert (rai::peer_information (endpoint_a, version_a));
+					peers.insert (rai::peer_information (endpoint_a, protocol_info_a));
 				}
 			}
 		}
@@ -3441,7 +3442,7 @@ bool rai::reserved_address (rai::endpoint const & endpoint_a, bool blacklist_loo
 	return result;
 }
 
-rai::peer_information::peer_information (rai::endpoint const & endpoint_a, unsigned network_version_a) :
+rai::peer_information::peer_information (rai::endpoint const & endpoint_a, rai::protocol_information protocol_info_a) :
 endpoint (endpoint_a),
 ip_address (endpoint_a.address ()),
 last_contact (std::chrono::steady_clock::now ()),
@@ -3450,7 +3451,7 @@ last_bootstrap_attempt (std::chrono::steady_clock::time_point ()),
 last_rep_request (std::chrono::steady_clock::time_point ()),
 last_rep_response (std::chrono::steady_clock::time_point ()),
 rep_weight (0),
-network_version (network_version_a),
+protocol_info (protocol_info_a),
 node_id ()
 {
 }
@@ -3465,7 +3466,7 @@ last_rep_request (std::chrono::steady_clock::time_point ()),
 last_rep_response (std::chrono::steady_clock::time_point ()),
 rep_weight (0),
 node_id (),
-network_version (rai::protocol_version)
+protocol_info ()
 {
 }
 
@@ -3477,13 +3478,13 @@ legacy_peers (0)
 {
 }
 
-bool rai::peer_container::contacted (rai::endpoint const & endpoint_a, unsigned version_a)
+bool rai::peer_container::contacted (rai::endpoint const & endpoint_a, rai::protocol_information protocol_info_a)
 {
 	auto endpoint_l (rai::map_endpoint_to_v6 (endpoint_a));
 	auto should_handshake (false);
-	if (version_a < rai::protocol_version_legacy_min)
+	if (protocol_info_a.version < rai::protocol_version_legacy_min)
 	{
-		insert (endpoint_l, version_a);
+		insert (endpoint_l, protocol_info_a);
 	}
 	else if (!known_peer (endpoint_l) && peers.get<rai::peer_by_ip_addr> ().count (endpoint_l.address ()) < max_peers_per_ip)
 	{

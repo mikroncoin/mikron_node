@@ -45,7 +45,7 @@ TEST (wallet, status)
 		return wallet->active_status.active.find (status_ty) != wallet->active_status.active.end ();
 	};
 	ASSERT_EQ ("Status: Disconnected, Block: 1", wallet->status->text ().toStdString ());
-	system.nodes[0]->peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000), 0);
+	system.nodes[0]->peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000), rai::protocol_information ());
 	// Because of the wallet "vulnerable" message, this won't be the message displayed.
 	// However, it will still be part of the status set.
 	ASSERT_FALSE (wallet_has (rai_qt::status_types::synchronizing));
@@ -464,7 +464,7 @@ TEST (history, short_text)
 	auto wallet (std::make_shared<rai_qt::wallet> (*test_application, processor, *system.nodes[0], system.wallet (0), account));
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::genesis genesis;
+	rai::genesis_legacy_with_open genesis;
 	rai::ledger ledger (store, system.nodes[0]->stats);
 	{
 		rai::transaction transaction (store.environment, nullptr, true);

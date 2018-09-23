@@ -17,9 +17,9 @@ TEST (peer_container, no_recontact)
 	ASSERT_EQ (0, peers.size ());
 	peers.peer_observer = [&observed_peer](rai::endpoint const &) { ++observed_peer; };
 	peers.disconnect_observer = [&observed_disconnect]() { observed_disconnect = true; };
-	ASSERT_FALSE (peers.insert (endpoint1, rai::protocol_version));
+	ASSERT_FALSE (peers.insert (endpoint1, rai::protocol_information ()));
 	ASSERT_EQ (1, peers.size ());
-	ASSERT_TRUE (peers.insert (endpoint1, rai::protocol_version));
+	ASSERT_TRUE (peers.insert (endpoint1, rai::protocol_information ()));
 	auto remaining (peers.purge_list (std::chrono::steady_clock::now () + std::chrono::seconds (5)));
 	ASSERT_TRUE (remaining.empty ());
 	ASSERT_EQ (1, observed_peer);
@@ -30,7 +30,7 @@ TEST (peer_container, no_self_incoming)
 {
 	rai::endpoint self (boost::asio::ip::address_v6::loopback (), 10000);
 	rai::peer_container peers (self);
-	peers.insert (self, 0);
+	peers.insert (self, rai::protocol_information ());
 	ASSERT_TRUE (peers.peers.empty ());
 }
 
@@ -38,20 +38,20 @@ TEST (peer_container, no_self_contacting)
 {
 	rai::endpoint self (boost::asio::ip::address_v6::loopback (), 10000);
 	rai::peer_container peers (self);
-	peers.insert (self, 0);
+	peers.insert (self, rai::protocol_information ());
 	ASSERT_TRUE (peers.peers.empty ());
 }
 
 TEST (peer_container, reserved_peers_no_contact)
 {
 	rai::peer_container peers (rai::endpoint{});
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0x00000001)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xc0000201)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xc6336401)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xcb007101)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xe9fc0001)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xf0000001)), 10000), 0));
-	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xffffffff)), 10000), 0));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0x00000001)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xc0000201)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xc6336401)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xcb007101)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xe9fc0001)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xf0000001)), 10000), rai::protocol_information ()));
+	ASSERT_TRUE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::v4_mapped (boost::asio::ip::address_v4 (0xffffffff)), 10000), rai::protocol_information ()));
 	ASSERT_EQ (0, peers.size ());
 }
 
@@ -84,7 +84,7 @@ TEST (peer_container, fill_random_full)
 	rai::peer_container peers (rai::endpoint{});
 	for (auto i (0); i < 100; ++i)
 	{
-		peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), i), 0);
+		peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), i), rai::protocol_information ());
 	}
 	std::array<rai::endpoint, 8> target;
 	std::fill (target.begin (), target.end (), rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000));
@@ -99,7 +99,7 @@ TEST (peer_container, fill_random_part)
 	auto half (target.size () / 2);
 	for (auto i (0); i < half; ++i)
 	{
-		peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), i + 1), 0);
+		peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), i + 1), rai::protocol_information ());
 	}
 	std::fill (target.begin (), target.end (), rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000));
 	peers.random_fill (target);
@@ -118,7 +118,7 @@ TEST (peer_container, list_fanout)
 	ASSERT_TRUE (list1.empty ());
 	for (auto i (0); i < 1000; ++i)
 	{
-		ASSERT_FALSE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000 + i), rai::protocol_version));
+		ASSERT_FALSE (peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 10000 + i), rai::protocol_information ()));
 	}
 	auto list2 (peers.list_fanout ());
 	ASSERT_EQ (32, list2.size ());
@@ -127,15 +127,15 @@ TEST (peer_container, list_fanout)
 TEST (peer_container, rep_weight)
 {
 	rai::peer_container peers (rai::endpoint{});
-	peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 24001), 0);
+	peers.insert (rai::endpoint (boost::asio::ip::address_v6::loopback (), 24001), rai::protocol_information ());
 	ASSERT_TRUE (peers.representatives (1).empty ());
 	rai::endpoint endpoint0 (boost::asio::ip::address_v6::loopback (), 24000);
 	rai::endpoint endpoint1 (boost::asio::ip::address_v6::loopback (), 24002);
 	rai::endpoint endpoint2 (boost::asio::ip::address_v6::loopback (), 24003);
 	rai::amount amount (100);
-	peers.insert (endpoint2, rai::protocol_version);
-	peers.insert (endpoint0, rai::protocol_version);
-	peers.insert (endpoint1, rai::protocol_version);
+	peers.insert (endpoint2, rai::protocol_information ());
+	peers.insert (endpoint0, rai::protocol_information ());
+	peers.insert (endpoint1, rai::protocol_information ());
 	rai::keypair keypair;
 	peers.rep_response (endpoint0, keypair.pub, amount);
 	auto reps (peers.representatives (1));
@@ -171,6 +171,6 @@ TEST (peer_container, depeer)
 {
 	rai::peer_container peers (rai::endpoint{});
 	rai::endpoint endpoint0 (boost::asio::ip::address_v6::loopback (), 24000);
-	peers.contacted (endpoint0, rai::protocol_version_min - 1);
+	peers.contacted (endpoint0, rai::protocol_information (rai::protocol_version_min - 1, rai::protocol_version_min - 1, rai::protocol_version_min - 1, std::bitset<16> ()));
 	ASSERT_EQ (0, peers.size ());
 }

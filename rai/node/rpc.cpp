@@ -1572,10 +1572,29 @@ public:
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
-		auto balance (block_a.hashables.balance.number ());
-		auto previous_balance (handler.node.ledger.balance (transaction, block_a.hashables.previous));
-		if (balance < previous_balance)
+		auto cur_balance (block_a.hashables.balance.number ());
+		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		rai::state_block_subtype subtype = block_a.get_subtype (previous_balance);
+		switch (subtype)
 		{
+		case rai::state_block_subtype::open:
+			if (raw)
+			{
+				tree.put ("subtype", "open");
+			}
+			else
+			{
+				tree.put ("type", "receive");
+			}
+			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+			if (!block_a.hashables.link.is_zero ())
+			{
+				tree.put ("account", block_a.hashables.link.to_string ());
+			}
+			break;
+
+		case rai::state_block_subtype::send:
+			// send
 			if (raw)
 			{
 				tree.put ("subtype", "send");
@@ -1585,38 +1604,32 @@ public:
 				tree.put ("type", "send");
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
-			tree.put ("amount", (previous_balance - balance).convert_to<std::string> ());
-		}
-		else
-		{
-			if (block_a.hashables.link.is_zero ())
+			tree.put ("amount", (previous_balance - cur_balance).convert_to<std::string> ());
+			break;
+
+		case rai::state_block_subtype::receive:
+			// receive
+			if (raw)
 			{
-				if (raw)
-				{
-					tree.put ("subtype", "change");
-				}
-			}
-			else if (balance == previous_balance && !handler.node.ledger.epoch_link.is_zero () && block_a.hashables.link == handler.node.ledger.epoch_link)
-			{
-				if (raw)
-				{
-					tree.put ("subtype", "epoch");
-					tree.put ("account", handler.node.ledger.epoch_signer.to_account ());
-				}
+				tree.put ("subtype", "receive");
 			}
 			else
 			{
-				if (raw)
-				{
-					tree.put ("subtype", "receive");
-				}
-				else
-				{
-					tree.put ("type", "receive");
-				}
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-				tree.put ("amount", (balance - previous_balance).convert_to<std::string> ());
+				tree.put ("type", "receive");
 			}
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("amount", (cur_balance - previous_balance).convert_to<std::string> ());
+			break;
+
+		case rai::state_block_subtype::change:
+			// change
+			if (raw)
+			{
+				tree.put ("subtype", "change");
+			}
+			break;
+
+			// epoch and undefined not handled
 		}
 	}
 	rai::rpc_handler & handler;
@@ -1944,12 +1957,20 @@ void rai::rpc_handler::password_valid (bool wallet_locked)
 void rai::rpc_handler::peers ()
 {
 	boost::property_tree::ptree peers_l;
-	auto peers_list (node.peers.list_version ());
-	for (auto i (peers_list.begin ()), n (peers_list.end ()); i != n; ++i)
+	auto peers_vector (node.peers.list_vector ());
+	for (auto i (peers_vector.begin ()), n (peers_vector.end ()); i != n; ++i)
 	{
-		std::stringstream text;
-		text << i->first;
-		peers_l.push_back (boost::property_tree::ptree::value_type (text.str (), boost::property_tree::ptree (std::to_string (i->second))));
+		boost::property_tree::ptree peer_l;
+		std::stringstream endpoint;
+		endpoint << i->endpoint;
+		peer_l.push_back (boost::property_tree::ptree::value_type ("endpoint", boost::property_tree::ptree (endpoint.str ())));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version", boost::property_tree::ptree (std::to_string (i->protocol_info.version))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_min", boost::property_tree::ptree (std::to_string (i->protocol_info.version_min))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_max", boost::property_tree::ptree (std::to_string (i->protocol_info.version_max))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("proto_extensions", boost::property_tree::ptree (std::to_string (i->protocol_info.extensions.to_ulong ()))));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("is_full_node", boost::property_tree::ptree (i->protocol_info.is_full_node () ? "true" : "false")));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("rep_weight", boost::property_tree::ptree (i->rep_weight.to_string ())));
+		peers_l.push_back (std::make_pair ("", peer_l));
 	}
 	response_l.add_child ("peers", peers_l);
 	response_errors ();

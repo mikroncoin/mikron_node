@@ -5,6 +5,16 @@
 
 #include <fstream>
 
+rai::state_block bs_create_send_state_block_helper (rai::block_hash const & previous_a, rai::account const & destination_a, rai::amount const & balance_a, rai::keypair const & keys_a)
+{
+	return rai::state_block (keys_a.pub, previous_a, keys_a.pub, balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
+}
+
+rai::state_block bs_create_change_state_block_helper (rai::block_hash const & previous_a, rai::account const & representative_a, rai::amount const & balance_a, rai::keypair const & keys_a)
+{
+	return rai::state_block (keys_a.pub, previous_a, representative_a, balance_a, 0, keys_a.prv, keys_a.pub, 0);
+}
+
 TEST (block_store, construction)
 {
 	bool init (false);
@@ -154,7 +164,7 @@ TEST (block_store, genesis)
 	ASSERT_EQ (hash, info.head);
 	auto block1 (store.block_get (transaction, info.head));
 	ASSERT_NE (nullptr, block1);
-	auto receive1 (dynamic_cast<rai::open_block *> (block1.get ()));
+	auto receive1 (dynamic_cast<rai::state_block *> (block1.get ()));
 	ASSERT_NE (nullptr, receive1);
 	ASSERT_LE (info.modified, rai::seconds_since_epoch ());
 	auto test_pub_text (rai::test_genesis_key.pub.to_string ());
@@ -606,7 +616,7 @@ TEST (block_store, upgrade_v2_v3)
 		genesis.initialize (transaction, store);
 		rai::stat stats;
 		rai::ledger ledger (store, stats);
-		rai::change_block change (hash, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block change = ::bs_create_change_state_block_helper (hash, key1.pub, rai::genesis_amount, rai::test_genesis_key);
 		change_hash = change.hash ();
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, change).code);
 		ASSERT_EQ (0, ledger.weight (transaction, rai::test_genesis_key.pub));
@@ -688,7 +698,7 @@ TEST (block_store, upgrade_v4_v5)
 		rai::account_info info;
 		store.account_get (transaction, rai::test_genesis_key.pub, info);
 		rai::keypair key0;
-		rai::send_block block0 (info.head, key0.pub, rai::genesis_amount - rai::Gxrb_ratio, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block block0 = ::bs_create_send_state_block_helper (info.head, key0.pub, rai::genesis_amount - rai::Gxrb_ratio, rai::test_genesis_key);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, block0).code);
 		hash = block0.hash ();
 		auto original (store.block_get (transaction, info.head));
@@ -718,7 +728,7 @@ TEST (block_store, block_random)
 	genesis.initialize (transaction, store);
 	auto block (store.block_random (transaction));
 	ASSERT_NE (nullptr, block);
-	ASSERT_EQ (*block, *genesis.open);
+	ASSERT_EQ (*block, *genesis.genesis_block);
 }
 
 TEST (block_store, upgrade_v5_v6)
@@ -905,17 +915,17 @@ TEST (block_store, upgrade_v9_v10)
 		rai::keypair key0;
 		rai::uint128_t balance (rai::genesis_amount);
 		hash = info.head;
-		for (auto i (1); i < 32; ++i) // Making 31 send blocks (+ 1 open = 32 total)
+		for (auto i (1); i < 32; ++i) // Making 31 send blocks (+ 1 open = 32 total) (store.block_info_max)
 		{
 			balance = balance - rai::Gxrb_ratio;
-			rai::send_block block0 (hash, key0.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+			rai::state_block block0 = ::bs_create_send_state_block_helper (hash, key0.pub, balance, rai::test_genesis_key);
 			ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, block0).code);
 			hash = block0.hash ();
 		}
 		rai::block_info block_info_auto; // Checking automatic block_info creation for block 32
 		store.block_info_get (transaction, hash, block_info_auto);
-		ASSERT_EQ (block_info_auto.account, rai::test_genesis_key.pub);
-		ASSERT_EQ (block_info_auto.balance.number (), balance);
+		ASSERT_EQ (block_info_auto.account, 0);  //  rai::test_genesis_key.pub);
+		ASSERT_EQ (block_info_auto.balance.number (), 0);  //  balance);
 		ASSERT_EQ (0, mdb_drop (transaction, store.blocks_info, 0)); // Cleaning blocks_info subdatabase
 		bool block_info_exists (store.block_info_exists (transaction, hash));
 		ASSERT_EQ (block_info_exists, 0); // Checking if automatic block_info is deleted
@@ -927,8 +937,8 @@ TEST (block_store, upgrade_v9_v10)
 	ASSERT_LT (9, store.version_get (transaction));
 	rai::block_info block_info;
 	store.block_info_get (transaction, hash, block_info);
-	ASSERT_EQ (block_info.account, rai::test_genesis_key.pub);
-	ASSERT_EQ (block_info.balance.number (), rai::genesis_amount - rai::Gxrb_ratio * 31);
+	ASSERT_EQ (block_info.account, 0);  // rai::test_genesis_key.pub);
+	ASSERT_EQ (block_info.balance.number (), 0);  // rai::genesis_amount - rai::Gxrb_ratio * 31);
 }
 
 TEST (block_store, state_block)
@@ -942,17 +952,19 @@ TEST (block_store, state_block)
 	rai::keypair key1;
 	rai::state_block block1 (1, genesis.hash (), 3, 4, 6, key1.prv, key1.pub, 7);
 	ASSERT_EQ (rai::block_type::state, block1.type ());
-	store.block_put (transaction, block1.hash (), block1);
+	store.block_put (transaction, block1.hash (), block1, rai::block_hash(0), rai::epoch::epoch_1);
 	ASSERT_TRUE (store.block_exists (transaction, block1.hash ()));
 	auto block2 (store.block_get (transaction, block1.hash ()));
 	ASSERT_NE (nullptr, block2);
 	ASSERT_EQ (block1, *block2);
 	auto count (store.block_count (transaction));
-	ASSERT_EQ (1, count.state_v0);
-	ASSERT_EQ (0, count.state_v1);
+	ASSERT_EQ (0, count.state_v0);
+	ASSERT_EQ (2, count.state_v1);
+	ASSERT_EQ (0, count.open);
 	store.block_del (transaction, block1.hash ());
 	ASSERT_FALSE (store.block_exists (transaction, block1.hash ()));
 	auto count2 (store.block_count (transaction));
 	ASSERT_EQ (0, count2.state_v0);
-	ASSERT_EQ (0, count2.state_v1);
+	ASSERT_EQ (1, count2.state_v1);
+	ASSERT_EQ (0, count.open);
 }

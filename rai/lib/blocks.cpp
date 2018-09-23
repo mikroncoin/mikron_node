@@ -1,4 +1,5 @@
 #include <rai/lib/blocks.hpp>
+#include <rai/secure/common.hpp>
 
 #include <boost/endian/conversion.hpp>
 
@@ -1123,6 +1124,85 @@ rai::signature rai::state_block::block_signature () const
 void rai::state_block::signature_set (rai::uint512_union const & signature_a)
 {
 	signature = signature_a;
+}
+
+rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_balance_a) const
+{
+	// if there is no previous: open
+	if (!has_previous ())
+	{
+		return rai::state_block_subtype::open;
+	}
+	// check balances: if decreasing: send
+	auto cur_balance (hashables.balance.number ());
+	if (cur_balance < previous_balance_a)
+	{
+		return rai::state_block_subtype::send;
+	}
+	// if balance increasing: receive
+	if (cur_balance > previous_balance_a)
+	{
+		return rai::state_block_subtype::receive;
+	}
+	// balance does not change, and no link: change
+	if (!has_link ())
+	{
+		return rai::state_block_subtype::change;
+	}
+	// if (balance == previous_balance && !handler.node.ledger.epoch_link.is_zero() && block_a.hashables.link == handler.node.ledger.epoch_link)
+	// epoch
+	// otherwise: undefined, which is not a valid block
+	return rai::state_block_subtype::undefined;
+}
+
+bool rai::state_block::is_valid_open_subtype () const
+{
+	if (hashables.account.is_zero ()) return false;
+	if (has_previous ()) return false;
+	if (hashables.account != rai::genesis_account)
+	{
+		// normal accounts have link (to a send)
+		if (!has_link ()) return false;
+	}
+	else
+	{
+		// genesis block has no link
+		if (has_link ()) return false;
+	}
+	return true;
+}
+
+bool rai::state_block::is_valid_send_or_receive_subtype () const
+{
+	// balance change is not known
+	if (hashables.account.is_zero ()) return false;
+	if (!has_previous ()) return false;
+	if (!has_link ()) return false;
+	return true;
+}
+
+bool rai::state_block::is_valid_change_subtype () const
+{
+	if (hashables.account.is_zero ()) return false;
+	if (!has_representative ()) return false;
+	if (!has_previous ()) return false;
+	if (has_link ()) return false;
+	return true;
+}
+
+bool rai::state_block::has_previous () const
+{
+	return !hashables.previous.is_zero ();
+}
+
+bool rai::state_block::has_link () const
+{
+	return !hashables.link.is_zero ();
+}
+
+bool rai::state_block::has_representative () const
+{
+	return !hashables.representative.is_zero ();
 }
 
 std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::ptree const & tree_a)
