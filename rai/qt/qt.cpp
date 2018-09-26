@@ -118,6 +118,7 @@ void rai_qt::self_pane::refresh_balance ()
 }
 
 rai_qt::accounts::accounts (rai_qt::wallet & wallet_a) :
+
 window (new QWidget),
 wallet_balance_label (new QLabel),
 layout (new QVBoxLayout),
@@ -2141,7 +2142,7 @@ void rai_qt::block_creation::create_send ()
 						assert (!error);
 						auto rep_block (wallet.node.store.block_get (transaction, info.rep_block));
 						assert (rep_block != nullptr);
-						rai::state_block send (account_l, info.head, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0);
+						rai::state_block send (account_l, info.head, 0, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0);
 						wallet.node.work_generate_blocking (send);
 						std::string block_l;
 						send.serialize_json (block_l);
@@ -2207,7 +2208,7 @@ void rai_qt::block_creation::create_receive ()
 						{
 							auto rep_block (wallet.node.store.block_get (transaction, info.rep_block));
 							assert (rep_block != nullptr);
-							rai::state_block receive (pending_key.account, info.head, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0);
+							rai::state_block receive (pending_key.account, info.head, 0, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0);
 							wallet.node.work_generate_blocking (receive);
 							std::string block_l;
 							receive.serialize_json (block_l);
@@ -2271,7 +2272,7 @@ void rai_qt::block_creation::create_change ()
 				auto error (wallet.wallet_m->store.fetch (transaction, account_l, key));
 				if (!error)
 				{
-					rai::state_block change (account_l, info.head, representative_l, info.balance, 0, key, account_l, 0);
+					rai::state_block change (account_l, info.head, 0, representative_l, info.balance, 0, key, account_l, 0);
 					wallet.node.work_generate_blocking (change);
 					std::string block_l;
 					change.serialize_json (block_l);
@@ -2333,7 +2334,7 @@ void rai_qt::block_creation::create_open ()
 							auto error (wallet.wallet_m->store.fetch (transaction, pending_key.account, key));
 							if (!error)
 							{
-								rai::state_block open (pending_key.account, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0);
+								rai::state_block open (pending_key.account, 0, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0);
 								wallet.node.work_generate_blocking (open);
 								std::string block_l;
 								open.serialize_json (block_l);

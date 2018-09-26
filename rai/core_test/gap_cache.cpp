@@ -58,7 +58,7 @@ TEST (gap_cache, gap_bootstrap)
 	rai::system system (24000, 2);
 	rai::block_hash latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	rai::keypair key;
-	auto send (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, latest, rai::rai_test_genesis_account, rai::genesis_amount - 100, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest)));
+	auto send (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, latest, 0, rai::rai_test_genesis_account, rai::genesis_amount - 100, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest)));
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, true);
 		ASSERT_EQ (rai::process_result::progress, system.nodes[0]->block_processor.process_receive_one (transaction, send).code);
@@ -89,9 +89,9 @@ TEST (gap_cache, two_dependencies)
 	rai::system system (24000, 1);
 	rai::keypair key;
 	rai::genesis genesis;
-	auto send1 (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, genesis.hash (), rai::rai_test_genesis_account, 10, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (genesis.hash ())));
-	auto send2 (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, send1->hash (), rai::rai_test_genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (send1->hash ())));
-	auto open (std::make_shared<rai::state_block> (key.pub, 0, key.pub, rai::genesis_amount - 10, send1->hash (), key.prv, key.pub, system.work.generate (key.pub)));
+	auto send1 (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, genesis.hash (), 0, rai::rai_test_genesis_account, 10, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (genesis.hash ())));
+	auto send2 (std::make_shared<rai::state_block> (rai::rai_test_genesis_account, send1->hash (), 0, rai::rai_test_genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (send1->hash ())));
+	auto open (std::make_shared<rai::state_block> (key.pub, 0, 0, key.pub, rai::genesis_amount - 10, send1->hash (), key.prv, key.pub, system.work.generate (key.pub)));
 	ASSERT_EQ (0, system.nodes[0]->gap_cache.blocks.size ());
 	system.nodes[0]->block_processor.add (send2, std::chrono::steady_clock::now ());
 	system.nodes[0]->block_processor.flush ();

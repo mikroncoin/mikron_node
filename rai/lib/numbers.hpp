@@ -20,6 +20,22 @@ rai::uint128_t const xrb_ratio = rai::uint128_t ("1000000000000000000000000"); /
 rai::uint128_t const mxrb_ratio = rai::uint128_t ("1000000000000000000000"); // 10^21
 rai::uint128_t const uxrb_ratio = rai::uint128_t ("1000000000000000000"); // 10^18
 
+union uint32_union
+{
+public:
+	uint32_union () = default;
+	uint32_union (uint32_t);
+	uint32_union (std::string const &);
+	bool operator== (rai::uint32_union const &) const;
+	void encode_dec (std::string &) const;
+	bool decode_dec (std::string const &);
+	std::string to_string_dec () const;
+	bool is_zero () const;
+	void clear ();
+	uint32_t number() const;
+	std::array<uint8_t, 4> bytes;
+};
+
 union uint128_union
 {
 public:

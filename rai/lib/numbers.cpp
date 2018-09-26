@@ -1,5 +1,7 @@
 #include <rai/lib/numbers.hpp>
 
+#include <rai/node/common.hpp>
+
 #include <ed25519-donna/ed25519.h>
 
 #include <blake2/blake2.h>
@@ -34,6 +36,91 @@ uint8_t account_decode (char value)
 	auto result (account_reverse[value - 0x30] - 0x30);
 	return result;
 }
+}
+
+rai::uint32_union::uint32_union (std::string const & string_a)
+{
+	decode_dec (string_a);
+}
+
+rai::uint32_union::uint32_union (uint32_t value_a)
+{
+	uint32_t number_l (value_a);
+	for (auto i (bytes.rbegin ()), n (bytes.rend ()); i != n; ++i)
+	{
+		*i = static_cast<uint8_t> (number_l & static_cast<uint8_t> (0xff));
+		number_l >>= 8;
+	}
+}
+
+bool rai::uint32_union::operator== (rai::uint32_union const & other_a) const
+{
+	return bytes == other_a.bytes;
+}
+
+void rai::uint32_union::encode_dec (std::string & text) const
+{
+	assert (text.empty ());
+	std::stringstream stream;
+	stream << std::dec << std::noshowbase;
+	stream << number ();
+	text = stream.str ();
+}
+
+bool rai::uint32_union::decode_dec (std::string const & text)
+{
+	auto error (text.size () > 10 || (text.size () > 1 && text[0] == '0') || (text.size () > 0 && text[0] == '-'));
+	if (!error)
+	{
+		std::stringstream stream (text);
+		stream << std::dec << std::noshowbase;
+		uint32_t number_l;
+		try
+		{
+			stream >> number_l;
+			uint32_t unchecked (number_l);
+			*this = unchecked;
+			if (!stream.eof ())
+			{
+				error = true;
+			}
+		}
+		catch (std::runtime_error &)
+		{
+			error = true;
+		}
+	}
+	return error;
+}
+
+std::string rai::uint32_union::to_string_dec () const
+{
+	std::string result;
+	encode_dec (result);
+	return result;
+}
+
+bool rai::uint32_union::is_zero () const
+{
+	return number() == 0;
+}
+
+void rai::uint32_union::clear ()
+{
+	bytes.fill (0);
+}
+
+uint32_t rai::uint32_union::number () const
+{
+	uint32_t result = 0;
+	auto shift (0);
+	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
+	{
+		result <<= shift;
+		result |= *i;
+		shift = 8;
+	}
+	return result;
 }
 
 void rai::uint256_union::encode_account (std::string & destination_a) const
@@ -203,7 +290,7 @@ void rai::uint256_union::clear ()
 
 rai::uint256_t rai::uint256_union::number () const
 {
-	rai::uint256_t result;
+	rai::uint256_t result = 0;
 	auto shift (0);
 	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
 	{
@@ -318,7 +405,7 @@ void rai::uint512_union::clear ()
 
 rai::uint512_t rai::uint512_union::number () const
 {
-	rai::uint512_t result;
+	rai::uint512_t result = 0;
 	auto shift (0);
 	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
 	{
@@ -477,7 +564,7 @@ bool rai::uint128_union::operator> (rai::uint128_union const & other_a) const
 
 rai::uint128_t rai::uint128_union::number () const
 {
-	rai::uint128_t result;
+	rai::uint128_t result = 0;
 	auto shift (0);
 	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
 	{

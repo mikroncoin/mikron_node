@@ -71,6 +71,7 @@ enum class error_rpc
 	bad_destination,
 	bad_key,
 	bad_link,
+	bad_creation_time,
 	bad_previous,
 	bad_representative_number,
 	bad_source,

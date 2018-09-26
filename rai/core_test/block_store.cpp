@@ -7,12 +7,12 @@
 
 rai::state_block bs_create_send_state_block_helper (rai::block_hash const & previous_a, rai::account const & destination_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (keys_a.pub, previous_a, keys_a.pub, balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (keys_a.pub, previous_a, 0, keys_a.pub, balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
 }
 
 rai::state_block bs_create_change_state_block_helper (rai::block_hash const & previous_a, rai::account const & representative_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (keys_a.pub, previous_a, representative_a, balance_a, 0, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (keys_a.pub, previous_a, 0, representative_a, balance_a, 0, keys_a.prv, keys_a.pub, 0);
 }
 
 TEST (block_store, construction)
@@ -950,7 +950,7 @@ TEST (block_store, state_block)
 	rai::transaction transaction (store.environment, nullptr, true);
 	genesis.initialize (transaction, store);
 	rai::keypair key1;
-	rai::state_block block1 (1, genesis.hash (), 3, 4, 6, key1.prv, key1.pub, 7);
+	rai::state_block block1 (1, genesis.hash (), 0, 3, 4, 6, key1.prv, key1.pub, 7);
 	ASSERT_EQ (rai::block_type::state, block1.type ());
 	store.block_put (transaction, block1.hash (), block1, rai::block_hash(0), rai::epoch::epoch_1);
 	ASSERT_TRUE (store.block_exists (transaction, block1.hash ()));
