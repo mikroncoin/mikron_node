@@ -3374,7 +3374,7 @@ TEST (rpc, block_create_state_open)
 	request.put ("key", key.prv.data.to_string ());
 	request.put ("account", key.pub.to_account ());
 	request.put ("previous", 0);
-	request.put ("creation_time", "12345");
+	request.put ("creation_time", "0");  // now, has to be after the send node
 	request.put ("representative", rai::test_genesis_key.pub.to_account ());
 	request.put ("balance", rai::Gxrb_ratio.convert_to<std::string> ());
 	request.put ("link", send_block->hash ().to_string ());

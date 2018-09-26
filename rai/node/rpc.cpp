@@ -1036,13 +1036,14 @@ void rai::rpc_handler::block_create ()
 				ec = nano::error_common::bad_account_number;
 			}
 		}
-		rai::short_timestamp creation_time;
+		// creation_time; accept if missing, treat it as 0 = now
+		rai::short_timestamp creation_time (0);
 		boost::optional<std::string> creation_time_text (request.get_optional<std::string> ("creation_time"));
 		if (!ec && creation_time_text.is_initialized ())
 		{
 			if (creation_time.decode_dec (creation_time_text.get ()))
 			{
-				ec = nano::error_rpc::bad_creation_time;
+				creation_time = 0;  // missing, default 0 = now
 			}
 		}
 		rai::uint256_union representative (0);
@@ -1185,8 +1186,12 @@ void rai::rpc_handler::block_create ()
 			}
 			if (type == "state")
 			{
-				if (previous_text.is_initialized () && !creation_time.is_zero () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
+				if (previous_text.is_initialized () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
 				{
+					if (creation_time.is_zero ())
+					{
+						creation_time.set_time_now ();
+					}
 					if (work == 0)
 					{
 						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);

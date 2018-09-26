@@ -133,10 +133,10 @@ TEST (ledger, process_send)
 	ASSERT_EQ (1, info1.block_count);
 	// This was a valid block, it should progress.
 	auto return1 (ledger.process (transaction, send));
+	ASSERT_EQ(rai::process_result::progress, return1.code);
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash1));
 	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ());
 	ASSERT_TRUE (store.frontier_get (transaction, hash1).is_zero ());  // state block does not get into frontier
-	ASSERT_EQ (rai::process_result::progress, return1.code);
 	ASSERT_EQ (rai::test_genesis_key.pub, return1.account);
 	ASSERT_EQ (rai::genesis_amount - 50, return1.amount.number ());
 	ASSERT_EQ (50, ledger.account_balance (transaction, rai::test_genesis_key.pub));
@@ -154,8 +154,8 @@ TEST (ledger, process_send)
 	rai::block_hash hash2 (open.hash ());
 	// This was a valid block, it should progress.
 	auto return2 (ledger.process (transaction, open));
+	ASSERT_EQ(rai::process_result::progress, return2.code);
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash2));
-	ASSERT_EQ (rai::process_result::progress, return2.code);
 	ASSERT_EQ (key2.pub, return2.account);
 	ASSERT_EQ (rai::genesis_amount - 50, return2.amount.number ());
 	ASSERT_TRUE (store.frontier_get (transaction, hash2).is_zero ());  // state block does not get into frontier
@@ -442,10 +442,10 @@ TEST (ledger, representative_change)
 	rai::state_block block (::ledger_create_change_state_block_helper (genesis.block (), key2.pub, rai::test_genesis_key));
 	ASSERT_EQ (rai::test_genesis_key.pub, store.frontier_get (transaction, info1.head));
 	auto return1 (ledger.process (transaction, block));
+	ASSERT_EQ (rai::process_result::progress, return1.code);
 	ASSERT_EQ (0, ledger.amount (transaction, block.hash ()));
 	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ());
 	ASSERT_TRUE (store.frontier_get (transaction, block.hash ()).is_zero ());
-	ASSERT_EQ (rai::process_result::progress, return1.code);
 	ASSERT_EQ (rai::test_genesis_key.pub, return1.account);
 	ASSERT_EQ (0, ledger.weight (transaction, rai::test_genesis_key.pub));
 	ASSERT_EQ (rai::genesis_amount, ledger.weight (transaction, key2.pub));
