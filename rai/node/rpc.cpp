@@ -1036,6 +1036,15 @@ void rai::rpc_handler::block_create ()
 				ec = nano::error_common::bad_account_number;
 			}
 		}
+		rai::short_timestamp creation_time;
+		boost::optional<std::string> creation_time_text (request.get_optional<std::string> ("creation_time"));
+		if (!ec && creation_time_text.is_initialized ())
+		{
+			if (creation_time.decode_dec (creation_time_text.get ()))
+			{
+				ec = nano::error_rpc::bad_creation_time;
+			}
+		}
 		rai::uint256_union representative (0);
 		boost::optional<std::string> representative_text (request.get_optional<std::string> ("representative"));
 		if (!ec && representative_text.is_initialized ())
@@ -1176,13 +1185,13 @@ void rai::rpc_handler::block_create ()
 			}
 			if (type == "state")
 			{
-				if (previous_text.is_initialized () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
+				if (previous_text.is_initialized () && !creation_time.is_zero () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
 				{
 					if (work == 0)
 					{
 						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
 					}
-					rai::state_block state (pub, previous, representative, balance, link, prv, pub, work);
+					rai::state_block state (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
 					response_l.put ("hash", state.hash ().to_string ());
 					std::string contents;
 					state.serialize_json (contents);

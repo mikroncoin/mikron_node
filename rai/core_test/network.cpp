@@ -8,17 +8,17 @@ using namespace std::chrono_literals;
 // Helper methods introduced when switched from legacy block types to state block, to reduce the effort of test updates
 rai::state_block network_create_send_state_block_helper (rai::block_hash const & previous_a, rai::account const & destination_a, rai::amount const & balance_a, rai::account const & representative_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block (pub_a, previous_a, representative_a, balance_a, destination_a, prv_a, pub_a, work_a);
+	return rai::state_block (pub_a, previous_a, 0, representative_a, balance_a, destination_a, prv_a, pub_a, work_a);
 }
 
 rai::state_block network_create_receive_state_block_helper (rai::block_hash const & previous_a, rai::block_hash const & source_a, rai::account const & account_a, rai::account const & representative_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block (account_a, previous_a, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
+	return rai::state_block (account_a, previous_a, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
 }
 
 rai::state_block network_create_open_state_block_helper (rai::block_hash const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block (account_a, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
+	return rai::state_block (account_a, 0, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
 }
 
 
@@ -593,8 +593,8 @@ TEST (bootstrap_processor, process_state)
 	rai::genesis genesis;
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	auto node0 (system.nodes[0]);
-	std::unique_ptr<rai::block> block1 (new rai::state_block (rai::test_genesis_key.pub, node0->latest (rai::test_genesis_key.pub), rai::test_genesis_key.pub, rai::genesis_amount - 100, rai::test_genesis_key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
-	std::unique_ptr<rai::block> block2 (new rai::state_block (rai::test_genesis_key.pub, block1->hash (), rai::test_genesis_key.pub, rai::genesis_amount, block1->hash (), rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	std::unique_ptr<rai::block> block1 (new rai::state_block (rai::test_genesis_key.pub, node0->latest (rai::test_genesis_key.pub), 0, rai::test_genesis_key.pub, rai::genesis_amount - 100, rai::test_genesis_key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	std::unique_ptr<rai::block> block2 (new rai::state_block (rai::test_genesis_key.pub, block1->hash (), 0, rai::test_genesis_key.pub, rai::genesis_amount, block1->hash (), rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	node0->work_generate_blocking (*block1);
 	node0->work_generate_blocking (*block2);
 	node0->process (*block1);

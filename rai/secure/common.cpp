@@ -25,6 +25,7 @@ const rai::uint128_t live_genesis_amount = (rai::uint128_t)300000000 * (rai::uin
 char const * test_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
+	"creation_time": "42",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
 	"balance": "340282366920938463463374607431768211455",
@@ -45,6 +46,7 @@ char const * test_genesis_legacy_data = R"%%%({
 char const * beta_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
+	"creation_time": "42",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
 	"balance": "300000000000000000000000000000000000000",
@@ -57,6 +59,7 @@ char const * beta_genesis_data = R"%%%({
 char const * live_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
+	"creation_time": "42",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
 	"balance": "300000000000000000000000000000000000000",

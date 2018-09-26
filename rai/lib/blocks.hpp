@@ -41,6 +41,32 @@ enum class block_type : uint8_t
 	state = 6
 };
 
+using timestamp_t = uint32_t;
+
+// Number of seconds since short_timestamp_epoch (Sept 1 2018), 4-byte
+class short_timestamp
+{
+public:
+	// The time origin for creation times, in Posix time, Sept 1 2018.
+	static const rai::timestamp_t short_timestamp_epoch = 1535760000;  // Sept 1 2018
+	// default constructor, 0
+	short_timestamp ();
+	short_timestamp (rai::timestamp_t);
+	short_timestamp (const rai::short_timestamp &);
+	bool operator== (rai::short_timestamp const &) const;
+	rai::timestamp_t number () const;
+	void set_time_now ();
+	static rai::short_timestamp now ();
+	void set_from_posix_time (uint64_t);
+	bool decode_dec (std::string const &);
+	uint64_t to_posix_time () const;
+	std::string to_date_string_utc () const;
+	std::string to_date_string_local () const;
+	bool is_zero () const;
+	void clear ();
+	uint32_union data;
+};
+
 class block
 {
 public:
@@ -50,6 +76,8 @@ public:
 	virtual void hash (blake2b_state &) const = 0;
 	virtual uint64_t block_work () const = 0;
 	virtual void block_work_set (uint64_t) = 0;
+	// Block creation time, seconds since short_timestamp_epoch, 4-byte
+	virtual rai::short_timestamp creation_time () const = 0;
 	// Previous block in account's chain, zero for open block
 	virtual rai::block_hash previous () const = 0;
 	// Source block for open/receive blocks, zero otherwise.
@@ -67,6 +95,7 @@ public:
 	virtual ~block () = default;
 	virtual bool valid_predecessor (rai::block const &) const = 0;
 };
+
 class send_hashables
 {
 public:
@@ -89,6 +118,7 @@ public:
 	void hash (blake2b_state &) const override;
 	uint64_t block_work () const override;
 	void block_work_set (uint64_t) override;
+	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
 	rai::block_hash root () const override;
@@ -130,6 +160,7 @@ public:
 	void hash (blake2b_state &) const override;
 	uint64_t block_work () const override;
 	void block_work_set (uint64_t) override;
+	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
 	rai::block_hash root () const override;
@@ -173,6 +204,7 @@ public:
 	void hash (blake2b_state &) const override;
 	uint64_t block_work () const override;
 	void block_work_set (uint64_t) override;
+	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
 	rai::block_hash root () const override;
@@ -214,6 +246,7 @@ public:
 	void hash (blake2b_state &) const override;
 	uint64_t block_work () const override;
 	void block_work_set (uint64_t) override;
+	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
 	rai::block_hash root () const override;
@@ -247,7 +280,7 @@ enum class state_block_subtype : uint8_t
 class state_hashables
 {
 public:
-	state_hashables (rai::account const &, rai::block_hash const &, rai::account const &, rai::amount const &, rai::uint256_union const &);
+	state_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &);
 	state_hashables (bool &, rai::stream &);
 	state_hashables (bool &, boost::property_tree::ptree const &);
 	void hash (blake2b_state &) const;
@@ -258,6 +291,8 @@ public:
 	rai::account account;
 	// Previous transaction in this chain
 	rai::block_hash previous;
+	// Block creation time, seconds since short_timestamp_epoch (Sept 1 2018), 4-byte
+	rai::short_timestamp creation_time;
 	// Representative of this account
 	rai::account representative;
 	// Current balance of this account
@@ -270,7 +305,7 @@ public:
 class state_block : public rai::block
 {
 public:
-	state_block (rai::account const &, rai::block_hash const &, rai::account const &, rai::amount const &, rai::uint256_union const &, rai::raw_key const &, rai::public_key const &, uint64_t);
+	state_block (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &, rai::raw_key const &, rai::public_key const &, uint64_t);
 	state_block (bool &, rai::stream &);
 	state_block (bool &, boost::property_tree::ptree const &);
 	virtual ~state_block () = default;
@@ -278,6 +313,7 @@ public:
 	void hash (blake2b_state &) const override;
 	uint64_t block_work () const override;
 	void block_work_set (uint64_t) override;
+	rai::short_timestamp creation_time () const override;
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
 	rai::block_hash root () const override;
@@ -300,7 +336,7 @@ public:
 	bool has_previous () const;
 	bool has_link () const;
 	bool has_representative () const;
-	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
+	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
 	rai::signature signature;
 	uint64_t work;
