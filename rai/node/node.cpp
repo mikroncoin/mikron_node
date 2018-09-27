@@ -1665,7 +1665,7 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 		{
 			if (node.config.logging.ledger_logging())
 			{
-				BOOST_LOG (node.log) << boost::str (boost::format ("State block is invalid %1%") % hash.to_string ());
+				BOOST_LOG (node.log) << boost::str (boost::format ("State block is invalid, %1%") % hash.to_string ());
 			}
 			break;
 		}
@@ -1673,7 +1673,7 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 		{
 			if (node.config.logging.ledger_logging())
 			{
-				BOOST_LOG (node.log) << boost::str (boost::format ("Invalid creation time for block %1%, %2%") % hash.to_string () % block_a->creation_time ().number ());
+				BOOST_LOG (node.log) << boost::str (boost::format ("Invalid block creation time, %1%, %2%") % block_a->creation_time ().number () % hash.to_string ());
 			}
 			break;
 		}
