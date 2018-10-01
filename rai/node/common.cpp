@@ -452,13 +452,13 @@ vote (vote_a)
 	}
 }
 
-bool rai::confirm_ack::deserialize (rai::stream & stream_a)
+/*bool rai::confirm_ack::deserialize (rai::stream & stream_a)
 {
 	assert (header.message_type == rai::message_type::confirm_ack);
 	// block_type is deserialized with the header
 	auto result (vote->deserialize (stream_a));
 	return result;
-}
+}*/
 
 void rai::confirm_ack::serialize (rai::stream & stream_a)
 {
