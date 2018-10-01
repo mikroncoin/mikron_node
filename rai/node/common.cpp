@@ -356,7 +356,6 @@ rai::publish::publish (std::shared_ptr<rai::block> block_a) :
 message_with_block (rai::message_type::publish),
 block (block_a)
 {
-	//header.block_type_set (block->type ());
 }
 
 bool rai::publish::deserialize (rai::stream & stream_a)
@@ -399,7 +398,6 @@ rai::confirm_req::confirm_req (std::shared_ptr<rai::block> block_a) :
 message_with_block (rai::message_type::confirm_req),
 block (block_a)
 {
-	//header.block_type_set (block->type ());
 }
 
 bool rai::confirm_req::deserialize (rai::stream & stream_a)
@@ -431,7 +429,7 @@ bool rai::confirm_req::operator== (rai::confirm_req const & other_a) const
 
 rai::confirm_ack::confirm_ack (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a, rai::block_type & block_type_a) :
 message_with_block (header_a),
-block_type(block_type_a),
+block_type (block_type_a),
 vote (std::make_shared<rai::vote> (error_a, stream_a, block_type_a))
 {
 }
@@ -452,13 +450,15 @@ vote (vote_a)
 	}
 }
 
-/*bool rai::confirm_ack::deserialize (rai::stream & stream_a)
+/*  Not used, see deserialize_config_ack ()
+bool rai::confirm_ack::deserialize (rai::stream & stream_a)
 {
 	assert (header.message_type == rai::message_type::confirm_ack);
 	// block_type is deserialized with the header
 	auto result (vote->deserialize (stream_a));
 	return result;
-}*/
+}
+*/
 
 void rai::confirm_ack::serialize (rai::stream & stream_a)
 {
