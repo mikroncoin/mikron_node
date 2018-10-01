@@ -159,8 +159,6 @@ class protocol_information
 public:
 	protocol_information (unsigned, unsigned, unsigned, std::bitset<16>);
 	protocol_information ();
-	rai::block_type block_type () const;
-	void block_type_set (rai::block_type);
 	bool is_full_node () const;
 	void set_full_node (bool value_a);
 	uint8_t version;
@@ -171,7 +169,6 @@ public:
 	static size_t constexpr response_flag_position = 1;
 	static size_t constexpr full_node_position = 2;
 	static size_t constexpr validating_node_position = 3;
-	static std::bitset<16> constexpr block_type_mask = std::bitset<16> (0x0f00);
 };
 class message_header
 {
@@ -180,8 +177,6 @@ public:
 	message_header (bool &, rai::stream &);
 	void serialize (rai::stream &);
 	bool deserialize (rai::stream &);
-	rai::block_type block_type () const;
-	void block_type_set (rai::block_type);
 	rai::message_type message_type;
 	protocol_information protocol_info;
 	static std::array<uint8_t, 2> constexpr magic_number =
@@ -241,7 +236,16 @@ public:
 	bool operator== (rai::keepalive const &) const;
 	std::array<rai::endpoint, 8> peers;
 };
-class publish : public message
+
+class message_with_block : public message
+{
+public:
+	message_with_block (rai::message_type);
+	message_with_block (rai::message_header const &);
+	static rai::block_type deserialize_block_type (rai::stream &);
+};
+
+class publish : public message_with_block
 {
 public:
 	publish (bool &, rai::stream &, rai::message_header const &);
@@ -252,7 +256,8 @@ public:
 	bool operator== (rai::publish const &) const;
 	std::shared_ptr<rai::block> block;
 };
-class confirm_req : public message
+
+class confirm_req : public message_with_block
 {
 public:
 	confirm_req (bool &, rai::stream &, rai::message_header const &);
@@ -263,17 +268,20 @@ public:
 	bool operator== (rai::confirm_req const &) const;
 	std::shared_ptr<rai::block> block;
 };
-class confirm_ack : public message
+
+class confirm_ack : public message_with_block
 {
 public:
-	confirm_ack (bool &, rai::stream &, rai::message_header const &);
+	confirm_ack (bool &, rai::stream &, rai::message_header const &, rai::block_type &);
 	confirm_ack (std::shared_ptr<rai::vote>);
 	bool deserialize (rai::stream &) override;
 	void serialize (rai::stream &) override;
 	void visit (rai::message_visitor &) const override;
 	bool operator== (rai::confirm_ack const &) const;
+	rai::block_type block_type;
 	std::shared_ptr<rai::vote> vote;
 };
+
 class frontier_req : public message
 {
 public:
