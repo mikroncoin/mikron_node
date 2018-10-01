@@ -462,7 +462,7 @@ bool rai::confirm_ack::deserialize (rai::stream & stream_a)
 
 void rai::confirm_ack::serialize (rai::stream & stream_a)
 {
-	assert (header.block_type () == rai::block_type::not_a_block || header.block_type () == rai::block_type::send || header.block_type () == rai::block_type::receive || header.block_type () == rai::block_type::open || header.block_type () == rai::block_type::change || header.block_type () == rai::block_type::state);
+	assert (block_type == rai::block_type::not_a_block || block_type == rai::block_type::send || block_type == rai::block_type::receive || block_type == rai::block_type::open || block_type == rai::block_type::change || block_type == rai::block_type::state);
 	header.serialize (stream_a);
 	rai::write (stream_a, static_cast<uint8_t> (block_type));
 	vote->serialize (stream_a, block_type);
