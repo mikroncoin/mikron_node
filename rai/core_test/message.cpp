@@ -59,7 +59,7 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::publish), bytes[5]);
 	ASSERT_EQ (0x04, bytes[6]);
-	ASSERT_EQ (0, bytes[7]);
+	ASSERT_EQ (0x00, bytes[7]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	auto error (false);
@@ -73,6 +73,39 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::block_type::send, publish2.block-> type ());
 }
 
+TEST (message, confirm_req_serialization)
+{
+	//rai::genesis genesis;
+	rai::keypair key1;
+	rai::confirm_req confirm_req (std::unique_ptr<rai::block> (new rai::state_block (rai::genesis_account, 0, 0, rai::genesis_account, rai::genesis_amount, key1.pub, key1.prv, key1.pub, 0)));
+	ASSERT_EQ (rai::block_type::state, confirm_req.block->type ());
+	//rai::confirm_req confirm_req (std::shared_ptr<rai::block> (dynamic_cast<rai::block*> (const_cast<rai::state_block *> (&genesis.block ()))));
+	std::vector<uint8_t> bytes;
+	{
+		rai::vectorstream stream1 (bytes);
+		confirm_req.serialize (stream1);
+	}
+	ASSERT_TRUE (bytes.size () >= 9);
+	ASSERT_EQ ('M', bytes[0]);
+	ASSERT_EQ ('T', bytes[1]);
+	ASSERT_EQ (rai::protocol_version, bytes[2]);
+	ASSERT_EQ (rai::protocol_version, bytes[3]);
+	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_req), bytes[5]);
+	ASSERT_EQ (0x04, bytes[6]);
+	ASSERT_EQ (0x00, bytes[7]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::state), bytes[8]);
+	rai::bufferstream stream2 (bytes.data (), bytes.size ());
+	bool error (false);
+	rai::message_header header (error, stream2);
+	ASSERT_FALSE (error);
+
+	rai::confirm_req confirm2 (error, stream2, header);
+	ASSERT_FALSE (error);
+	ASSERT_EQ (*confirm_req.block.get (), *confirm2.block.get ());
+	ASSERT_EQ (confirm_req, confirm2);
+}
+
 TEST (message, confirm_ack_serialization)
 {
 	rai::keypair key1;
@@ -83,6 +116,16 @@ TEST (message, confirm_ack_serialization)
 		rai::vectorstream stream1 (bytes);
 		con1.serialize (stream1);
 	}
+	ASSERT_TRUE (bytes.size () >= 9);
+	ASSERT_EQ ('M', bytes[0]);
+	ASSERT_EQ ('T', bytes[1]);
+	ASSERT_EQ (rai::protocol_version, bytes[2]);
+	ASSERT_EQ (rai::protocol_version, bytes[3]);
+	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_ack), bytes[5]);
+	ASSERT_EQ (0x04, bytes[6]);
+	ASSERT_EQ (0x00, bytes[7]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
 	bool error (false);
 	rai::message_header header (error, stream2);
