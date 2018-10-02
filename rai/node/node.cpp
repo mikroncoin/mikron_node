@@ -308,7 +308,7 @@ void rai::network::send_confirm_req (rai::endpoint const & endpoint_a, std::shar
 	}
 	if (node.config.logging.network_message_logging ())
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Sending confirm req to %1%") % endpoint_a);
+		BOOST_LOG (node.log) << boost::str (boost::format ("Sending confirm req to %1%, for %2%") % endpoint_a % block->hash ().to_string ());
 	}
 	std::weak_ptr<rai::node> node_w (node.shared ());
 	node.stats.inc (rai::stat::type::message, rai::stat::detail::confirm_req, rai::stat::dir::out);
