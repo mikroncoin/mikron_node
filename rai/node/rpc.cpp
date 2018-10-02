@@ -1643,7 +1643,10 @@ public:
 			}
 			break;
 
-			// epoch and undefined not handled
+		// epoch and undefined not handled
+		case rai::state_block_subtype::undefined:
+		default:
+			break;
 		}
 	}
 	rai::rpc_handler & handler;

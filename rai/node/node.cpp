@@ -564,9 +564,16 @@ void rai::network::receive_action (boost::system::error_code const & error, size
 						BOOST_LOG (node.log) << "Invalid node_id_handshake message";
 					}
 				}
+				else if (parser.status == rai::message_parser::parse_status::outdated_version)
+				{
+					if (node.config.logging.network_logging())
+					{
+						BOOST_LOG(node.log) << boost::str (boost::format ("Outdated version, from %1%") % remote);
+					}
+				}
 				else
 				{
-					BOOST_LOG (node.log) << "Could not deserialize buffer";
+					BOOST_LOG (node.log) << "Could not deserialize buffer " << (int)parser.status;
 				}
 			}
 			else
@@ -1651,6 +1658,30 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 			if (node.config.logging.ledger_logging ())
 			{
 				BOOST_LOG (node.log) << boost::str (boost::format ("Block %1% cannot follow predecessor %2%") % hash.to_string () % block_a->previous ().to_string ());
+			}
+			break;
+		}
+		case rai::process_result::invalid_state_block:
+		{
+			if (node.config.logging.ledger_logging())
+			{
+				BOOST_LOG (node.log) << boost::str (boost::format ("State block is invalid, %1%") % hash.to_string ());
+			}
+			break;
+		}
+		case rai::process_result::invalid_block_creation_time:
+		{
+			if (node.config.logging.ledger_logging())
+			{
+				BOOST_LOG (node.log) << boost::str (boost::format ("Invalid block creation time, %1%, %2%") % block_a->creation_time ().number () % hash.to_string ());
+			}
+			break;
+		}
+		default:
+		{
+			if (node.config.logging.ledger_logging())
+			{
+				BOOST_LOG (node.log) << boost::str (boost::format ("General error %1% for block %2%") % (int)result.code % hash.to_string ());
 			}
 			break;
 		}
