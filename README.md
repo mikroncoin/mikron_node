@@ -28,6 +28,16 @@ Mikron is based on the great **Nano** (by Colin LeMahieu; formerly known as RaiB
 
 For more information, see [Nano.org](https://nano.org/) or read the [whitepaper](https://nano.org/en/whitepaper).
 
+### Guides & Documentation
+
+* White Paper
+* [Build Instructions](https://github.com/mikroncoin/mikron_node/wiki/Build-Instructions)
+* Command Line Interface
+* RPC Protocol
+* Wallet Design
+* Block Lattice
+* Design Features
+
 ### Guides & Documentation -- Nano
 
 * [White Paper](https://nano.org/en/whitepaper)
