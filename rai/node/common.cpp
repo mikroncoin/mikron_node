@@ -8,7 +8,6 @@ size_t constexpr rai::protocol_information::query_flag_position;
 size_t constexpr rai::protocol_information::response_flag_position;
 size_t constexpr rai::protocol_information::full_node_position;
 size_t constexpr rai::protocol_information::validating_node_position;
-std::bitset<16> constexpr rai::protocol_information::block_type_mask;
 std::array<uint8_t, 2> constexpr rai::message_header::magic_number;
 
 rai::protocol_information::protocol_information (unsigned version_a, unsigned version_min_a, unsigned version_max_a, std::bitset<16> extensions_a) :
@@ -24,17 +23,6 @@ version (rai::protocol_version),
 version_min (rai::protocol_version_min),
 version_max (rai::protocol_version)
 {
-}
-
-rai::block_type rai::protocol_information::block_type () const
-{
-	return static_cast<rai::block_type> (((extensions & block_type_mask) >> 8).to_ullong ());
-}
-
-void rai::protocol_information::block_type_set (rai::block_type type_a)
-{
-	extensions &= ~block_type_mask;
-	extensions |= std::bitset<16> (static_cast<unsigned long long> (type_a) << 8);
 }
 
 bool rai::protocol_information::is_full_node () const
@@ -98,16 +86,6 @@ header (message_type_a)
 rai::message::message (rai::message_header const & header_a) :
 header (header_a)
 {
-}
-
-rai::block_type rai::message_header::block_type () const
-{
-	return protocol_info.block_type ();
-}
-
-void rai::message_header::block_type_set (rai::block_type type_a)
-{
-	protocol_info.block_type_set (type_a);
 }
 
 // MTU - IP header - UDP header
@@ -238,7 +216,8 @@ void rai::message_parser::deserialize_confirm_req (rai::stream & stream_a, rai::
 void rai::message_parser::deserialize_confirm_ack (rai::stream & stream_a, rai::message_header const & header_a)
 {
 	auto error (false);
-	rai::confirm_ack incoming (error, stream_a, header_a);
+	rai::block_type block_type = rai::message_with_block::deserialize_block_type (stream_a);
+	rai::confirm_ack incoming (error, stream_a, header_a, block_type);
 	if (!error && at_end (stream_a))
 	{
 		for (auto & vote_block : incoming.vote->blocks)
@@ -346,8 +325,26 @@ bool rai::keepalive::operator== (rai::keepalive const & other_a) const
 	return peers == other_a.peers;
 }
 
+rai::message_with_block::message_with_block (rai::message_type message_type_a) :
+	message (message_type_a)
+{
+}
+
+rai::message_with_block::message_with_block (rai::message_header const & header_a) :
+	message (header_a)
+{
+}
+
+rai::block_type rai::message_with_block::deserialize_block_type (rai::stream & stream_a)
+{
+	uint8_t block_type_raw (0);
+	auto error (rai::read (stream_a, block_type_raw));
+	if (error) return rai::block_type::invalid;
+	return static_cast<rai::block_type> (block_type_raw);
+}
+
 rai::publish::publish (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a) :
-message (header_a)
+message_with_block (header_a)
 {
 	if (!error_a)
 	{
@@ -356,16 +353,16 @@ message (header_a)
 }
 
 rai::publish::publish (std::shared_ptr<rai::block> block_a) :
-message (rai::message_type::publish),
+message_with_block (rai::message_type::publish),
 block (block_a)
 {
-	header.block_type_set (block->type ());
 }
 
 bool rai::publish::deserialize (rai::stream & stream_a)
 {
 	assert (header.message_type == rai::message_type::publish);
-	block = rai::deserialize_block (stream_a, header.block_type ());
+	rai::block_type block_type_l = deserialize_block_type (stream_a);
+	block = rai::deserialize_block (stream_a, block_type_l);
 	auto result (block == nullptr);
 	return result;
 }
@@ -374,6 +371,7 @@ void rai::publish::serialize (rai::stream & stream_a)
 {
 	assert (block != nullptr);
 	header.serialize (stream_a);
+	rai::write (stream_a, static_cast<uint8_t> (block->type ()));
 	block->serialize (stream_a);
 }
 
@@ -388,7 +386,7 @@ bool rai::publish::operator== (rai::publish const & other_a) const
 }
 
 rai::confirm_req::confirm_req (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a) :
-message (header_a)
+message_with_block (header_a)
 {
 	if (!error_a)
 	{
@@ -397,16 +395,16 @@ message (header_a)
 }
 
 rai::confirm_req::confirm_req (std::shared_ptr<rai::block> block_a) :
-message (rai::message_type::confirm_req),
+message_with_block (rai::message_type::confirm_req),
 block (block_a)
 {
-	header.block_type_set (block->type ());
 }
 
 bool rai::confirm_req::deserialize (rai::stream & stream_a)
 {
 	assert (header.message_type == rai::message_type::confirm_req);
-	block = rai::deserialize_block (stream_a, header.block_type ());
+	rai::block_type block_type_l = deserialize_block_type (stream_a);
+	block = rai::deserialize_block (stream_a, block_type_l);
 	auto result (block == nullptr);
 	return result;
 }
@@ -420,6 +418,7 @@ void rai::confirm_req::serialize (rai::stream & stream_a)
 {
 	assert (block != nullptr);
 	header.serialize (stream_a);
+	rai::write (stream_a, static_cast<uint8_t> (block->type ()));
 	block->serialize (stream_a);
 }
 
@@ -428,39 +427,45 @@ bool rai::confirm_req::operator== (rai::confirm_req const & other_a) const
 	return *block == *other_a.block;
 }
 
-rai::confirm_ack::confirm_ack (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a) :
-message (header_a),
-vote (std::make_shared<rai::vote> (error_a, stream_a, header.block_type ()))
+rai::confirm_ack::confirm_ack (bool & error_a, rai::stream & stream_a, rai::message_header const & header_a, rai::block_type & block_type_a) :
+message_with_block (header_a),
+block_type (block_type_a),
+vote (std::make_shared<rai::vote> (error_a, stream_a, block_type_a))
 {
 }
 
 rai::confirm_ack::confirm_ack (std::shared_ptr<rai::vote> vote_a) :
-message (rai::message_type::confirm_ack),
+message_with_block (rai::message_type::confirm_ack),
+block_type (rai::block_type::invalid),  // set later
 vote (vote_a)
 {
 	auto & first_vote_block (vote_a->blocks[0]);
 	if (first_vote_block.which ())
 	{
-		header.block_type_set (rai::block_type::not_a_block);
+		block_type = rai::block_type::not_a_block;
 	}
 	else
 	{
-		header.block_type_set (boost::get<std::shared_ptr<rai::block>> (first_vote_block)->type ());
+		block_type = boost::get<std::shared_ptr<rai::block>> (first_vote_block)->type ();
 	}
 }
 
+/*  Not used, see deserialize_config_ack ()
 bool rai::confirm_ack::deserialize (rai::stream & stream_a)
 {
 	assert (header.message_type == rai::message_type::confirm_ack);
+	// block_type is deserialized with the header
 	auto result (vote->deserialize (stream_a));
 	return result;
 }
+*/
 
 void rai::confirm_ack::serialize (rai::stream & stream_a)
 {
-	assert (header.block_type () == rai::block_type::not_a_block || header.block_type () == rai::block_type::send || header.block_type () == rai::block_type::receive || header.block_type () == rai::block_type::open || header.block_type () == rai::block_type::change || header.block_type () == rai::block_type::state);
+	assert (block_type == rai::block_type::not_a_block || block_type == rai::block_type::send || block_type == rai::block_type::receive || block_type == rai::block_type::open || block_type == rai::block_type::change || block_type == rai::block_type::state);
 	header.serialize (stream_a);
-	vote->serialize (stream_a, header.block_type ());
+	rai::write (stream_a, static_cast<uint8_t> (block_type));
+	vote->serialize (stream_a, block_type);
 }
 
 bool rai::confirm_ack::operator== (rai::confirm_ack const & other_a) const

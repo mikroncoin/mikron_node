@@ -132,6 +132,8 @@ std::string nano::error_rpc_messages::message (int ev) const
 			return "RPC control is disabled";
 		case nano::error_rpc::source_not_found:
 			return "Source not found";
+		case nano::error_rpc::bad_creation_time:
+			return "Bad block creation time";
 	}
 
 	return "Invalid error code";
