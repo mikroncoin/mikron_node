@@ -2327,7 +2327,7 @@ void rai::node::start ()
 	bootstrap.start ();
 	backup_wallet ();
 	online_reps.recalculate_stake ();
-	port_mapping.start ();
+	port_mapping_start_delayed ();
 	add_initial_peers ();
 	observers.started.notify ();
 }
@@ -2485,6 +2485,26 @@ void rai::node::ongoing_store_flush ()
 		if (auto node_l = node_w.lock ())
 		{
 			node_l->ongoing_store_flush ();
+		}
+	});
+}
+
+void rai::node::port_mapping_start_delayed ()
+{
+	auto delay_sec (60);
+	if (this->config.logging.network_logging())
+	{
+		BOOST_LOG (this->log) << boost::str (boost::format ("UPnP Port mapping scheduled in %1% sec") % delay_sec);
+	}
+	std::weak_ptr<rai::node> node_w(shared_from_this());
+	alarm.add(std::chrono::steady_clock::now() + std::chrono::seconds (delay_sec), [node_w]() {
+		if (auto node_l = node_w.lock())
+		{
+			if (node_l->config.logging.network_logging())
+			{
+				BOOST_LOG (node_l->log) << "Starting UPnP port mapping";
+			}
+			node_l->port_mapping.start();
 		}
 	});
 }
