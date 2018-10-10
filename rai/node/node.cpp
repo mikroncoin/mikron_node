@@ -471,6 +471,10 @@ public:
 				if (message_a.response->first != node.node_id.pub)
 				{
 					node.peers.insert (endpoint_l, message_a.header.protocol_info);
+					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
+					{
+						BOOST_LOG (node.log) << boost::str (boost::format ("Peer inserted after handshake, %1%, count %2%") % endpoint_l % node.peers.size ());
+					}
 				}
 			}
 			else if (node.config.logging.network_node_id_handshake_logging ())
@@ -2350,6 +2354,10 @@ void rai::node::keepalive_preconfigured (std::vector<std::string> const & peers_
 	for (auto i (peers_a.begin ()), n (peers_a.end ()); i != n; ++i)
 	{
 		keepalive (*i, rai::network::node_port);
+	}
+	if (this->config.logging.network_logging () || this->config.logging.network_keepalive_logging ())
+	{
+		BOOST_LOG (this->log) << boost::str (boost::format ("%1% preconfigured peers, keepalive sending initaited") % peers_a.size ());
 	}
 }
 
