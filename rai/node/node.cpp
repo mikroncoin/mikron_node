@@ -934,10 +934,9 @@ lmdb_max_dbs (128)
 			break;
 
 		case rai::rai_networks::rai_beta_network:
-			// until well-known node URL exists, keep localnode also
-			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
+			//preconfigured_peers.push_back("::ffff:127.0.0.1");
 			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04"));  // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
 			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65"));  // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
 			preconfigured_representatives.push_back (rai::account ("F2A6163F9F0E911A8027AF044128577C78C462D014095DF2DB302965103D939D"));  // Rep3 mik_3wo84rzsy5nj5c14hdr6a6n7gz5rrjjf171bdqsfpe3bena5u6wxe3izxrq8
@@ -945,8 +944,6 @@ lmdb_max_dbs (128)
 			break;
 
 		case rai::rai_networks::rai_live_network:
-			// until well-known node URL exists, keep localnode also
-			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("node.mikron.io");
 			preconfigured_peers.push_back ("node2.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF"));
