@@ -36,7 +36,9 @@
         },
         "work_peers": "",
         "preconfigured_peers": [
-            "betanode.mikron.io"
+            "betanode.mikron.io",
+            "betanode2.mikron.io",
+            "betanode3.mikron.io"
         ],
         "preconfigured_representatives": [
             "mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p",

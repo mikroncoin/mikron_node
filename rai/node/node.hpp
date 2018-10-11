@@ -618,6 +618,7 @@ public:
 	void ongoing_rep_crawl ();
 	void ongoing_bootstrap ();
 	void ongoing_store_flush ();
+	void port_mapping_start_delayed ();
 	void backup_wallet ();
 	int price (rai::uint128_t const &, int);
 	void work_generate_blocking (rai::block &);

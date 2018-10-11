@@ -308,7 +308,7 @@ void rai::network::send_confirm_req (rai::endpoint const & endpoint_a, std::shar
 	}
 	if (node.config.logging.network_message_logging ())
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Sending confirm req to %1%") % endpoint_a);
+		BOOST_LOG (node.log) << boost::str (boost::format ("Sending confirm req to %1%, for %2%") % endpoint_a % block->hash ().to_string ());
 	}
 	std::weak_ptr<rai::node> node_w (node.shared ());
 	node.stats.inc (rai::stat::type::message, rai::stat::detail::confirm_req, rai::stat::dir::out);
@@ -471,6 +471,10 @@ public:
 				if (message_a.response->first != node.node_id.pub)
 				{
 					node.peers.insert (endpoint_l, message_a.header.protocol_info);
+					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
+					{
+						BOOST_LOG (node.log) << boost::str (boost::format ("Peer inserted after handshake, %1%, count %2%") % endpoint_l % node.peers.size ());
+					}
 				}
 			}
 			else if (node.config.logging.network_node_id_handshake_logging ())
@@ -930,10 +934,9 @@ lmdb_max_dbs (128)
 			break;
 
 		case rai::rai_networks::rai_beta_network:
-			// until well-known node URL exists, keep localnode also
-			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
+			//preconfigured_peers.push_back("::ffff:127.0.0.1");
 			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04"));  // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
 			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65"));  // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
 			preconfigured_representatives.push_back (rai::account ("F2A6163F9F0E911A8027AF044128577C78C462D014095DF2DB302965103D939D"));  // Rep3 mik_3wo84rzsy5nj5c14hdr6a6n7gz5rrjjf171bdqsfpe3bena5u6wxe3izxrq8
@@ -941,8 +944,6 @@ lmdb_max_dbs (128)
 			break;
 
 		case rai::rai_networks::rai_live_network:
-			// until well-known node URL exists, keep localnode also
-			preconfigured_peers.push_back ("::ffff:127.0.0.1");
 			preconfigured_peers.push_back ("node.mikron.io");
 			preconfigured_peers.push_back ("node2.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF"));
@@ -2323,7 +2324,7 @@ void rai::node::start ()
 	bootstrap.start ();
 	backup_wallet ();
 	online_reps.recalculate_stake ();
-	port_mapping.start ();
+	port_mapping_start_delayed ();
 	add_initial_peers ();
 	observers.started.notify ();
 }
@@ -2350,6 +2351,10 @@ void rai::node::keepalive_preconfigured (std::vector<std::string> const & peers_
 	for (auto i (peers_a.begin ()), n (peers_a.end ()); i != n; ++i)
 	{
 		keepalive (*i, rai::network::node_port);
+	}
+	if (this->config.logging.network_logging () || this->config.logging.network_keepalive_logging ())
+	{
+		BOOST_LOG (this->log) << boost::str (boost::format ("%1% preconfigured peers, keepalive sending initaited") % peers_a.size ());
 	}
 }
 
@@ -2477,6 +2482,26 @@ void rai::node::ongoing_store_flush ()
 		if (auto node_l = node_w.lock ())
 		{
 			node_l->ongoing_store_flush ();
+		}
+	});
+}
+
+void rai::node::port_mapping_start_delayed ()
+{
+	auto delay_sec (60);
+	if (this->config.logging.network_logging())
+	{
+		BOOST_LOG (this->log) << boost::str (boost::format ("UPnP Port mapping scheduled in %1% sec") % delay_sec);
+	}
+	std::weak_ptr<rai::node> node_w(shared_from_this());
+	alarm.add(std::chrono::steady_clock::now() + std::chrono::seconds (delay_sec), [node_w]() {
+		if (auto node_l = node_w.lock())
+		{
+			if (node_l->config.logging.network_logging())
+			{
+				BOOST_LOG (node_l->log) << "Starting UPnP port mapping";
+			}
+			node_l->port_mapping.start();
 		}
 	});
 }
