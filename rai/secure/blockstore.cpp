@@ -502,7 +502,7 @@ meta (0)
 		error_a |= mdb_dbi_open (transaction, "meta", MDB_CREATE, &meta) != 0;
 		if (!error_a)
 		{
-			do_upgrades (transaction);
+			error_a |= do_upgrades (transaction);
 			checksum_put (transaction, 0, 0, 0);
 		}
 	}
@@ -563,37 +563,35 @@ void rai::block_store::delete_node_id (MDB_txn * transaction_a)
 	assert (!error || error == MDB_NOTFOUND);
 }
 
-void rai::block_store::do_upgrades (MDB_txn * transaction_a)
+int rai::block_store::do_upgrades (MDB_txn * transaction_a)
 {
+	int res;
 	switch (version_get (transaction_a))
 	{
+		// Versions 1 -- 11 are not supported, legacy, incompatible
 		case 1:
-			upgrade_v1_to_v2 (transaction_a);
 		case 2:
-			upgrade_v2_to_v3 (transaction_a);
 		case 3:
-			upgrade_v3_to_v4 (transaction_a);
 		case 4:
-			upgrade_v4_to_v5 (transaction_a);
 		case 5:
-			upgrade_v5_to_v6 (transaction_a);
 		case 6:
-			upgrade_v6_to_v7 (transaction_a);
 		case 7:
-			upgrade_v7_to_v8 (transaction_a);
 		case 8:
-			upgrade_v8_to_v9 (transaction_a);
 		case 9:
-			upgrade_v9_to_v10 (transaction_a);
 		case 10:
-			upgrade_v10_to_v11 (transaction_a);
 		case 11:
+			res = upgrade_v11_to_v12 (transaction_a);
+			if (res) return res;
+		case 12:
 			break;
 		default:
-			assert (false);
+			assert(false);
+			return 1;
 	}
+	return 0;
 }
 
+/*
 void rai::block_store::upgrade_v1_to_v2 (MDB_txn * transaction_a)
 {
 	version_put (transaction_a, 2);
@@ -788,6 +786,31 @@ void rai::block_store::upgrade_v10_to_v11 (MDB_txn * transaction_a)
 	MDB_dbi unsynced;
 	mdb_dbi_open (transaction_a, "unsynced", MDB_CREATE | MDB_DUPSORT, &unsynced);
 	mdb_drop (transaction_a, unsynced, 1);
+}
+*/
+
+int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
+{
+	version_put (transaction_a, 12);
+
+	// versions below 12 are incompatible, delete all contents
+	mdb_drop (transaction_a, frontiers, 0);
+	mdb_drop (transaction_a, accounts_v0, 0);
+	mdb_drop (transaction_a, accounts_v1, 0);
+	mdb_drop (transaction_a, send_blocks, 0);
+	mdb_drop (transaction_a, receive_blocks, 0);
+	mdb_drop (transaction_a, open_blocks, 0);
+	mdb_drop (transaction_a, change_blocks, 0);
+	mdb_drop (transaction_a, state_blocks_v0, 0);
+	mdb_drop (transaction_a, state_blocks_v1, 0);
+	mdb_drop (transaction_a, pending_v0, 0);
+	mdb_drop (transaction_a, pending_v1, 0);
+	mdb_drop (transaction_a, blocks_info, 0);
+	mdb_drop (transaction_a, representation, 0);
+	mdb_drop (transaction_a, unchecked, 0);
+	mdb_drop (transaction_a, checksum, 0);
+	mdb_drop (transaction_a, vote, 0);
+	return 0;
 }
 
 void rai::block_store::clear (MDB_dbi db_a)

@@ -168,7 +168,8 @@ public:
 
 	void version_put (MDB_txn *, int);
 	int version_get (MDB_txn *);
-	void do_upgrades (MDB_txn *);
+	int do_upgrades (MDB_txn *);
+	/*
 	void upgrade_v1_to_v2 (MDB_txn *);
 	void upgrade_v2_to_v3 (MDB_txn *);
 	void upgrade_v3_to_v4 (MDB_txn *);
@@ -179,7 +180,8 @@ public:
 	void upgrade_v8_to_v9 (MDB_txn *);
 	void upgrade_v9_to_v10 (MDB_txn *);
 	void upgrade_v10_to_v11 (MDB_txn *);
-	void upgrade_v11_to_v12 (MDB_txn *);
+	*/
+	int upgrade_v11_to_v12 (MDB_txn *);
 
 	// Requires a write transaction
 	rai::raw_key get_node_id (MDB_txn *);

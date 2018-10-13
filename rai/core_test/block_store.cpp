@@ -600,6 +600,39 @@ TEST (block_store, sequence_increment)
 	ASSERT_EQ (31, vote6->sequence);
 }
 
+TEST(block_store, upgrade_v11_v12)
+{
+	rai::keypair key1;
+	auto path (rai::unique_path ());
+	{
+		bool init (false);
+		rai::block_store store (init, path);
+		ASSERT_TRUE (!init);
+		rai::transaction transaction (store.environment, nullptr, true);
+		rai::genesis genesis;
+		genesis.initialize (transaction, store);
+		rai::stat stats;
+		rai::ledger ledger (store, stats);
+		rai::state_block send (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, rai::genesis_amount - 100, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
+		store.version_put (transaction, 11);
+		rai::account_info info;
+		ASSERT_FALSE (store.account_get (transaction, rai::genesis_account, info));
+		ASSERT_EQ (rai::genesis_amount - 100, info.balance.number ());
+	}
+	bool init (false);
+	rai::block_store store (init, path);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	ASSERT_TRUE (!init);
+	ASSERT_LT (11, store.version_get (transaction));
+	rai::account_info info;
+	ASSERT_TRUE (store.account_get (transaction, rai::genesis_account, info));
+	ASSERT_TRUE (store.account_get (transaction, rai::genesis_account, info));
+}
+
+/*
 TEST (block_store, upgrade_v2_v3)
 {
 	rai::keypair key1;
@@ -717,6 +750,7 @@ TEST (block_store, upgrade_v4_v5)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (hash, store.block_successor (transaction, genesis_hash));
 }
+*/
 
 TEST (block_store, block_random)
 {
@@ -731,6 +765,7 @@ TEST (block_store, block_random)
 	ASSERT_EQ (*block, *genesis.genesis_block);
 }
 
+/*
 TEST (block_store, upgrade_v5_v6)
 {
 	auto path (rai::unique_path ());
@@ -779,6 +814,7 @@ TEST (block_store, upgrade_v6_v7)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (store.unchecked_end (), store.unchecked_begin (transaction));
 }
+*/
 
 // Databases need to be dropped in order to convert to dupsort compatible
 TEST (block_store, change_dupsort)
@@ -825,6 +861,7 @@ TEST (block_store, change_dupsort)
 	}
 }
 
+/*
 TEST (block_store, upgrade_v7_v8)
 {
 	auto path (rai::unique_path ());
@@ -853,6 +890,7 @@ TEST (block_store, upgrade_v7_v8)
 		ASSERT_EQ (store.unchecked_end (), iterator1);
 	}
 }
+*/
 
 TEST (block_store, sequence_flush)
 {
@@ -871,6 +909,7 @@ TEST (block_store, sequence_flush)
 	ASSERT_EQ (*seq3, *vote1);
 }
 
+/*
 // Upgrading tracking block sequence numbers to whole vote.
 TEST (block_store, upgrade_v8_v9)
 {
@@ -940,6 +979,7 @@ TEST (block_store, upgrade_v9_v10)
 	ASSERT_EQ (block_info.account, 0);  // rai::test_genesis_key.pub);
 	ASSERT_EQ (block_info.balance.number (), 0);  // rai::genesis_amount - rai::Gxrb_ratio * 31);
 }
+*/
 
 TEST (block_store, state_block)
 {
