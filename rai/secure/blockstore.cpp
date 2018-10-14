@@ -793,7 +793,10 @@ int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
 {
 	version_put (transaction_a, 12);
 
-	// versions below 12 are incompatible, delete all contents
+	// Versions below 12 are incompatible (1--11), not supported, delete all contents
+	// Changes include:
+	// - new creation_time field in blocks
+
 	mdb_drop (transaction_a, frontiers, 0);
 	mdb_drop (transaction_a, accounts_v0, 0);
 	mdb_drop (transaction_a, accounts_v1, 0);

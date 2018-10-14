@@ -11,3 +11,7 @@
 [submodule "phc-winner-argon2"]
 	path = phc-winner-argon2
 	url = https://github.com/mikroncoin/argon2-hash.git
+
+#[submodule "beast"]
+#	path = beast
+#	url = https://github.com/boostorg/beast.git
