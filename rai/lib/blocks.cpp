@@ -1201,8 +1201,18 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_
 	// if there is no previous: open
 	if (!has_previous ())
 	{
-		return rai::state_block_subtype::open;
+		if (has_link ())
+		{
+			// no prev but link: open_receive
+			return rai::state_block_subtype::open_receive;
+		}
+		else
+		{
+			// no prev, no link: open_genesis
+			return rai::state_block_subtype::open_genesis;
+		}
 	}
+	// has previous, has previous balance
 	// check balances: if decreasing: send
 	auto cur_balance (hashables.balance.number ());
 	if (cur_balance < previous_balance_a)

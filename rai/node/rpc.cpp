@@ -1591,24 +1591,32 @@ public:
 		rai::state_block_subtype subtype = block_a.get_subtype (previous_balance);
 		switch (subtype)
 		{
-		case rai::state_block_subtype::open:
+		case rai::state_block_subtype::open_receive:
 			if (raw)
 			{
-				tree.put ("subtype", "open");
+				tree.put ("subtype", "open_receive");
 			}
 			else
 			{
 				tree.put ("type", "receive");
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			if (!block_a.hashables.link.is_zero ())
+			tree.put ("account", block_a.hashables.link.to_string ());
+			break;
+
+		case rai::state_block_subtype::open_genesis:
+			if (raw)
 			{
-				tree.put ("account", block_a.hashables.link.to_string ());
+				tree.put ("subtype", "open_genesis");
 			}
+			else
+			{
+				tree.put ("type", "receive");
+			}
+			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::send:
-			// send
 			if (raw)
 			{
 				tree.put ("subtype", "send");
@@ -1622,7 +1630,6 @@ public:
 			break;
 
 		case rai::state_block_subtype::receive:
-			// receive
 			if (raw)
 			{
 				tree.put ("subtype", "receive");
@@ -1636,7 +1643,6 @@ public:
 			break;
 
 		case rai::state_block_subtype::change:
-			// change
 			if (raw)
 			{
 				tree.put ("subtype", "change");

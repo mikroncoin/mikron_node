@@ -273,8 +273,9 @@ enum class state_block_subtype : uint8_t
 	undefined = 0,
 	send = 2,
 	receive = 3,
-	open = 4,
-	change = 5
+	open_receive = 4,
+	open_genesis = 5,
+	change = 6
 };
 
 class state_hashables
