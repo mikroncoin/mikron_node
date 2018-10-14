@@ -259,12 +259,13 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 		result.code = block_a.previous ().is_zero () ? rai::process_result::progress : rai::process_result::gap_previous; // Does the first block in an account yield 0 for previous() ? (Unambigious)
 		if (result.code == rai::process_result::progress)
 		{
+			subtype = block_a.get_subtype (0);
 			result.code = !block_a.hashables.link.is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
 		}
 	}
 	if (result.code == rai::process_result::progress)
 	{
-		if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::undefined)
+		if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
 		{
 			if (!block_a.hashables.link.is_zero ())
 			{
