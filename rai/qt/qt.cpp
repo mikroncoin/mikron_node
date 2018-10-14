@@ -540,31 +540,45 @@ public:
 	void state_block (rai::state_block const & block_a)
 	{
 		auto balance (block_a.hashables.balance.number ());
-		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
-		if (balance < previous_balance)
+		rai::uint128_t previous_balance (0);
+		if (!block_a.hashables.previous.is_zero ())
 		{
-			type = "Send";
-			amount = previous_balance - balance;
-			account = block_a.hashables.link;
+			previous_balance = (ledger.balance (transaction, block_a.hashables.previous));
 		}
-		else
+		rai::state_block_subtype subtype (block_a.get_subtype (previous_balance));
+		switch (subtype)
 		{
-			if (block_a.hashables.link.is_zero ())
-			{
-				type = "Change";
-				account = block_a.hashables.representative;
-			}
-			else if (balance == previous_balance && !ledger.epoch_link.is_zero () && block_a.hashables.link == ledger.epoch_link)
-			{
-				type = "Epoch";
-				account = ledger.epoch_signer;
-			}
-			else
-			{
+			case rai::state_block_subtype::send:
+				type = "Send";
+				amount = previous_balance - balance;
+				account = block_a.hashables.link;
+				break;
+			case rai::state_block_subtype::receive:
 				type = "Receive";
+				amount = balance - previous_balance;
 				account = ledger.account (transaction, block_a.hashables.link);
-			}
-			amount = balance - previous_balance;
+				break;
+			case rai::state_block_subtype::open_receive:
+				type = "Receive";
+				amount = balance;
+				account = ledger.account (transaction, block_a.hashables.link);
+				break;
+			case rai::state_block_subtype::open_genesis:
+				type = "Open";
+				amount = balance;
+				account = block_a.hashables.account;  // self
+				break;
+			case rai::state_block_subtype::change:
+				type = "Change";
+				amount = 0;
+				account = block_a.hashables.representative;
+				break;
+			case rai::state_block_subtype::undefined:
+			default:
+				type = "Undefined";
+				amount = 0;
+				account = 0;
+				break;
 		}
 	}
 	MDB_txn * transaction;
