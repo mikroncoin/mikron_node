@@ -186,8 +186,7 @@ public:
 	size_t receive;
 	size_t open;
 	size_t change;
-	size_t state_v0;
-	size_t state_v1;
+	size_t state;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
 class iterate_vote_blocks_as_hash

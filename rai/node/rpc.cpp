@@ -1006,9 +1006,7 @@ void rai::rpc_handler::block_count_type ()
 	response_l.put ("receive", std::to_string (count.receive));
 	response_l.put ("open", std::to_string (count.open));
 	response_l.put ("change", std::to_string (count.change));
-	response_l.put ("state_v0", std::to_string (count.state_v0));
-	response_l.put ("state_v1", std::to_string (count.state_v1));
-	response_l.put ("state", std::to_string (count.state_v0 + count.state_v1));
+	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
 }
 

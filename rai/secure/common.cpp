@@ -281,14 +281,13 @@ send (0),
 receive (0),
 open (0),
 change (0),
-state_v0 (0),
-state_v1 (0)
+state (0)
 {
 }
 
 size_t rai::block_counts::sum ()
 {
-	return send + receive + open + change + state_v0 + state_v1;
+	return send + receive + open + change + state;
 }
 
 rai::pending_info::pending_info () :
@@ -956,8 +955,7 @@ rai::genesis::genesis ()
 void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store_a) const
 {
 	auto hash_l (hash ());
-	assert (store_a.latest_v0_begin (transaction_a) == store_a.latest_v0_end ());
-	assert (store_a.latest_v1_begin (transaction_a) == store_a.latest_v1_end ());
+	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	rai::epoch epoch_l (rai::epoch::epoch_1);
 	store_a.block_put(transaction_a, hash_l, *genesis_block, rai::block_hash(0), epoch_l);
 	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, rai::seconds_since_epoch (), 1, epoch_l });
@@ -994,8 +992,7 @@ rai::genesis_legacy_with_open::genesis_legacy_with_open()
 void rai::genesis_legacy_with_open::initialize(MDB_txn * transaction_a, rai::block_store & store_a) const
 {
 	auto hash_l (hash ());
-	assert(store_a.latest_v0_begin(transaction_a) == store_a.latest_v0_end());
-	assert(store_a.latest_v1_begin(transaction_a) == store_a.latest_v1_end());
+	assert(store_a.latest_begin(transaction_a) == store_a.latest_end());
 	store_a.block_put(transaction_a, hash_l, *genesis_block);
 	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, rai::seconds_since_epoch(), 1, rai::epoch::epoch_0 });
 	store_a.representation_put(transaction_a, genesis_account, rai::genesis_amount);

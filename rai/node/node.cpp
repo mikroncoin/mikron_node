@@ -1725,6 +1725,11 @@ block_processor_thread ([this]() { this->block_processor.process_blocks (); }),
 online_reps (*this),
 stats (config.stat_config)
 {
+	{
+		rai::transaction transaction (store.environment, nullptr, false);
+		auto block_counts (store.block_count (transaction));
+		BOOST_LOG (log) << "Blockstore open, version " << store.version_get (transaction) << ", block count " << block_counts.sum () << ", path " << application_path_a;
+	}
 	wallets.observer = [this](bool active) {
 		observers.wallet.notify (active);
 	};
@@ -1883,7 +1888,7 @@ stats (config.stat_config)
 			}
 		}
 	});
-	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR;
+	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << ", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
 	BOOST_LOG (log) << boost::str (boost::format ("Node port: %1%") % config.peering_port);
 	BOOST_LOG (log) << boost::str (boost::format ("Work pool running %1% threads") % work.threads.size ());
 	if (!init_a.error ())
@@ -2354,7 +2359,7 @@ void rai::node::keepalive_preconfigured (std::vector<std::string> const & peers_
 	}
 	if (this->config.logging.network_logging () || this->config.logging.network_keepalive_logging ())
 	{
-		BOOST_LOG (this->log) << boost::str (boost::format ("%1% preconfigured peers, keepalive sending initaited") % peers_a.size ());
+		BOOST_LOG (this->log) << boost::str (boost::format ("%1% preconfigured peers, keepalive sending initiated") % peers_a.size ());
 	}
 }
 
