@@ -260,7 +260,11 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 		if (result.code == rai::process_result::progress)
 		{
 			subtype = block_a.get_subtype (0);
-			result.code = !block_a.hashables.link.is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
+			result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
+			if (result.code == rai::process_result::progress)
+			{
+				result.code = !block_a.hashables.link.is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
+			}
 		}
 	}
 	if (result.code == rai::process_result::progress)
