@@ -618,7 +618,7 @@ rai::epoch rai::block_store::block_version (MDB_txn * transaction_a, rai::block_
 	rai::mdb_val value;
 	auto status (mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), value));
 	assert (status == 0 || status == MDB_NOTFOUND);
-	return rai::epoch::epoch_1;
+	return status == 0 ? rai::epoch::epoch_1 : rai::epoch::epoch_0;
 }
 
 void rai::block_store::representation_add (MDB_txn * transaction_a, rai::block_hash const & source_a, rai::uint128_t const & amount_a)
@@ -945,7 +945,7 @@ bool rai::block_store::account_get (MDB_txn * transaction_a, rai::account const 
 {
 	rai::mdb_val value;
 	auto status (mdb_get (transaction_a, accounts, rai::mdb_val (account_a), value));
-	assert (status == 0 || status1 == MDB_NOTFOUND);
+	assert (status == 0 || status == MDB_NOTFOUND);
 	if (status != 0)
 	{
 		return true;
@@ -991,21 +991,7 @@ size_t rai::block_store::account_count (MDB_txn * transaction_a)
 
 void rai::block_store::account_put (MDB_txn * transaction_a, rai::account const & account_a, rai::account_info const & info_a)
 {
-	MDB_dbi db;
-	switch (info_a.epoch)
-	{
-		case rai::epoch::invalid:
-		case rai::epoch::unspecified:
-			assert (false);
-		case rai::epoch::epoch_0:
-			assert (false);
-			db = accounts;
-			break;
-		case rai::epoch::epoch_1:
-			db = accounts;
-			break;
-	}
-	auto status (mdb_put (transaction_a, db, rai::mdb_val (account_a), info_a.val (), 0));
+	auto status (mdb_put (transaction_a, accounts, rai::mdb_val (account_a), info_a.val (), 0));
 	assert (status == 0);
 }
 
@@ -1051,13 +1037,13 @@ bool rai::block_store::pending_get (MDB_txn * transaction_a, rai::pending_key co
 
 rai::store_iterator rai::block_store::pending_begin (MDB_txn * transaction_a, rai::pending_key const & key_a)
 {
-	rai::store_iterator result (transaction_a, pending, key_a.val (), rai::epoch::epoch_0);
+	rai::store_iterator result (transaction_a, pending, key_a.val (), rai::epoch::epoch_1);
 	return result;
 }
 
 rai::store_iterator rai::block_store::pending_begin (MDB_txn * transaction_a)
 {
-	rai::store_iterator result (transaction_a, pending, rai::epoch::epoch_0);
+	rai::store_iterator result (transaction_a, pending, rai::epoch::epoch_1);
 	return result;
 }
 
@@ -1359,13 +1345,13 @@ std::shared_ptr<rai::vote> rai::block_store::vote_max (MDB_txn * transaction_a, 
 
 rai::store_iterator rai::block_store::latest_begin (MDB_txn * transaction_a, rai::account const & account_a)
 {
-	rai::store_iterator result (transaction_a, accounts, rai::mdb_val (account_a), rai::epoch::epoch_0);
+	rai::store_iterator result (transaction_a, accounts, rai::mdb_val (account_a), rai::epoch::epoch_1);
 	return result;
 }
 
 rai::store_iterator rai::block_store::latest_begin (MDB_txn * transaction_a)
 {
-	rai::store_iterator result (transaction_a, accounts, rai::epoch::epoch_0);
+	rai::store_iterator result (transaction_a, accounts, rai::epoch::epoch_1);
 	return result;
 }
 

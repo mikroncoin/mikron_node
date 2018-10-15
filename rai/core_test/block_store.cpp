@@ -324,7 +324,7 @@ TEST (block_store, frontier_retrieval)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::account account1 (0);
-	rai::account_info info1 (0, 0, 0, 0, 0, 0, rai::epoch::epoch_0);
+	rai::account_info info1 (0, 0, 0, 0, 0, 0, rai::epoch::epoch_1);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.account_put (transaction, account1, info1);
 	rai::account_info info2;
@@ -998,13 +998,11 @@ TEST (block_store, state_block)
 	ASSERT_NE (nullptr, block2);
 	ASSERT_EQ (block1, *block2);
 	auto count (store.block_count (transaction));
-	ASSERT_EQ (0, count.state_v0);
-	ASSERT_EQ (2, count.state_v1);
+	ASSERT_EQ (2, count.state);
 	ASSERT_EQ (0, count.open);
 	store.block_del (transaction, block1.hash ());
 	ASSERT_FALSE (store.block_exists (transaction, block1.hash ()));
 	auto count2 (store.block_count (transaction));
-	ASSERT_EQ (0, count2.state_v0);
-	ASSERT_EQ (1, count2.state_v1);
+	ASSERT_EQ (1, count2.state);
 	ASSERT_EQ (0, count.open);
 }

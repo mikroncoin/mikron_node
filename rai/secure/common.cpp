@@ -190,7 +190,7 @@ open_block (0),
 balance (0),
 modified (0),
 block_count (0),
-epoch (rai::epoch::epoch_0)
+epoch (rai::epoch::epoch_1)
 {
 }
 
@@ -293,7 +293,7 @@ size_t rai::block_counts::sum ()
 rai::pending_info::pending_info () :
 source (0),
 amount (0),
-epoch (rai::epoch::epoch_0)
+epoch (rai::epoch::epoch_1)
 {
 }
 
