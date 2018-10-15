@@ -10,9 +10,9 @@ namespace rai
 class store_iterator
 {
 public:
-	store_iterator (MDB_txn *, MDB_dbi, rai::epoch = rai::epoch::unspecified);
+	store_iterator (MDB_txn *, MDB_dbi);
 	store_iterator (std::nullptr_t);
-	store_iterator (MDB_txn *, MDB_dbi, MDB_val const &, rai::epoch = rai::epoch::unspecified);
+	store_iterator (MDB_txn *, MDB_dbi, MDB_val const &);
 	store_iterator (rai::store_iterator &&);
 	store_iterator (rai::store_iterator const &) = delete;
 	~store_iterator ();
@@ -46,9 +46,9 @@ class block_store
 public:
 	block_store (bool &, boost::filesystem::path const &, int lmdb_max_dbs = 128);
 
-	MDB_dbi block_database (rai::block_type, rai::epoch);
+	MDB_dbi block_database (rai::block_type);
 	void block_put_raw (MDB_txn *, MDB_dbi, rai::block_hash const &, MDB_val);
-	void block_put (MDB_txn *, rai::block_hash const &, rai::block const &, rai::block_hash const & = rai::block_hash (0), rai::epoch = rai::epoch::epoch_0);
+	void block_put (MDB_txn *, rai::block_hash const &, rai::block const &, rai::block_hash const & = rai::block_hash (0));
 	MDB_val block_get_raw (MDB_txn *, rai::block_hash const &, rai::block_type &);
 	rai::block_hash block_successor (MDB_txn *, rai::block_hash const &);
 	void block_successor_clear (MDB_txn *, rai::block_hash const &);
@@ -89,7 +89,7 @@ public:
 	rai::store_iterator block_info_begin (MDB_txn *);
 	rai::store_iterator block_info_end ();
 	rai::uint128_t block_balance (MDB_txn *, rai::block_hash const &);
-	rai::epoch block_version (MDB_txn *, rai::block_hash const &);
+	//rai::epoch block_version (MDB_txn *, rai::block_hash const &);
 	static size_t const block_info_max = 32;
 
 	rai::uint128_t representation_get (MDB_txn *, rai::account const &);

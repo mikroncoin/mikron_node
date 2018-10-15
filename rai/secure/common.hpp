@@ -118,7 +118,7 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t, epoch);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t);
 	void serialize (rai::stream &) const;
 	bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
@@ -132,7 +132,6 @@ public:
 	/** Seconds since posix epoch */
 	uint64_t modified;
 	uint64_t block_count;
-	rai::epoch epoch;
 };
 
 /**
@@ -143,14 +142,13 @@ class pending_info
 public:
 	pending_info ();
 	pending_info (rai::mdb_val const &);
-	pending_info (rai::account const &, rai::amount const &, epoch);
+	pending_info (rai::account const &, rai::amount const &);
 	void serialize (rai::stream &) const;
 	bool deserialize (rai::stream &);
 	bool operator== (rai::pending_info const &) const;
 	rai::mdb_val val () const;
 	rai::account source;
 	rai::amount amount;
-	rai::epoch epoch;
 };
 class pending_key
 {

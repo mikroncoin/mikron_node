@@ -924,9 +924,9 @@ bootstrap_connections_max (64),
 callback_port (0),
 lmdb_max_dbs (128)
 {
-	const char * epoch_message ("epoch v1 block");
-	strncpy ((char *)epoch_block_link.bytes.data (), epoch_message, epoch_block_link.bytes.size ());
-	epoch_block_signer = rai::genesis_account;
+	//const char * epoch_message ("epoch v1 block");
+	//strncpy ((char *)epoch_block_link.bytes.data (), epoch_message, epoch_block_link.bytes.size ());
+	//epoch_block_signer = rai::genesis_account;
 	switch (rai::rai_network)
 	{
 		case rai::rai_networks::rai_test_network:
@@ -1709,7 +1709,7 @@ alarm (alarm_a),
 work (work_a),
 store (init_a.block_store_init, application_path_a / "data.ldb", config_a.lmdb_max_dbs),
 gap_cache (*this),
-ledger (store, stats, config.epoch_block_link, config.epoch_block_signer),
+ledger (store, stats),
 active (*this),
 network (*this, config.peering_port),
 bootstrap_initiator (*this),

@@ -824,7 +824,7 @@ TEST (rpc, frontier)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, rai::epoch::epoch_0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -864,7 +864,7 @@ TEST (rpc, frontier_limited)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, rai::epoch::epoch_0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -894,7 +894,7 @@ TEST (rpc, frontier_startpoint)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, rai::epoch::epoch_0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -1417,8 +1417,8 @@ TEST (rpc, pending)
 		blocks[hash] = amount;
 		boost::optional<std::string> source (i->second.get_optional<std::string> ("source"));
 		ASSERT_FALSE (source.is_initialized ());
-		boost::optional<uint8_t> min_version (i->second.get_optional<uint8_t> ("min_version"));
-		ASSERT_FALSE (min_version.is_initialized ());
+		//boost::optional<uint8_t> min_version (i->second.get_optional<uint8_t> ("min_version"));
+		//ASSERT_FALSE (min_version.is_initialized ());
 	}
 	ASSERT_EQ (blocks[block1->hash ()], 100);
 	request.put ("threshold", "101");
@@ -1432,7 +1432,7 @@ TEST (rpc, pending)
 	ASSERT_EQ (0, blocks_node.size ());
 	request.put ("threshold", "0");
 	request.put ("source", "true");
-	request.put ("min_version", "true");
+	//request.put ("min_version", "true");
 	test_response response2 (request, rpc, system.service);
 	while (response2.status == 0)
 	{
@@ -1449,7 +1449,7 @@ TEST (rpc, pending)
 		hash.decode_hex (i->first);
 		amounts[hash].decode_dec (i->second.get<std::string> ("amount"));
 		sources[hash].decode_account (i->second.get<std::string> ("source"));
-		ASSERT_EQ (1, i->second.get<uint8_t> ("min_version"));
+		//ASSERT_EQ (1, i->second.get<uint8_t> ("min_version"));
 	}
 	ASSERT_EQ (amounts[block1->hash ()], 100);
 	ASSERT_EQ (sources[block1->hash ()], rai::test_genesis_key.pub);
@@ -2603,8 +2603,8 @@ TEST (rpc, wallet_pending)
 			blocks[hash] = amount;
 			boost::optional<std::string> source (i->second.get_optional<std::string> ("source"));
 			ASSERT_FALSE (source.is_initialized ());
-			boost::optional<uint8_t> min_version (i->second.get_optional<uint8_t> ("min_version"));
-			ASSERT_FALSE (min_version.is_initialized ());
+			//boost::optional<uint8_t> min_version (i->second.get_optional<uint8_t> ("min_version"));
+			//ASSERT_FALSE (min_version.is_initialized ());
 		}
 	}
 	ASSERT_EQ (blocks[block1->hash ()], 100);
@@ -2619,7 +2619,7 @@ TEST (rpc, wallet_pending)
 	ASSERT_EQ (0, pending1.size ());
 	request.put ("threshold", "0");
 	request.put ("source", "true");
-	request.put ("min_version", "true");
+	//request.put ("min_version", "true");
 	test_response response2 (request, rpc, system0.service);
 	while (response2.status == 0)
 	{
@@ -2639,7 +2639,7 @@ TEST (rpc, wallet_pending)
 			hash.decode_hex (i->first);
 			amounts[hash].decode_dec (i->second.get<std::string> ("amount"));
 			sources[hash].decode_account (i->second.get<std::string> ("source"));
-			ASSERT_EQ (i->second.get<uint8_t> ("min_version"), 1);
+			//ASSERT_EQ (i->second.get<uint8_t> ("min_version"), 1);
 		}
 	}
 	ASSERT_EQ (amounts[block1->hash ()], 100);
@@ -2923,7 +2923,7 @@ TEST (rpc, account_info)
 	ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
 	std::string block_count (response.json.get<std::string> ("block_count"));
 	ASSERT_EQ ("2", block_count);
-	ASSERT_EQ (1, response.json.get<uint8_t> ("account_version"));
+	//ASSERT_EQ (1, response.json.get<uint8_t> ("account_version"));
 	boost::optional<std::string> weight (response.json.get_optional<std::string> ("weight"));
 	ASSERT_FALSE (weight.is_initialized ());
 	boost::optional<std::string> pending (response.json.get_optional<std::string> ("pending"));
