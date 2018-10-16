@@ -1599,7 +1599,7 @@ public:
 				tree.put ("type", "receive");
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", block_a.hashables.link.to_string ());
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
 			break;
 
 		case rai::state_block_subtype::open_genesis:
@@ -1612,6 +1612,7 @@ public:
 				tree.put ("type", "receive");
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+			tree.put ("account", block_a.hashables.account.to_account ());  // self
 			break;
 
 		case rai::state_block_subtype::send:
