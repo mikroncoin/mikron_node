@@ -563,6 +563,7 @@ int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
 	// - no v0 and v1 state_blocks, only state_blocks
 	// - no v0 and v1 pending, only pending
 	// - no epoch field in account_info, pending
+	// - account_info binary serialization (platform-specific, non-portable format in local blockstore)
 
 	MDB_dbi accounts_v1;
 	if (0 == mdb_dbi_open (transaction_a, "accounts_v1", 0, &accounts_v1))
@@ -941,8 +942,7 @@ bool rai::block_store::account_get (MDB_txn * transaction_a, rai::account const 
 	{
 		return true;
 	}
-	rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
-	info_a.deserialize (stream);
+	info_a.deserialize_from_db (value);
 	return false;
 }
 
@@ -981,7 +981,7 @@ size_t rai::block_store::account_count (MDB_txn * transaction_a)
 
 void rai::block_store::account_put (MDB_txn * transaction_a, rai::account const & account_a, rai::account_info const & info_a)
 {
-	auto status (mdb_put (transaction_a, accounts, rai::mdb_val (account_a), info_a.val (), 0));
+	auto status (mdb_put (transaction_a, accounts, rai::mdb_val (account_a), info_a.serialize_to_db (), 0));
 	assert (status == 0);
 }
 

@@ -119,12 +119,14 @@ public:
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
 	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
+	//void serialize (rai::stream &) const;
+	//bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
 	size_t db_size () const;
+	// members, they must be all value types
 	rai::block_hash head;
 	rai::block_hash rep_block;
 	rai::block_hash open_block;

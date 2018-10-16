@@ -195,9 +195,7 @@ block_count (0)
 
 rai::account_info::account_info (rai::mdb_val const & val_a)
 {
-	auto size (db_size ());
-	assert (val_a.value.mv_size == size);
-	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
+	deserialize_from_db (val_a);
 }
 
 rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, uint64_t modified_a, uint64_t block_count_a) :
@@ -210,6 +208,7 @@ block_count (block_count_a)
 {
 }
 
+/*
 void rai::account_info::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, head.bytes);
@@ -245,6 +244,7 @@ bool rai::account_info::deserialize (rai::stream & stream_a)
 	}
 	return error;
 }
+*/
 
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
@@ -258,18 +258,19 @@ bool rai::account_info::operator!= (rai::account_info const & other_a) const
 
 size_t rai::account_info::db_size () const
 {
-	assert (reinterpret_cast<const uint8_t *> (this) == reinterpret_cast<const uint8_t *> (&head));
-	assert (reinterpret_cast<const uint8_t *> (&head) + sizeof (head) == reinterpret_cast<const uint8_t *> (&rep_block));
-	assert (reinterpret_cast<const uint8_t *> (&rep_block) + sizeof (rep_block) == reinterpret_cast<const uint8_t *> (&open_block));
-	assert (reinterpret_cast<const uint8_t *> (&open_block) + sizeof (open_block) == reinterpret_cast<const uint8_t *> (&balance));
-	assert (reinterpret_cast<const uint8_t *> (&balance) + sizeof (balance) == reinterpret_cast<const uint8_t *> (&modified));
-	assert (reinterpret_cast<const uint8_t *> (&modified) + sizeof (modified) == reinterpret_cast<const uint8_t *> (&block_count));
-	return sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (modified) + sizeof (block_count);
+	return sizeof (rai::account_info);
 }
 
-rai::mdb_val rai::account_info::val () const
+rai::mdb_val rai::account_info::serialize_to_db () const
 {
 	return rai::mdb_val (db_size (), const_cast<rai::account_info *> (this));
+}
+
+void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)
+{
+	auto size (db_size());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
 }
 
 rai::block_counts::block_counts () :
