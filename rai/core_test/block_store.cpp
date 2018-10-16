@@ -138,7 +138,7 @@ TEST (block_store, pending_iterator)
 	ASSERT_TRUE (!init);
 	rai::transaction transaction (store.environment, nullptr, true);
 	ASSERT_EQ (store.pending_end (), store.pending_begin (transaction));
-	store.pending_put (transaction, rai::pending_key (1, 2), { 2, 3, rai::epoch::epoch_1 });
+	store.pending_put (transaction, rai::pending_key (1, 2), { 2, 3 });
 	auto current (store.pending_begin (transaction));
 	ASSERT_NE (store.pending_end (), current);
 	rai::pending_key key1 (current->first);
@@ -147,7 +147,6 @@ TEST (block_store, pending_iterator)
 	rai::pending_info pending (current->second);
 	ASSERT_EQ (rai::account (2), pending.source);
 	ASSERT_EQ (rai::amount (3), pending.amount);
-	ASSERT_EQ (rai::epoch::epoch_1, pending.epoch);
 }
 
 TEST (block_store, genesis)
@@ -324,7 +323,7 @@ TEST (block_store, frontier_retrieval)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::account account1 (0);
-	rai::account_info info1 (0, 0, 0, 0, 0, 0, rai::epoch::epoch_0);
+	rai::account_info info1 (0, 0, 0, 0, 0, 0);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.account_put (transaction, account1, info1);
 	rai::account_info info2;
@@ -340,7 +339,7 @@ TEST (block_store, one_account)
 	rai::account account (0);
 	rai::block_hash hash (0);
 	rai::transaction transaction (store.environment, nullptr, true);
-	store.account_put (transaction, account, { hash, account, hash, 42, 100, 200, rai::epoch::epoch_0 });
+	store.account_put (transaction, account, { hash, account, hash, 42, 100, 200 });
 	auto begin (store.latest_begin (transaction));
 	auto end (store.latest_end ());
 	ASSERT_NE (end, begin);
@@ -385,8 +384,8 @@ TEST (block_store, two_account)
 	rai::account account2 (3);
 	rai::block_hash hash2 (4);
 	rai::transaction transaction (store.environment, nullptr, true);
-	store.account_put (transaction, account1, { hash1, account1, hash1, 42, 100, 300, rai::epoch::epoch_0 });
-	store.account_put (transaction, account2, { hash2, account2, hash2, 84, 200, 400, rai::epoch::epoch_0 });
+	store.account_put (transaction, account1, { hash1, account1, hash1, 42, 100, 300 });
+	store.account_put (transaction, account2, { hash2, account2, hash2, 84, 200, 400 });
 	auto begin (store.latest_begin (transaction));
 	auto end (store.latest_end ());
 	ASSERT_NE (end, begin);
@@ -418,8 +417,8 @@ TEST (block_store, latest_find)
 	rai::account account2 (3);
 	rai::block_hash hash2 (4);
 	rai::transaction transaction (store.environment, nullptr, true);
-	store.account_put (transaction, account1, { hash1, account1, hash1, 100, 0, 300, rai::epoch::epoch_0 });
-	store.account_put (transaction, account2, { hash2, account2, hash2, 200, 0, 400, rai::epoch::epoch_0 });
+	store.account_put (transaction, account1, { hash1, account1, hash1, 100, 0, 300 });
+	store.account_put (transaction, account2, { hash2, account2, hash2, 200, 0, 400 });
 	auto first (store.latest_begin (transaction));
 	auto second (store.latest_begin (transaction));
 	++second;
@@ -600,6 +599,39 @@ TEST (block_store, sequence_increment)
 	ASSERT_EQ (31, vote6->sequence);
 }
 
+TEST(block_store, upgrade_v11_v12)
+{
+	rai::keypair key1;
+	auto path (rai::unique_path ());
+	{
+		bool init (false);
+		rai::block_store store (init, path);
+		ASSERT_TRUE (!init);
+		rai::transaction transaction (store.environment, nullptr, true);
+		rai::genesis genesis;
+		genesis.initialize (transaction, store);
+		rai::stat stats;
+		rai::ledger ledger (store, stats);
+		rai::state_block send (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, rai::genesis_amount - 100, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
+		store.version_put (transaction, 11);
+		rai::account_info info;
+		ASSERT_FALSE (store.account_get (transaction, rai::genesis_account, info));
+		ASSERT_EQ (rai::genesis_amount - 100, info.balance.number ());
+	}
+	bool init (false);
+	rai::block_store store (init, path);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	ASSERT_TRUE (!init);
+	ASSERT_LT (11, store.version_get (transaction));
+	rai::account_info info;
+	ASSERT_TRUE (store.account_get (transaction, rai::genesis_account, info));
+	ASSERT_TRUE (store.account_get (transaction, rai::genesis_account, info));
+}
+
+/*
 TEST (block_store, upgrade_v2_v3)
 {
 	rai::keypair key1;
@@ -717,6 +749,7 @@ TEST (block_store, upgrade_v4_v5)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (hash, store.block_successor (transaction, genesis_hash));
 }
+*/
 
 TEST (block_store, block_random)
 {
@@ -731,6 +764,7 @@ TEST (block_store, block_random)
 	ASSERT_EQ (*block, *genesis.genesis_block);
 }
 
+/*
 TEST (block_store, upgrade_v5_v6)
 {
 	auto path (rai::unique_path ());
@@ -779,6 +813,7 @@ TEST (block_store, upgrade_v6_v7)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (store.unchecked_end (), store.unchecked_begin (transaction));
 }
+*/
 
 // Databases need to be dropped in order to convert to dupsort compatible
 TEST (block_store, change_dupsort)
@@ -825,6 +860,7 @@ TEST (block_store, change_dupsort)
 	}
 }
 
+/*
 TEST (block_store, upgrade_v7_v8)
 {
 	auto path (rai::unique_path ());
@@ -853,6 +889,7 @@ TEST (block_store, upgrade_v7_v8)
 		ASSERT_EQ (store.unchecked_end (), iterator1);
 	}
 }
+*/
 
 TEST (block_store, sequence_flush)
 {
@@ -871,6 +908,7 @@ TEST (block_store, sequence_flush)
 	ASSERT_EQ (*seq3, *vote1);
 }
 
+/*
 // Upgrading tracking block sequence numbers to whole vote.
 TEST (block_store, upgrade_v8_v9)
 {
@@ -940,6 +978,7 @@ TEST (block_store, upgrade_v9_v10)
 	ASSERT_EQ (block_info.account, 0);  // rai::test_genesis_key.pub);
 	ASSERT_EQ (block_info.balance.number (), 0);  // rai::genesis_amount - rai::Gxrb_ratio * 31);
 }
+*/
 
 TEST (block_store, state_block)
 {
@@ -952,19 +991,17 @@ TEST (block_store, state_block)
 	rai::keypair key1;
 	rai::state_block block1 (1, genesis.hash (), 0, 3, 4, 6, key1.prv, key1.pub, 7);
 	ASSERT_EQ (rai::block_type::state, block1.type ());
-	store.block_put (transaction, block1.hash (), block1, rai::block_hash(0), rai::epoch::epoch_1);
+	store.block_put (transaction, block1.hash (), block1, rai::block_hash(0));
 	ASSERT_TRUE (store.block_exists (transaction, block1.hash ()));
 	auto block2 (store.block_get (transaction, block1.hash ()));
 	ASSERT_NE (nullptr, block2);
 	ASSERT_EQ (block1, *block2);
 	auto count (store.block_count (transaction));
-	ASSERT_EQ (0, count.state_v0);
-	ASSERT_EQ (2, count.state_v1);
+	ASSERT_EQ (2, count.state);
 	ASSERT_EQ (0, count.open);
 	store.block_del (transaction, block1.hash ());
 	ASSERT_FALSE (store.block_exists (transaction, block1.hash ()));
 	auto count2 (store.block_count (transaction));
-	ASSERT_EQ (0, count2.state_v0);
-	ASSERT_EQ (1, count2.state_v1);
+	ASSERT_EQ (1, count2.state);
 	ASSERT_EQ (0, count.open);
 }

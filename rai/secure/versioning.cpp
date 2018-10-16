@@ -1,5 +1,6 @@
 #include <rai/secure/versioning.hpp>
 
+/*
 rai::account_info_v1::account_info_v1 () :
 head (0),
 rep_block (0),
@@ -166,3 +167,4 @@ rai::mdb_val rai::account_info_v5::val () const
 {
 	return rai::mdb_val (sizeof (*this), const_cast<rai::account_info_v5 *> (this));
 }
+*/

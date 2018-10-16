@@ -3,6 +3,7 @@
 #include <rai/secure/blockstore.hpp>
 #include <rai/secure/versioning.hpp>
 
+/*  Legacy
 TEST (versioning, account_info_v1)
 {
 	auto file (rai::unique_path ());
@@ -33,3 +34,4 @@ TEST (versioning, account_info_v1)
 		ASSERT_EQ (v1.rep_block, v2.rep_block);
 	}
 }
+*/

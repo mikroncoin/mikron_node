@@ -189,31 +189,26 @@ rep_block (0),
 open_block (0),
 balance (0),
 modified (0),
-block_count (0),
-epoch (rai::epoch::epoch_0)
+block_count (0)
 {
 }
 
-rai::account_info::account_info (rai::mdb_val const & val_a) :
-epoch (val_a.epoch)
+rai::account_info::account_info (rai::mdb_val const & val_a)
 {
-	assert (val_a.epoch == rai::epoch::epoch_0 || val_a.epoch == rai::epoch::epoch_1);
-	auto size (db_size ());
-	assert (val_a.value.mv_size == size);
-	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
+	deserialize_from_db (val_a);
 }
 
-rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, uint64_t modified_a, uint64_t block_count_a, rai::epoch epoch_a) :
+rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, uint64_t modified_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
 balance (balance_a),
 modified (modified_a),
-block_count (block_count_a),
-epoch (epoch_a)
+block_count (block_count_a)
 {
 }
 
+/*
 void rai::account_info::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, head.bytes);
@@ -249,10 +244,11 @@ bool rai::account_info::deserialize (rai::stream & stream_a)
 	}
 	return error;
 }
+*/
 
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance && modified == other_a.modified && block_count == other_a.block_count && epoch == other_a.epoch;
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance && modified == other_a.modified && block_count == other_a.block_count;
 }
 
 bool rai::account_info::operator!= (rai::account_info const & other_a) const
@@ -262,18 +258,19 @@ bool rai::account_info::operator!= (rai::account_info const & other_a) const
 
 size_t rai::account_info::db_size () const
 {
-	assert (reinterpret_cast<const uint8_t *> (this) == reinterpret_cast<const uint8_t *> (&head));
-	assert (reinterpret_cast<const uint8_t *> (&head) + sizeof (head) == reinterpret_cast<const uint8_t *> (&rep_block));
-	assert (reinterpret_cast<const uint8_t *> (&rep_block) + sizeof (rep_block) == reinterpret_cast<const uint8_t *> (&open_block));
-	assert (reinterpret_cast<const uint8_t *> (&open_block) + sizeof (open_block) == reinterpret_cast<const uint8_t *> (&balance));
-	assert (reinterpret_cast<const uint8_t *> (&balance) + sizeof (balance) == reinterpret_cast<const uint8_t *> (&modified));
-	assert (reinterpret_cast<const uint8_t *> (&modified) + sizeof (modified) == reinterpret_cast<const uint8_t *> (&block_count));
-	return sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (modified) + sizeof (block_count);
+	return sizeof (rai::account_info);
 }
 
-rai::mdb_val rai::account_info::val () const
+rai::mdb_val rai::account_info::serialize_to_db () const
 {
 	return rai::mdb_val (db_size (), const_cast<rai::account_info *> (this));
+}
+
+void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)
+{
+	auto size (db_size());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
 }
 
 rai::block_counts::block_counts () :
@@ -281,27 +278,23 @@ send (0),
 receive (0),
 open (0),
 change (0),
-state_v0 (0),
-state_v1 (0)
+state (0)
 {
 }
 
 size_t rai::block_counts::sum ()
 {
-	return send + receive + open + change + state_v0 + state_v1;
+	return send + receive + open + change + state;
 }
 
 rai::pending_info::pending_info () :
 source (0),
-amount (0),
-epoch (rai::epoch::epoch_0)
+amount (0)
 {
 }
 
-rai::pending_info::pending_info (rai::mdb_val const & val_a) :
-epoch (val_a.epoch)
+rai::pending_info::pending_info (rai::mdb_val const & val_a)
 {
-	assert (val_a.epoch == rai::epoch::epoch_0 || val_a.epoch == rai::epoch::epoch_1);
 	auto db_size (sizeof (source) + sizeof (amount));
 	assert (val_a.value.mv_size == db_size);
 	assert (reinterpret_cast<const uint8_t *> (this) == reinterpret_cast<const uint8_t *> (&source));
@@ -309,10 +302,9 @@ epoch (val_a.epoch)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + db_size, reinterpret_cast<uint8_t *> (this));
 }
 
-rai::pending_info::pending_info (rai::account const & source_a, rai::amount const & amount_a, rai::epoch epoch_a) :
+rai::pending_info::pending_info (rai::account const & source_a, rai::amount const & amount_a) :
 source (source_a),
-amount (amount_a),
-epoch (epoch_a)
+amount (amount_a)
 {
 }
 
@@ -334,7 +326,7 @@ bool rai::pending_info::deserialize (rai::stream & stream_a)
 
 bool rai::pending_info::operator== (rai::pending_info const & other_a) const
 {
-	return source == other_a.source && amount == other_a.amount && epoch == other_a.epoch;
+	return source == other_a.source && amount == other_a.amount;
 }
 
 rai::mdb_val rai::pending_info::val () const
@@ -956,11 +948,9 @@ rai::genesis::genesis ()
 void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store_a) const
 {
 	auto hash_l (hash ());
-	assert (store_a.latest_v0_begin (transaction_a) == store_a.latest_v0_end ());
-	assert (store_a.latest_v1_begin (transaction_a) == store_a.latest_v1_end ());
-	rai::epoch epoch_l (rai::epoch::epoch_1);
-	store_a.block_put(transaction_a, hash_l, *genesis_block, rai::block_hash(0), epoch_l);
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, rai::seconds_since_epoch (), 1, epoch_l });
+	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
+	store_a.block_put(transaction_a, hash_l, *genesis_block, rai::block_hash(0));
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, rai::seconds_since_epoch (), 1});
 	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
@@ -994,10 +984,9 @@ rai::genesis_legacy_with_open::genesis_legacy_with_open()
 void rai::genesis_legacy_with_open::initialize(MDB_txn * transaction_a, rai::block_store & store_a) const
 {
 	auto hash_l (hash ());
-	assert(store_a.latest_v0_begin(transaction_a) == store_a.latest_v0_end());
-	assert(store_a.latest_v1_begin(transaction_a) == store_a.latest_v1_end());
+	assert(store_a.latest_begin(transaction_a) == store_a.latest_end());
 	store_a.block_put(transaction_a, hash_l, *genesis_block);
-	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, rai::seconds_since_epoch(), 1, rai::epoch::epoch_0 });
+	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, rai::seconds_since_epoch(), 1});
 	store_a.representation_put(transaction_a, genesis_account, rai::genesis_amount);
 	store_a.checksum_put(transaction_a, 0, 0, hash_l);
 	store_a.frontier_put(transaction_a, hash_l, genesis_account);

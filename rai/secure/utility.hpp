@@ -115,7 +115,7 @@ public:
 
 /**
  * Tag for which epoch an entry belongs to
- */
+ *
 enum class epoch : uint8_t
 {
 	invalid = 0,
@@ -123,6 +123,7 @@ enum class epoch : uint8_t
 	epoch_0 = 2,
 	epoch_1 = 3
 };
+*/
 
 /**
  * Encapsulates MDB_val and provides uint256_union conversion of the data.
@@ -130,8 +131,8 @@ enum class epoch : uint8_t
 class mdb_val
 {
 public:
-	mdb_val (rai::epoch = rai::epoch::unspecified);
-	mdb_val (MDB_val const &, rai::epoch = rai::epoch::unspecified);
+	mdb_val ();
+	mdb_val (MDB_val const &);
 	mdb_val (size_t, void *);
 	mdb_val (rai::uint128_union const &);
 	mdb_val (rai::uint256_union const &);
@@ -141,7 +142,6 @@ public:
 	operator MDB_val * () const;
 	operator MDB_val const & () const;
 	MDB_val value;
-	rai::epoch epoch;
 };
 
 /**

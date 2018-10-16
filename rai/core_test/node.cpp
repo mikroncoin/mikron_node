@@ -510,8 +510,8 @@ TEST (node_config, serialization)
 	ASSERT_NE (config2.callback_target, config1.callback_target);
 	ASSERT_NE (config2.lmdb_max_dbs, config1.lmdb_max_dbs);
 
-	ASSERT_FALSE (tree.get_optional<std::string> ("epoch_block_link"));
-	ASSERT_FALSE (tree.get_optional<std::string> ("epoch_block_signer"));
+	//ASSERT_FALSE (tree.get_optional<std::string> ("epoch_block_link"));
+	//ASSERT_FALSE (tree.get_optional<std::string> ("epoch_block_signer"));
 
 	bool upgraded (false);
 	ASSERT_FALSE (config2.deserialize_json (upgraded, tree));

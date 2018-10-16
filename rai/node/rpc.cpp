@@ -473,7 +473,7 @@ void rai::rpc_handler::account_info ()
 			response_l.put ("balance", balance);
 			response_l.put ("modified_timestamp", std::to_string (info.modified));
 			response_l.put ("block_count", std::to_string (info.block_count));
-			response_l.put ("account_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
+			//response_l.put ("account_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
 			if (representative)
 			{
 				auto block (node.store.block_get (transaction, info.rep_block));
@@ -1006,9 +1006,7 @@ void rai::rpc_handler::block_count_type ()
 	response_l.put ("receive", std::to_string (count.receive));
 	response_l.put ("open", std::to_string (count.open));
 	response_l.put ("change", std::to_string (count.change));
-	response_l.put ("state_v0", std::to_string (count.state_v0));
-	response_l.put ("state_v1", std::to_string (count.state_v1));
-	response_l.put ("state", std::to_string (count.state_v0 + count.state_v1));
+	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
 }
 
@@ -1583,7 +1581,6 @@ public:
 			tree.put ("type", "state");
 			tree.put ("representative", block_a.hashables.representative.to_account ());
 			tree.put ("link", block_a.hashables.link.to_string ());
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
 		auto cur_balance (block_a.hashables.balance.number ());
@@ -1591,24 +1588,35 @@ public:
 		rai::state_block_subtype subtype = block_a.get_subtype (previous_balance);
 		switch (subtype)
 		{
-		case rai::state_block_subtype::open:
+		case rai::state_block_subtype::open_receive:
 			if (raw)
 			{
-				tree.put ("subtype", "open");
+				tree.put ("subtype", "open_receive");
 			}
 			else
 			{
 				tree.put ("type", "receive");
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			if (!block_a.hashables.link.is_zero ())
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			break;
+
+		case rai::state_block_subtype::open_genesis:
+			if (raw)
 			{
-				tree.put ("account", block_a.hashables.link.to_string ());
+				tree.put ("subtype", "open_genesis");
 			}
+			else
+			{
+				tree.put ("type", "receive");
+			}
+			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+			tree.put ("account", block_a.hashables.account.to_account ());  // self
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::send:
-			// send
 			if (raw)
 			{
 				tree.put ("subtype", "send");
@@ -1619,10 +1627,10 @@ public:
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
 			tree.put ("amount", (previous_balance - cur_balance).convert_to<std::string> ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::receive:
-			// receive
 			if (raw)
 			{
 				tree.put ("subtype", "receive");
@@ -1633,13 +1641,15 @@ public:
 			}
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
 			tree.put ("amount", (cur_balance - previous_balance).convert_to<std::string> ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::change:
-			// change
+			// change occurs only in raw
 			if (raw)
 			{
 				tree.put ("subtype", "change");
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			}
 			break;
 
@@ -1706,9 +1716,11 @@ void rai::rpc_handler::account_history ()
 					block->visit (visitor);
 					if (!entry.empty ())
 					{
+						entry.put ("block_time", block->creation_time().to_posix_time());
 						entry.put ("hash", hash.to_string ());
 						if (output_raw)
 						{
+							entry.put ("block_time_utc", block->creation_time().to_date_string_utc ());
 							entry.put ("work", rai::to_string_hex (block->block_work ()));
 							entry.put ("signature", block->block_signature ().to_string ());
 						}
@@ -2027,10 +2039,10 @@ void rai::rpc_handler::pending ()
 						{
 							pending_tree.put ("source", info.source.to_account ());
 						}
-						if (min_version)
-						{
-							pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
-						}
+						//if (min_version)
+						//{
+						//	  pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
+						//}
 						peers_l.add_child (key.hash.to_string (), pending_tree);
 					}
 					else
@@ -3213,10 +3225,10 @@ void rai::rpc_handler::wallet_pending ()
 								{
 									pending_tree.put ("source", info.source.to_account ());
 								}
-								if (min_version)
-								{
-									pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
-								}
+								//if (min_version)
+								//{
+								//	pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
+								//}
 								peers_l.add_child (key.hash.to_string (), pending_tree);
 							}
 							else

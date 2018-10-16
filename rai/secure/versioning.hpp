@@ -5,6 +5,9 @@
 
 namespace rai
 {
+/**
+ * Non-longer-supported legacy versions
+ *
 class account_info_v1
 {
 public:
@@ -51,4 +54,5 @@ public:
 	rai::amount balance;
 	uint64_t modified;
 };
+*/
 }

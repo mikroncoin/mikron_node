@@ -118,13 +118,15 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t, epoch);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t);
+	//void serialize (rai::stream &) const;
+	//bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
 	size_t db_size () const;
+	// members, they must be all value types
 	rai::block_hash head;
 	rai::block_hash rep_block;
 	rai::block_hash open_block;
@@ -132,7 +134,6 @@ public:
 	/** Seconds since posix epoch */
 	uint64_t modified;
 	uint64_t block_count;
-	rai::epoch epoch;
 };
 
 /**
@@ -143,14 +144,13 @@ class pending_info
 public:
 	pending_info ();
 	pending_info (rai::mdb_val const &);
-	pending_info (rai::account const &, rai::amount const &, epoch);
+	pending_info (rai::account const &, rai::amount const &);
 	void serialize (rai::stream &) const;
 	bool deserialize (rai::stream &);
 	bool operator== (rai::pending_info const &) const;
 	rai::mdb_val val () const;
 	rai::account source;
 	rai::amount amount;
-	rai::epoch epoch;
 };
 class pending_key
 {
@@ -186,8 +186,7 @@ public:
 	size_t receive;
 	size_t open;
 	size_t change;
-	size_t state_v0;
-	size_t state_v1;
+	size_t state;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
 class iterate_vote_blocks_as_hash

@@ -1,6 +1,3 @@
-[submodule "beast"]
-	path = beast
-	url = https://github.com/boostorg/beast.git
 [submodule "miniupnp"]
 	path = miniupnp
 	url = https://github.com/miniupnp/miniupnp.git
@@ -9,8 +6,12 @@
 	url = https://github.com/weidai11/cryptopp.git
 [submodule "lmdb"]
 	path = lmdb
-	url = https://github.com/nanocurrency/lmdb.git
+	url = https://github.com/mikroncoin/lmdb.git
 	branch = lmdb_0_9_21
 [submodule "phc-winner-argon2"]
 	path = phc-winner-argon2
-	url = https://github.com/clemahieu/phc-winner-argon2.git
+	url = https://github.com/mikroncoin/argon2-hash.git
+
+#[submodule "beast"]
+#	path = beast
+#	url = https://github.com/boostorg/beast.git
