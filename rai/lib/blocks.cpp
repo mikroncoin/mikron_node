@@ -73,7 +73,7 @@ bool rai::short_timestamp::operator== (rai::short_timestamp const & other_a) con
 	return data == other_a.data;
 }
 
-rai::timestamp_t rai::short_timestamp::number() const
+rai::timestamp_t rai::short_timestamp::number () const
 {
 	return data.number ();
 }
@@ -85,20 +85,25 @@ void rai::short_timestamp::set_time_now ()
 	return set_from_posix_time (now);
 }
 
-rai::short_timestamp rai::short_timestamp::now ()
-{
-	uint64_t now = (uint64_t)std::time(nullptr);
-	return rai::short_timestamp (now);
-}
-
-void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)
+rai::timestamp_t rai::short_timestamp::convert_from_posix_time (uint64_t time_posix)
 {
 	uint64_t current_time_since_epoch = 0;
 	if (time_posix >= (uint64_t)short_timestamp_epoch)
 	{
-		current_time_since_epoch = time_posix - (uint64_t)short_timestamp_epoch;
+		current_time_since_epoch = time_posix - (uint64_t)rai::short_timestamp::short_timestamp_epoch;
 	}
-	data = (rai::timestamp_t)current_time_since_epoch;
+	return (rai::timestamp_t)current_time_since_epoch;
+}
+
+rai::timestamp_t rai::short_timestamp::now ()
+{
+	uint64_t now = (uint64_t)std::time(nullptr);
+	return convert_from_posix_time(now);
+}
+
+void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)
+{
+	data = convert_from_posix_time (time_posix);
 }
 
 bool rai::short_timestamp::decode_dec (std::string const & text)

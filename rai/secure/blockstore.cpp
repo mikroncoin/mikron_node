@@ -564,6 +564,7 @@ int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
 	// - no v0 and v1 pending, only pending
 	// - no epoch field in account_info, pending
 	// - account_info binary serialization (platform-specific, non-portable format in local blockstore)
+	// - account_info: field last_block_time instead of modified
 
 	MDB_dbi accounts_v1;
 	if (0 == mdb_dbi_open (transaction_a, "accounts_v1", 0, &accounts_v1))

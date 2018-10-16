@@ -189,6 +189,7 @@ rep_block (0),
 open_block (0),
 balance (0),
 modified (0),
+last_block_time (0),
 block_count (0)
 {
 }
@@ -198,12 +199,13 @@ rai::account_info::account_info (rai::mdb_val const & val_a)
 	deserialize_from_db (val_a);
 }
 
-rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, uint64_t modified_a, uint64_t block_count_a) :
+rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, uint64_t modified_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
 balance (balance_a),
 modified (modified_a),
+last_block_time (last_block_time_a),
 block_count (block_count_a)
 {
 }
@@ -248,7 +250,9 @@ bool rai::account_info::deserialize (rai::stream & stream_a)
 
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance && modified == other_a.modified && block_count == other_a.block_count;
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance &&
+		modified == other_a.modified &&
+		last_block_time == other_a.last_block_time && block_count == other_a.block_count;
 }
 
 bool rai::account_info::operator!= (rai::account_info const & other_a) const
@@ -950,7 +954,7 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put(transaction_a, hash_l, *genesis_block, rai::block_hash(0));
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, rai::seconds_since_epoch (), 1});
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, rai::seconds_since_epoch (), genesis_block->creation_time ().number (), 1});
 	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
@@ -986,7 +990,7 @@ void rai::genesis_legacy_with_open::initialize(MDB_txn * transaction_a, rai::blo
 	auto hash_l (hash ());
 	assert(store_a.latest_begin(transaction_a) == store_a.latest_end());
 	store_a.block_put(transaction_a, hash_l, *genesis_block);
-	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, rai::seconds_since_epoch(), 1});
+	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, rai::seconds_since_epoch(), genesis_block->creation_time ().number (), 1});
 	store_a.representation_put(transaction_a, genesis_account, rai::genesis_amount);
 	store_a.checksum_put(transaction_a, 0, 0, hash_l);
 	store_a.frontier_put(transaction_a, hash_l, genesis_account);
