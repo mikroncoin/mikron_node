@@ -1581,7 +1581,6 @@ public:
 			tree.put ("type", "state");
 			tree.put ("representative", block_a.hashables.representative.to_account ());
 			tree.put ("link", block_a.hashables.link.to_string ());
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
 		auto cur_balance (block_a.hashables.balance.number ());
@@ -1600,6 +1599,7 @@ public:
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::open_genesis:
@@ -1613,6 +1613,7 @@ public:
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
 			tree.put ("account", block_a.hashables.account.to_account ());  // self
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::send:
@@ -1626,6 +1627,7 @@ public:
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
 			tree.put ("amount", (previous_balance - cur_balance).convert_to<std::string> ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::receive:
@@ -1639,12 +1641,15 @@ public:
 			}
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
 			tree.put ("amount", (cur_balance - previous_balance).convert_to<std::string> ());
+			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::change:
+			// change occurs only in raw
 			if (raw)
 			{
 				tree.put ("subtype", "change");
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			}
 			break;
 
@@ -1711,9 +1716,11 @@ void rai::rpc_handler::account_history ()
 					block->visit (visitor);
 					if (!entry.empty ())
 					{
+						entry.put ("block_time", block->creation_time().to_posix_time());
 						entry.put ("hash", hash.to_string ());
 						if (output_raw)
 						{
+							entry.put ("block_time_utc", block->creation_time().to_date_string_utc ());
 							entry.put ("work", rai::to_string_hex (block->block_work ()));
 							entry.put ("signature", block->block_signature ().to_string ());
 						}
