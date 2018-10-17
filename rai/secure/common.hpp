@@ -118,7 +118,7 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, rai::timestamp_t, uint64_t);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
 	//void serialize (rai::stream &) const;
 	//bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
@@ -131,8 +131,6 @@ public:
 	rai::block_hash rep_block;
 	rai::block_hash open_block;
 	rai::amount balance;
-	/** TODO: Replace with native block creation time.  Seconds since posix epoch */
-	uint64_t modified;
 	rai::timestamp_t last_block_time;
 	uint64_t block_count;
 };

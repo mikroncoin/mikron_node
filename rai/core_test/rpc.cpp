@@ -824,7 +824,7 @@ TEST (rpc, frontier)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -864,7 +864,7 @@ TEST (rpc, frontier_limited)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -894,7 +894,7 @@ TEST (rpc, frontier_startpoint)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -2930,8 +2930,8 @@ TEST (rpc, account_info)
 	ASSERT_EQ (send.hash ().to_string (), representative_block);
 	std::string balance (response.json.get<std::string> ("balance"));
 	ASSERT_EQ ("100", balance);
-	std::string modified_timestamp (response.json.get<std::string> ("modified_timestamp"));
-	ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+	std::string last_block_time (response.json.get<std::string> ("last_block_time"));
+	ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 	std::string block_count (response.json.get<std::string> ("block_count"));
 	ASSERT_EQ ("2", block_count);
 	//ASSERT_EQ (1, response.json.get<uint8_t> ("account_version"));
@@ -3137,8 +3137,8 @@ TEST (rpc, ledger)
 		ASSERT_EQ (open.hash ().to_string (), representative_block);
 		std::string balance_text (accounts.second.get<std::string> ("balance"));
 		ASSERT_EQ ("340282366920938463463374607431768211355", balance_text);
-		std::string modified_timestamp (accounts.second.get<std::string> ("modified_timestamp"));
-		ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+		std::string last_block_time (accounts.second.get<std::string> ("last_block_time"));
+		ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 		std::string block_count (accounts.second.get<std::string> ("block_count"));
 		ASSERT_EQ ("1", block_count);
 		boost::optional<std::string> weight (accounts.second.get_optional<std::string> ("weight"));
@@ -3579,8 +3579,8 @@ TEST (rpc, wallet_ledger)
 		ASSERT_EQ (open.hash ().to_string (), representative_block);
 		std::string balance_text (accounts.second.get<std::string> ("balance"));
 		ASSERT_EQ ("340282366920938463463374607431768211355", balance_text);
-		std::string modified_timestamp (accounts.second.get<std::string> ("modified_timestamp"));
-		ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+		std::string last_block_time(accounts.second.get<std::string> ("last_block_time"));
+		ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 		std::string block_count (accounts.second.get<std::string> ("block_count"));
 		ASSERT_EQ ("1", block_count);
 		boost::optional<std::string> weight (accounts.second.get_optional<std::string> ("weight"));

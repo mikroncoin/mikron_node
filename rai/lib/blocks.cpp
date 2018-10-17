@@ -85,20 +85,25 @@ void rai::short_timestamp::set_time_now ()
 	return set_from_posix_time (now);
 }
 
+rai::timestamp_t rai::short_timestamp::now ()
+{
+	uint64_t now = (uint64_t)std::time (nullptr);
+	return convert_from_posix_time (now);
+}
+
 rai::timestamp_t rai::short_timestamp::convert_from_posix_time (uint64_t time_posix)
 {
 	uint64_t current_time_since_epoch = 0;
 	if (time_posix >= (uint64_t)short_timestamp_epoch)
 	{
-		current_time_since_epoch = time_posix - (uint64_t)rai::short_timestamp::short_timestamp_epoch;
+		current_time_since_epoch = time_posix - (uint64_t)short_timestamp_epoch;
 	}
 	return (rai::timestamp_t)current_time_since_epoch;
 }
 
-rai::timestamp_t rai::short_timestamp::now ()
+uint64_t rai::short_timestamp::convert_to_posix_time (rai::timestamp_t time)
 {
-	uint64_t now = (uint64_t)std::time(nullptr);
-	return convert_from_posix_time(now);
+	return (uint64_t)short_timestamp_epoch + (uint64_t)time;
 }
 
 void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)

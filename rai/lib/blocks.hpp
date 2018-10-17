@@ -56,8 +56,9 @@ public:
 	bool operator== (rai::short_timestamp const &) const;
 	rai::timestamp_t number () const;
 	void set_time_now ();
-	static rai::timestamp_t convert_from_posix_time (uint64_t);
 	static rai::timestamp_t now ();
+	static rai::timestamp_t convert_from_posix_time (uint64_t);
+	static uint64_t convert_to_posix_time (rai::timestamp_t);
 	void set_from_posix_time (uint64_t);
 	bool decode_dec (std::string const &);
 	uint64_t to_posix_time () const;

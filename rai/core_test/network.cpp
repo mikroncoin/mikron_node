@@ -779,14 +779,23 @@ TEST (frontier_req, time_cutoff)
 	rai::system system (24000, 1);
 	auto connection (std::make_shared<rai::bootstrap_server> (nullptr, system.nodes[0]));
 	std::unique_ptr<rai::frontier_req> req (new rai::frontier_req);
+	// with small time -- genesis will not fall into
 	req->start.clear ();
 	req->age = 10;
 	req->count = std::numeric_limits<decltype (req->count)>::max ();
 	connection->requests.push (std::unique_ptr<rai::message>{});
 	auto request (std::make_shared<rai::frontier_req_server> (connection, std::move (req)));
-	ASSERT_EQ (rai::test_genesis_key.pub, request->current);
+	ASSERT_TRUE (request->current.is_zero ());
+	// with larger time
+	std::unique_ptr<rai::frontier_req> req2 (new rai::frontier_req);
 	rai::genesis genesis;
-	ASSERT_EQ (genesis.hash (), request->info.head);
+	req2->start.clear ();
+	req2->age = rai::short_timestamp::now () - genesis.block ().creation_time ().number () + 10;
+	req2->count = std::numeric_limits<decltype (req2->count)>::max ();
+	connection->requests.push (std::unique_ptr<rai::message>{});
+	auto request2 (std::make_shared<rai::frontier_req_server> (connection, std::move (req2)));
+	ASSERT_EQ (rai::test_genesis_key.pub, request2->current);
+	ASSERT_EQ (genesis.hash (), request2->info.head);
 }
 
 TEST (bulk, genesis)

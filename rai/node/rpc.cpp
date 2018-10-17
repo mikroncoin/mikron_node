@@ -471,7 +471,7 @@ void rai::rpc_handler::account_info ()
 			std::string balance;
 			rai::uint128_union (info.balance).encode_dec (balance);
 			response_l.put ("balance", balance);
-			response_l.put ("modified_timestamp", std::to_string (info.modified));
+			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time)));
 			response_l.put ("block_count", std::to_string (info.block_count));
 			//response_l.put ("account_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
 			if (representative)
@@ -1716,11 +1716,11 @@ void rai::rpc_handler::account_history ()
 					block->visit (visitor);
 					if (!entry.empty ())
 					{
-						entry.put ("block_time", block->creation_time().to_posix_time());
+						entry.put ("block_time", block->creation_time ().to_posix_time ());
 						entry.put ("hash", hash.to_string ());
 						if (output_raw)
 						{
-							entry.put ("block_time_utc", block->creation_time().to_date_string_utc ());
+							entry.put ("block_time_utc", block->creation_time ().to_date_string_utc ());
 							entry.put ("work", rai::to_string_hex (block->block_work ()));
 							entry.put ("signature", block->block_signature ().to_string ());
 						}
@@ -1808,11 +1808,12 @@ void rai::rpc_handler::ledger ()
 				ec = nano::error_common::bad_account_number;
 			}
 		}
-		uint64_t modified_since (0);
+		rai::timestamp_t modified_since (0);
 		boost::optional<std::string> modified_since_text (request.get_optional<std::string> ("modified_since"));
 		if (modified_since_text.is_initialized ())
 		{
-			modified_since = strtoul (modified_since_text.get ().c_str (), NULL, 10);
+			uint64_t modified_since_posix = strtoul (modified_since_text.get ().c_str (), NULL, 10);
+			modified_since = rai::short_timestamp::convert_from_posix_time (modified_since_posix);
 		}
 		const bool sorting = request.get<bool> ("sorting", false);
 		const bool representative = request.get<bool> ("representative", false);
@@ -1825,7 +1826,7 @@ void rai::rpc_handler::ledger ()
 			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n && accounts.size () < count; ++i)
 			{
 				rai::account_info info (i->second);
-				if (info.modified >= modified_since)
+				if (info.last_block_time >= modified_since)
 				{
 					rai::account account (i->first.uint256 ());
 					boost::property_tree::ptree response_a;
@@ -1835,7 +1836,7 @@ void rai::rpc_handler::ledger ()
 					std::string balance;
 					rai::uint128_union (info.balance).encode_dec (balance);
 					response_a.put ("balance", balance);
-					response_a.put ("modified_timestamp", std::to_string (info.modified));
+					response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
 					response_a.put ("block_count", std::to_string (info.block_count));
 					if (representative)
 					{
@@ -1864,7 +1865,7 @@ void rai::rpc_handler::ledger ()
 			{
 				rai::account_info info (i->second);
 				rai::uint128_union balance (info.balance);
-				if (info.modified >= modified_since)
+				if (info.last_block_time >= modified_since)
 				{
 					ledger_l.push_back (std::make_pair (balance, rai::account (i->first.uint256 ())));
 				}
@@ -1883,7 +1884,7 @@ void rai::rpc_handler::ledger ()
 				std::string balance;
 				(i->first).encode_dec (balance);
 				response_a.put ("balance", balance);
-				response_a.put ("modified_timestamp", std::to_string (info.modified));
+				response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
 				response_a.put ("block_count", std::to_string (info.block_count));
 				if (representative)
 				{
@@ -3115,11 +3116,12 @@ void rai::rpc_handler::wallet_ledger ()
 	const bool representative = request.get<bool> ("representative", false);
 	const bool weight = request.get<bool> ("weight", false);
 	const bool pending = request.get<bool> ("pending", false);
-	uint64_t modified_since (0);
+	rai::timestamp_t modified_since (0);
 	boost::optional<std::string> modified_since_text (request.get_optional<std::string> ("modified_since"));
 	if (modified_since_text.is_initialized ())
 	{
-		modified_since = strtoul (modified_since_text.get ().c_str (), NULL, 10);
+		uint64_t modified_since_posix = strtoul (modified_since_text.get ().c_str (), NULL, 10);
+		modified_since = rai::short_timestamp::convert_from_posix_time (modified_since_posix);
 	}
 	auto wallet (wallet_impl ());
 	if (!ec)
@@ -3132,7 +3134,7 @@ void rai::rpc_handler::wallet_ledger ()
 			rai::account_info info;
 			if (!node.store.account_get (transaction, account, info))
 			{
-				if (info.modified >= modified_since)
+				if (info.last_block_time >= modified_since)
 				{
 					boost::property_tree::ptree entry;
 					entry.put ("frontier", info.head.to_string ());
@@ -3141,7 +3143,7 @@ void rai::rpc_handler::wallet_ledger ()
 					std::string balance;
 					rai::uint128_union (info.balance).encode_dec (balance);
 					entry.put ("balance", balance);
-					entry.put ("modified_timestamp", std::to_string (info.modified));
+					entry.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
 					entry.put ("block_count", std::to_string (info.block_count));
 					if (representative)
 					{
