@@ -188,7 +188,7 @@ head (0),
 rep_block (0),
 open_block (0),
 balance (0),
-last_block_time (0),
+last_block_time_intern (0),
 block_count (0)
 {
 }
@@ -203,7 +203,7 @@ head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
 balance (balance_a),
-last_block_time (last_block_time_a),
+last_block_time_intern (last_block_time_a),
 block_count (block_count_a)
 {
 }
@@ -215,7 +215,7 @@ void rai::account_info::serialize (rai::stream & stream_a) const
 	write (stream_a, rep_block.bytes);
 	write (stream_a, open_block.bytes);
 	write (stream_a, balance.bytes);
-	write (stream_a, modified);
+	write (stream_a, last_block_time_intern);
 	write (stream_a, block_count);
 }
 
@@ -249,7 +249,7 @@ bool rai::account_info::deserialize (rai::stream & stream_a)
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
 	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance &&
-		last_block_time == other_a.last_block_time && block_count == other_a.block_count;
+		last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
 }
 
 bool rai::account_info::operator!= (rai::account_info const & other_a) const
@@ -259,12 +259,16 @@ bool rai::account_info::operator!= (rai::account_info const & other_a) const
 
 size_t rai::account_info::db_size () const
 {
+	// make sure class is well packed
+	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
 	return sizeof (rai::account_info);
 }
 
 rai::mdb_val rai::account_info::serialize_to_db () const
 {
-	return rai::mdb_val (db_size (), const_cast<rai::account_info *> (this));
+	auto size (db_size ());
+	assert (size == sizeof (*this));
+	return rai::mdb_val (size, const_cast<rai::account_info *> (this));
 }
 
 void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)

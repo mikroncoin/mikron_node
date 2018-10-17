@@ -126,12 +126,14 @@ public:
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
 	size_t db_size () const;
+	rai::timestamp_t last_block_time () const { return static_cast<rai::timestamp_t> (last_block_time_intern); }
+	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
 	// members, they must be all value types
 	rai::block_hash head;
-	rai::block_hash rep_block;
+	rai::block_hash rep_block;  // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
 	rai::amount balance;
-	rai::timestamp_t last_block_time;
+	uint64_t last_block_time_intern;  // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
 	uint64_t block_count;
 };
 

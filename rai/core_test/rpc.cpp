@@ -3579,7 +3579,7 @@ TEST (rpc, wallet_ledger)
 		ASSERT_EQ (open.hash ().to_string (), representative_block);
 		std::string balance_text (accounts.second.get<std::string> ("balance"));
 		ASSERT_EQ ("340282366920938463463374607431768211355", balance_text);
-		std::string last_block_time(accounts.second.get<std::string> ("last_block_time"));
+		std::string last_block_time (accounts.second.get<std::string> ("last_block_time"));
 		ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 		std::string block_count (accounts.second.get<std::string> ("block_count"));
 		ASSERT_EQ ("1", block_count);

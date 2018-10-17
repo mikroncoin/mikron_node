@@ -70,9 +70,9 @@ TEST (ledger, genesis_balance)
 	rai::account_info info;
 	ASSERT_FALSE (store.account_get (transaction, rai::genesis_account, info));
 	// Frontier time should have been updated when genesis balance was added
-	ASSERT_EQ (genesis.block ().creation_time ().number (), info.last_block_time);
+	ASSERT_EQ (genesis.block ().creation_time ().number (), info.last_block_time ());
 	auto now (rai::short_timestamp::now ());
-	ASSERT_GE (now, info.last_block_time);
+	ASSERT_GE (now, info.last_block_time ());
 }
 
 // Make sure the checksum is the same when ledger reloaded

@@ -2398,7 +2398,7 @@ void rai::frontier_req_server::skip_old ()
 	if (request->age != std::numeric_limits<decltype (request->age)>::max ())
 	{
 		auto now (rai::short_timestamp::now ());
-		while (!current.is_zero () && (now - info.last_block_time) >= request->age)
+		while (!current.is_zero () && (now - info.last_block_time ()) >= request->age)
 		{
 			next ();
 		}

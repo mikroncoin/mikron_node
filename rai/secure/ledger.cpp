@@ -952,7 +952,7 @@ void rai::ledger::change_latest (MDB_txn * transaction_a, rai::account const & a
 		info.head = hash_a;
 		info.rep_block = rep_block_a;
 		info.balance = balance_a;
-		info.last_block_time = last_block_time_a;
+		info.last_block_time_set (last_block_time_a);
 		info.block_count = block_count_a;
 		if (exists)
 		{

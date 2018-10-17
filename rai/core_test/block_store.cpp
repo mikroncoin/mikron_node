@@ -165,7 +165,7 @@ TEST (block_store, genesis)
 	ASSERT_NE (nullptr, block1);
 	auto receive1 (dynamic_cast<rai::state_block *> (block1.get ()));
 	ASSERT_NE (nullptr, receive1);
-	ASSERT_LE (info.last_block_time, genesis.block ().creation_time ().number ());
+	ASSERT_LE (info.last_block_time (), genesis.block ().creation_time ().number ());
 	auto test_pub_text (rai::test_genesis_key.pub.to_string ());
 	auto test_pub_account (rai::test_genesis_key.pub.to_account ());
 	auto test_prv_text (rai::test_genesis_key.prv.data.to_string ());
@@ -347,7 +347,7 @@ TEST (block_store, one_account)
 	rai::account_info info (begin->second);
 	ASSERT_EQ (hash, info.head);
 	ASSERT_EQ (42, info.balance.number ());
-	ASSERT_EQ (100, info.last_block_time);
+	ASSERT_EQ (100, info.last_block_time ());
 	ASSERT_EQ (200, info.block_count);
 	++begin;
 	ASSERT_EQ (end, begin);
@@ -393,7 +393,7 @@ TEST (block_store, two_account)
 	rai::account_info info1 (begin->second);
 	ASSERT_EQ (hash1, info1.head);
 	ASSERT_EQ (42, info1.balance.number ());
-	ASSERT_EQ (100, info1.last_block_time);
+	ASSERT_EQ (100, info1.last_block_time ());
 	ASSERT_EQ (300, info1.block_count);
 	++begin;
 	ASSERT_NE (end, begin);
@@ -401,7 +401,7 @@ TEST (block_store, two_account)
 	rai::account_info info2 (begin->second);
 	ASSERT_EQ (hash2, info2.head);
 	ASSERT_EQ (84, info2.balance.number ());
-	ASSERT_EQ (200, info2.last_block_time);
+	ASSERT_EQ (200, info2.last_block_time ());
 	ASSERT_EQ (400, info2.block_count);
 	++begin;
 	ASSERT_EQ (end, begin);

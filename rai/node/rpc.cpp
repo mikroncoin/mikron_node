@@ -471,7 +471,7 @@ void rai::rpc_handler::account_info ()
 			std::string balance;
 			rai::uint128_union (info.balance).encode_dec (balance);
 			response_l.put ("balance", balance);
-			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time)));
+			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
 			response_l.put ("block_count", std::to_string (info.block_count));
 			//response_l.put ("account_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
 			if (representative)
@@ -1826,7 +1826,7 @@ void rai::rpc_handler::ledger ()
 			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n && accounts.size () < count; ++i)
 			{
 				rai::account_info info (i->second);
-				if (info.last_block_time >= modified_since)
+				if (info.last_block_time () >= modified_since)
 				{
 					rai::account account (i->first.uint256 ());
 					boost::property_tree::ptree response_a;
@@ -1836,7 +1836,7 @@ void rai::rpc_handler::ledger ()
 					std::string balance;
 					rai::uint128_union (info.balance).encode_dec (balance);
 					response_a.put ("balance", balance);
-					response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
+					response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
 					response_a.put ("block_count", std::to_string (info.block_count));
 					if (representative)
 					{
@@ -1865,7 +1865,7 @@ void rai::rpc_handler::ledger ()
 			{
 				rai::account_info info (i->second);
 				rai::uint128_union balance (info.balance);
-				if (info.last_block_time >= modified_since)
+				if (info.last_block_time () >= modified_since)
 				{
 					ledger_l.push_back (std::make_pair (balance, rai::account (i->first.uint256 ())));
 				}
@@ -1884,7 +1884,7 @@ void rai::rpc_handler::ledger ()
 				std::string balance;
 				(i->first).encode_dec (balance);
 				response_a.put ("balance", balance);
-				response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
+				response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
 				response_a.put ("block_count", std::to_string (info.block_count));
 				if (representative)
 				{
@@ -3134,7 +3134,7 @@ void rai::rpc_handler::wallet_ledger ()
 			rai::account_info info;
 			if (!node.store.account_get (transaction, account, info))
 			{
-				if (info.last_block_time >= modified_since)
+				if (info.last_block_time () >= modified_since)
 				{
 					boost::property_tree::ptree entry;
 					entry.put ("frontier", info.head.to_string ());
@@ -3143,7 +3143,7 @@ void rai::rpc_handler::wallet_ledger ()
 					std::string balance;
 					rai::uint128_union (info.balance).encode_dec (balance);
 					entry.put ("balance", balance);
-					entry.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time));
+					entry.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
 					entry.put ("block_count", std::to_string (info.block_count));
 					if (representative)
 					{
