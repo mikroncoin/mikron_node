@@ -480,10 +480,12 @@ wallet (wallet_a)
 	tx_layout->addWidget (tx_count);
 	tx_layout->setContentsMargins (0, 0, 0, 0);
 	tx_window->setLayout (tx_layout);*/
-	model->setHorizontalHeaderItem (0, new QStandardItem ("Type"));
-	model->setHorizontalHeaderItem (1, new QStandardItem ("Account"));
+	model->setHorizontalHeaderItem (0, new QStandardItem ("Date"));
+	model->setHorizontalHeaderItem (1, new QStandardItem ("Type"));
 	model->setHorizontalHeaderItem (2, new QStandardItem ("Amount"));
-	model->setHorizontalHeaderItem (3, new QStandardItem ("Hash"));
+	model->setHorizontalHeaderItem (3, new QStandardItem ("Balance"));
+	model->setHorizontalHeaderItem (4, new QStandardItem ("Account"));
+	model->setHorizontalHeaderItem (5, new QStandardItem ("Hash"));
 	view->setModel (model);
 	view->setEditTriggers (QAbstractItemView::NoEditTriggers);
 	view->verticalHeader ()->hide ();
@@ -539,7 +541,8 @@ public:
 	}
 	void state_block (rai::state_block const & block_a)
 	{
-		auto balance (block_a.hashables.balance.number ());
+		block_time = block_a.creation_time ().number ();
+		balance = block_a.hashables.balance.number ();
 		rai::uint128_t previous_balance (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
@@ -585,7 +588,9 @@ public:
 	rai::ledger & ledger;
 	std::string type;
 	rai::uint128_t amount;
+	rai::uint128_t balance;
 	rai::account account;
+	rai::timestamp_t block_time;
 };
 }
 
@@ -601,11 +606,16 @@ void rai_qt::history::refresh ()
 		auto block (ledger.store.block_get (transaction, hash));
 		assert (block != nullptr);
 		block->visit (visitor);
+		rai::short_timestamp block_time (visitor.block_time);
+		items.push_back (new QStandardItem (QString (block_time.to_date_string_local ().c_str ())));
 		items.push_back (new QStandardItem (QString (visitor.type.c_str ())));
-		items.push_back (new QStandardItem (QString (visitor.account.to_account ().c_str ())));
-		auto balanceItem = new QStandardItem (QString (wallet.format_balance (visitor.amount).c_str ()));
+		auto amountItem = new QStandardItem (QString (wallet.format_balance (visitor.amount).c_str ()));
+		amountItem->setData (Qt::AlignRight, Qt::TextAlignmentRole);
+		items.push_back (amountItem);
+		auto balanceItem = new QStandardItem (QString (wallet.format_balance (visitor.balance).c_str ()));
 		balanceItem->setData (Qt::AlignRight, Qt::TextAlignmentRole);
 		items.push_back (balanceItem);
+		items.push_back (new QStandardItem (QString (visitor.account.to_account ().c_str ())));
 		items.push_back (new QStandardItem (QString (hash.to_string ().c_str ())));
 		hash = block->previous ();
 		model->appendRow (items);
@@ -1407,8 +1417,8 @@ void rai_qt::wallet::change_rendering_ratio (rai::uint128_t const & rendering_ra
 
 std::string rai_qt::wallet::format_balance (rai::uint128_t const & balance) const
 {
-	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 0, false);
-	auto unit = std::string ("XRB");
+	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 2, false);
+	auto unit = std::string ("MIK");
 	if (rendering_ratio == rai::kxrb_ratio)
 	{
 		unit = std::string ("kxrb");

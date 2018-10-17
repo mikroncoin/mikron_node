@@ -142,7 +142,9 @@ std::string rai::short_timestamp::to_date_string_utc () const
 std::string rai::short_timestamp::to_date_string_local () const
 {
 	std::time_t timet = (std::time_t)to_posix_time ();
-	return std::asctime (std::localtime (&timet));
+	std::stringstream ss;
+	ss << std::put_time (std::localtime (&timet), "%x %X");  // locale-dependent, 	08/23/01 14:55:02
+	return ss.str ();
 }
 
 std::string rai::block::to_json ()
