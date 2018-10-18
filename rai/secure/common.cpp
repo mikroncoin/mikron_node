@@ -6,6 +6,7 @@
 #include <rai/secure/versioning.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <queue>
 
@@ -21,11 +22,14 @@ char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264
 const rai::uint128_t test_genesis_amount = std::numeric_limits<rai::uint128_t>::max ();
 const rai::uint128_t beta_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 const rai::uint128_t live_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
+const uint32_t test_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
+const uint32_t beta_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
+const uint32_t live_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
 
 char const * test_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
-	"creation_time": "42",
+	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
 	"balance": "340282366920938463463374607431768211455",
@@ -46,7 +50,7 @@ char const * test_genesis_legacy_data = R"%%%({
 char const * beta_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
-	"creation_time": "42",
+	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
 	"balance": "300000000000000000000000000000000000000",
@@ -59,7 +63,7 @@ char const * beta_genesis_data = R"%%%({
 char const * live_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
-	"creation_time": "42",
+	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
 	"balance": "300000000000000000000000000000000000000",
@@ -118,6 +122,10 @@ public:
 	rai::account genesis_account;
 	std::string genesis_block;
 	rai::uint128_t genesis_amount;
+	static const rai::timestamp_t genesis_time =
+		rai::rai_network == rai::rai_networks::rai_test_network ? test_genesis_time :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_genesis_time :
+		live_genesis_time;
 	rai::block_hash not_a_block;
 	rai::account not_an_account;
 	rai::account burn_account;
@@ -144,6 +152,7 @@ std::string const & rai::rai_test_genesis_legacy (globals.rai_test_genesis_legac
 rai::account const & rai::genesis_account (globals.genesis_account);
 std::string const & rai::genesis_block (globals.genesis_block);
 rai::uint128_t const & rai::genesis_amount (globals.genesis_amount);
+rai::timestamp_t const rai::genesis_time (globals.genesis_time);
 rai::block_hash const & rai::not_a_block (globals.not_a_block);
 rai::block_hash const & rai::not_an_account (globals.not_an_account);
 rai::account const & rai::burn_account (globals.burn_account);
@@ -965,7 +974,9 @@ boost::transform_iterator<rai::iterate_vote_blocks_as_hash, rai::vote_blocks_vec
 rai::genesis::genesis ()
 {
 	boost::property_tree::ptree tree;
-	std::stringstream istream (rai::genesis_block);
+	std::string block_json (rai::genesis_block);
+	std::string block_json2 = boost::replace_all_copy (block_json, "{CREATION_TIME_PLACEHOLDER}", std::to_string (rai::genesis_time));
+	std::stringstream istream (block_json2);
 	boost::property_tree::read_json (istream, tree);
 	auto block (rai::deserialize_block_json (tree));
 	assert (dynamic_cast<rai::state_block *> (block.get ()) != nullptr);
@@ -1026,7 +1037,7 @@ rai::block_hash rai::genesis_legacy_with_open::hash() const
 }
 
 // TODO: move to higher up, separate settings for test, beta, live.
-uint32_t rai::manna_control::manna_start = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
+uint32_t rai::manna_control::manna_start = rai::genesis_time;
 uint32_t rai::manna_control::manna_freq = 5;  // sec
 rai::uint128_t rai::manna_control::manna_increment = rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000);
 

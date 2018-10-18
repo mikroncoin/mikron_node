@@ -281,6 +281,7 @@ extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::uint128_t const & genesis_amount;
+extern rai::timestamp_t const genesis_time;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
