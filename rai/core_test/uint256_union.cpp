@@ -495,3 +495,23 @@ TEST (uint64_t, parse)
 	uint64_t value4 (1);
 	ASSERT_TRUE (rai::from_string_hex ("", value4));
 }
+
+TEST (uint32_union, serialize)
+{
+	rai::uint32_union a1 = rai::uint32_union (267);
+	ASSERT_EQ (0, a1.bytes[0]);
+	ASSERT_EQ (0, a1.bytes[1]);
+	ASSERT_EQ (1, a1.bytes[2]);
+	ASSERT_EQ (11, a1.bytes[3]);
+	ASSERT_EQ ("267", a1.to_string_dec ());
+}
+
+TEST (uint32_union, deserialize)
+{
+	rai::uint32_union a1 = rai::uint32_union ("267");
+	ASSERT_EQ (267, a1.number ());
+
+	std::array<uint8_t, 4> bb = {0, 0, 1, 10};
+	a1.bytes = bb;
+	ASSERT_EQ (266, a1.number());
+}

@@ -32,7 +32,7 @@ public:
 	std::string to_string_dec () const;
 	bool is_zero () const;
 	void clear ();
-	uint32_t number() const;
+	uint32_t number () const;
 	std::array<uint8_t, 4> bytes;
 };
 
