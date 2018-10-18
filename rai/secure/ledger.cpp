@@ -641,6 +641,20 @@ rai::uint128_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash co
 	return visitor.balance;
 }
 
+// Balance for account containing hash.  Balance adjusted with current manna increment.
+rai::uint128_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::timestamp_t now)
+{
+	balance_visitor visitor (transaction_a, store);
+	visitor.compute (hash_a);
+	if (visitor.current_balance_block == nullptr || !rai::manna_control::is_manna_account (visitor.current_balance_block->hashables.account))
+	{
+		return visitor.balance;
+	}
+	// manna adjustment
+	rai::uint128_t manna_diff = rai::manna_control::compute_manna_increment (visitor.current_balance_block->creation_time ().number (), now);
+	return visitor.balance + manna_diff;
+}
+
 // Balance for an account by account number
 rai::uint128_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::account const & account_a)
 {
@@ -650,6 +664,18 @@ rai::uint128_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::accou
 	if (!none)
 	{
 		result = info.balance.number ();
+	}
+	return result;
+}
+
+rai::uint128_t rai::ledger::account_balance_with_manna (MDB_txn * transaction_a, rai::account const & account_a, rai::timestamp_t now)
+{
+	rai::uint128_t result(0);
+	rai::account_info info;
+	auto none (store.account_get (transaction_a, account_a, info));
+	if (!none)
+	{
+		result = info.balance_with_manna (account_a, now).number ();
 	}
 	return result;
 }

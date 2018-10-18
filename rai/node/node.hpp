@@ -611,6 +611,7 @@ public:
 	rai::uint128_t balance (rai::account const &);
 	std::unique_ptr<rai::block> block (rai::block_hash const &);
 	std::pair<rai::uint128_t, rai::uint128_t> balance_pending (rai::account const &);
+	std::tuple<rai::uint128_t, rai::uint128_t, rai::uint128_t> balance_pending_manna (rai::account const &);
 	rai::uint128_t weight (rai::account const &);
 	rai::account representative (rai::account const &);
 	void ongoing_keepalive ();

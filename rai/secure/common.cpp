@@ -257,6 +257,23 @@ bool rai::account_info::operator!= (rai::account_info const & other_a) const
 	return !(*this == other_a);
 }
 
+rai::amount rai::account_info::balance_with_manna (rai::account const & account_a, rai::timestamp_t now_a) const
+{
+	if (!rai::manna_control::is_manna_account (account_a))
+	{
+		return balance;
+	}
+	rai::uint128_t balance1 = balance.number ();
+	rai::timestamp_t now = now_a;
+	if (now == 0)
+	{
+		now = rai::short_timestamp::now ();
+	}
+	rai::uint128_t manna_diff = rai::manna_control::compute_manna_increment (last_block_time (), now);
+	rai::uint128_t balance2 = balance1 + manna_diff;
+	return balance2;
+}
+
 size_t rai::account_info::db_size () const
 {
 	// make sure class is well packed
@@ -579,7 +596,8 @@ transaction (transaction_a),
 store (store_a),
 current_balance (0),
 current_amount (0),
-balance (0)
+balance (0),
+current_balance_block (nullptr)
 {
 }
 
@@ -627,6 +645,7 @@ void rai::balance_visitor::change_block (rai::change_block const & block_a)
 void rai::balance_visitor::state_block (rai::state_block const & block_a)
 {
 	balance = block_a.hashables.balance.number ();
+	current_balance_block = std::make_shared<rai::state_block> (block_a);
 	current_balance = 0;
 }
 
@@ -637,10 +656,14 @@ void rai::balance_visitor::compute (rai::block_hash const & block_hash)
 	{
 		if (!current_amount.is_zero ())
 		{
-			amount_visitor source (transaction, store);
-			source.compute (current_amount);
-			balance += source.amount;
+			assert (false);
+			balance = 0;
+			current_balance = 0;
 			current_amount = 0;
+			//amount_visitor source (transaction, store);
+			//source.compute (current_amount);
+			//balance += source.amount;
+			//current_amount = 0;
 		}
 		else
 		{
@@ -954,7 +977,7 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 {
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
-	store_a.block_put(transaction_a, hash_l, *genesis_block, rai::block_hash(0));
+	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash(0));
 	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, genesis_block->creation_time ().number (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
@@ -982,22 +1005,44 @@ rai::genesis_legacy_with_open::genesis_legacy_with_open()
 	std::stringstream istream(rai::rai_test_genesis_legacy);
 	boost::property_tree::read_json(istream, tree);
 	auto block(rai::deserialize_block_json(tree));
-	assert(dynamic_cast<rai::open_block *> (block.get()) != nullptr);
-	genesis_block.reset(static_cast<rai::open_block *> (block.release()));
+	assert (dynamic_cast<rai::open_block *> (block.get ()) != nullptr);
+	genesis_block.reset (static_cast<rai::open_block *> (block.release()));
 }
 
 void rai::genesis_legacy_with_open::initialize(MDB_txn * transaction_a, rai::block_store & store_a) const
 {
 	auto hash_l (hash ());
-	assert(store_a.latest_begin(transaction_a) == store_a.latest_end());
-	store_a.block_put(transaction_a, hash_l, *genesis_block);
-	store_a.account_put(transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, genesis_block->creation_time ().number (), 1 });
-	store_a.representation_put(transaction_a, genesis_account, rai::genesis_amount);
-	store_a.checksum_put(transaction_a, 0, 0, hash_l);
-	store_a.frontier_put(transaction_a, hash_l, genesis_account);
+	assert (store_a.latest_begin(transaction_a) == store_a.latest_end());
+	store_a.block_put (transaction_a, hash_l, *genesis_block);
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, genesis_block->creation_time ().number (), 1 });
+	store_a.representation_put (transaction_a, genesis_account, rai::genesis_amount);
+	store_a.checksum_put (transaction_a, 0, 0, hash_l);
+	store_a.frontier_put (transaction_a, hash_l, genesis_account);
 }
 
 rai::block_hash rai::genesis_legacy_with_open::hash() const
 {
 	return genesis_block->hash ();
+}
+
+// TODO: move to higher up, separate settings for test, beta, live.
+uint32_t rai::manna_control::manna_start = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
+uint32_t rai::manna_control::manna_freq = 5;  // sec
+rai::uint128_t rai::manna_control::manna_increment = rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000) * rai::uint128_t (1000000);
+
+rai::uint128_t rai::manna_control::compute_manna_increment (rai::timestamp_t from, rai::timestamp_t to)
+{
+	if (from < manna_start) from = manna_start;  // no change before manna_start
+	uint32_t t1 = (uint32_t) (from / manna_freq);
+	uint32_t t2 = (uint32_t) (to / manna_freq);
+	return (rai::uint128_t) (t2 - t1) * (rai::uint128_t) manna_increment;
+}
+
+bool rai::manna_control::is_manna_account (rai::account const & account_a)
+{
+	if (account_a == rai::genesis_account)
+	{
+		return true;
+	}
+	return false;
 }

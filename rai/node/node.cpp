@@ -2390,6 +2390,16 @@ std::pair<rai::uint128_t, rai::uint128_t> rai::node::balance_pending (rai::accou
 	return result;
 }
 
+std::tuple<rai::uint128_t, rai::uint128_t, rai::uint128_t> rai::node::balance_pending_manna (rai::account const & account_a)
+{
+	rai::transaction transaction (store.environment, nullptr, false);
+	return std::make_tuple (
+		ledger.account_balance (transaction, account_a),
+		ledger.account_pending (transaction, account_a),
+		!rai::manna_control::is_manna_account (account_a) ? 0 : ledger.account_balance_with_manna (transaction, account_a, rai::short_timestamp::now ())
+	);
+}
+
 rai::uint128_t rai::node::weight (rai::account const & account_a)
 {
 	rai::transaction transaction (store.environment, nullptr, false);
