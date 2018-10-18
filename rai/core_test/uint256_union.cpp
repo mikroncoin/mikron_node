@@ -499,11 +499,23 @@ TEST (uint64_t, parse)
 TEST (uint32_union, serialize)
 {
 	rai::uint32_union a1 = rai::uint32_union (267);
+	ASSERT_EQ (267, a1.number ());
 	ASSERT_EQ (0, a1.bytes[0]);
 	ASSERT_EQ (0, a1.bytes[1]);
 	ASSERT_EQ (1, a1.bytes[2]);
 	ASSERT_EQ (11, a1.bytes[3]);
 	ASSERT_EQ ("267", a1.to_string_dec ());
+
+	std::vector<uint8_t> buf;
+	{
+		rai::vectorstream stream (buf);
+		rai::write (stream, a1);
+	}
+	ASSERT_EQ (4, buf.size ());
+	ASSERT_EQ (0, buf[0]);
+	ASSERT_EQ (0, buf[1]);
+	ASSERT_EQ (1, buf[2]);
+	ASSERT_EQ (11, buf[3]);
 }
 
 TEST (uint32_union, deserialize)
@@ -511,7 +523,12 @@ TEST (uint32_union, deserialize)
 	rai::uint32_union a1 = rai::uint32_union ("267");
 	ASSERT_EQ (267, a1.number ());
 
-	std::array<uint8_t, 4> bb = {0, 0, 1, 10};
-	a1.bytes = bb;
-	ASSERT_EQ (266, a1.number());
+	std::array<uint8_t, 4> buf2 = {0, 0, 1, 12};
+	a1.bytes = buf2;
+	ASSERT_EQ (268, a1.number ());
+
+	std::array<uint8_t, 4> buf3 = {0, 0, 1, 13};
+	rai::bufferstream stream (buf3.data (), buf3.size ());
+	rai::read (stream, a1);
+	ASSERT_EQ (269, a1.number ());
 }

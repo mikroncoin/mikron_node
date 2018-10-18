@@ -20,7 +20,7 @@ rai::uint128_t const xrb_ratio = rai::uint128_t ("1000000000000000000000000"); /
 rai::uint128_t const mxrb_ratio = rai::uint128_t ("1000000000000000000000"); // 10^21
 rai::uint128_t const uxrb_ratio = rai::uint128_t ("1000000000000000000"); // 10^18
 
-union uint32_union
+struct uint32_union
 {
 public:
 	uint32_union () = default;
