@@ -968,7 +968,7 @@ std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send
 	{
 		if (node.config.logging.ledger_logging ())
 		{
-			BOOST_LOG (node.log) << boost::str (boost::format ("Receiving send block %1%, rec hash %2%") % hash.to_string () % block->hash ().to_string ());
+			BOOST_LOG (node.log) << boost::str (boost::format ("Processing receive for send hash %1%, new receive hash %2%") % hash.to_string () % block->hash ().to_string ());
 		}
 		if (rai::work_validate (*block))
 		{
