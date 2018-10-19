@@ -1054,7 +1054,8 @@ std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & sourc
 				auto existing (store.find (transaction, source_a));
 				if (existing != store.end ())
 				{
-					auto balance (node.ledger.account_balance (transaction, source_a));
+					rai::timestamp_t now = rai::short_timestamp::now ();
+					auto balance (node.ledger.account_balance_with_manna (transaction, source_a, now));
 					if (!balance.is_zero () && balance >= amount_a)
 					{
 						rai::account_info info;
@@ -1067,7 +1068,7 @@ std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & sourc
 						assert (rep_block != nullptr);
 						uint64_t cached_work (0);
 						store.work_get (transaction, source_a, cached_work);
-						block.reset (new rai::state_block (source_a, info.head, 0, rep_block->representative (), balance - amount_a, account_a, prv, source_a, cached_work));
+						block.reset (new rai::state_block (source_a, info.head, now, rep_block->representative (), balance - amount_a, account_a, prv, source_a, cached_work));
 						if (id_mdb_val && block != nullptr)
 						{
 							auto status (mdb_put (transaction, node.wallets.send_action_ids, *id_mdb_val, rai::mdb_val (block->hash ()), 0));
