@@ -1586,7 +1586,7 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 		{
 			if (node.config.logging.ledger_duplicate_logging ())
 			{
-				BOOST_LOG (node.log) << boost::str (boost::format ("Old for: %1%") % block_a->hash ().to_string ());
+				BOOST_LOG (node.log) << boost::str (boost::format ("Old for (block exists): %1%") % block_a->hash ().to_string ());
 			}
 			queue_unchecked (transaction_a, hash);
 			break;

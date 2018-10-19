@@ -935,7 +935,9 @@ std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send
 					{
 						std::shared_ptr<rai::block> rep_block = node.ledger.store.block_get (transaction, info.rep_block);
 						assert (rep_block != nullptr);
-						block.reset (new rai::state_block (account, info.head, 0, rep_block->representative (), info.balance.number () + pending_info.amount.number (), hash, prv, account, cached_work));
+						auto now (rai::short_timestamp::now ());
+						auto previous_balance_with_manna (info.balance_with_manna (account, now).number ());
+						block.reset (new rai::state_block (account, info.head, now, rep_block->representative (), previous_balance_with_manna + pending_info.amount.number (), hash, prv, account, cached_work));
 					}
 					else
 					{
@@ -964,6 +966,10 @@ std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send
 	}
 	if (block != nullptr)
 	{
+		if (node.config.logging.ledger_logging ())
+		{
+			BOOST_LOG (node.log) << boost::str (boost::format ("Receiving send block %1%, rec hash %2%") % hash.to_string () % block->hash ().to_string ());
+		}
 		if (rai::work_validate (*block))
 		{
 			node.work_generate_blocking (*block);
