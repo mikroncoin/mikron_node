@@ -1585,6 +1585,7 @@ public:
 		}
 		auto cur_balance (block_a.hashables.balance.number ());
 		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
 		switch (subtype)
 		{
@@ -1626,7 +1627,7 @@ public:
 				tree.put ("type", "send");
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
-			tree.put ("amount", (previous_balance - cur_balance).convert_to<std::string> ());
+			tree.put ("amount", amount_manna.convert_to<std::string> ());
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
@@ -1640,7 +1641,7 @@ public:
 				tree.put ("type", "receive");
 			}
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-			tree.put ("amount", (cur_balance - previous_balance).convert_to<std::string> ());
+			tree.put ("amount", amount_manna.convert_to<std::string> ());
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
