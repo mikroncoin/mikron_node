@@ -1585,7 +1585,7 @@ public:
 		}
 		auto cur_balance (block_a.hashables.balance.number ());
 		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
-		rai::state_block_subtype subtype = block_a.get_subtype (previous_balance);
+		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
 		switch (subtype)
 		{
 		case rai::state_block_subtype::open_receive:

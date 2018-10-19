@@ -115,7 +115,7 @@ public:
 			representative = ledger.representative (transaction, block_a.hashables.previous);
 		}
 		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
-		auto subtype (block_a.get_subtype (previous_balance));
+		auto subtype (ledger.state_subtype (transaction, block_a));
 		// Add in amount delta
 		ledger.store.representation_add (transaction, hash, 0 - block_a.hashables.balance.number ());
 		if (!representative.is_zero ())
@@ -240,7 +240,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 				result.code = check_time_sequence (block_a, prev_block, rai::ledger::time_tolearance_short) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
 				if (result.code == rai::process_result::progress)
 				{
-					subtype = block_a.get_subtype (info.balance.number ());
+					subtype = ledger.state_subtype (transaction, block_a);
 					result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
 					if (result.code == rai::process_result::progress)
 					{
@@ -257,7 +257,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 		result.code = block_a.previous ().is_zero () ? rai::process_result::progress : rai::process_result::gap_previous; // Does the first block in an account yield 0 for previous() ? (Unambigious)
 		if (result.code == rai::process_result::progress)
 		{
-			subtype = block_a.get_subtype (0);
+			subtype = block_a.get_subtype (0, 0);
 			result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
 			if (result.code == rai::process_result::progress)
 			{
@@ -281,12 +281,25 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 					result.code = check_time_sequence (block_a, source_block, rai::ledger::time_tolearance_long) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
 					if (result.code == rai::process_result::progress)
 					{
+						// check that received amount matches pending send amount
 						rai::pending_key key (block_a.hashables.account, block_a.hashables.link);
 						rai::pending_info pending;
 						result.code = ledger.store.pending_get (transaction, key, pending) ? rai::process_result::unreceivable : rai::process_result::progress; // Has this source already been received (Malformed)
 						if (result.code == rai::process_result::progress)
 						{
-							result.code = result.amount == pending.amount ? rai::process_result::progress : rai::process_result::balance_mismatch;
+							// TODO  make it based on pending, with timestamp
+							///*
+							auto source_amount (ledger.amount (transaction, source_hash));
+							auto source_prev_block (ledger.store.block_get (transaction, source_block->previous ()));
+							auto pending_amount (pending.amount.number ());
+							//if (rai::manna_control::is_manna_account (block_a.hashables.account))
+							if (rai::manna_control::is_manna_account (ledger.account (transaction, source_hash)))
+							{
+								pending_amount = rai::manna_control::adjust_balance_with_manna (pending_amount, source_prev_block->creation_time ().number (), source_block->creation_time().number());
+							}
+							//*/
+							//auto pending_amount (ledger.amount (transaction, source_hash));
+							result.code = result.amount == pending_amount ? rai::process_result::progress : rai::process_result::balance_mismatch;
 						}
 					}
 				}
@@ -646,13 +659,13 @@ rai::uint128_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::bl
 {
 	balance_visitor visitor (transaction_a, store);
 	visitor.compute (hash_a);
-	if (visitor.current_balance_block == nullptr || !rai::manna_control::is_manna_account (visitor.current_balance_block->hashables.account))
+	assert (visitor.balance_block != nullptr);
+	if (visitor.balance_block == nullptr || !rai::manna_control::is_manna_account (visitor.balance_block->hashables.account))
 	{
 		return visitor.balance;
 	}
 	// manna adjustment
-	rai::uint128_t manna_diff = rai::manna_control::compute_manna_increment (visitor.current_balance_block->creation_time ().number (), now);
-	return visitor.balance + manna_diff;
+	return rai::manna_control::adjust_balance_with_manna (visitor.balance, visitor.balance_block->creation_time ().number (), now);
 }
 
 // Balance for an account by account number
@@ -670,7 +683,7 @@ rai::uint128_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::accou
 
 rai::uint128_t rai::ledger::account_balance_with_manna (MDB_txn * transaction_a, rai::account const & account_a, rai::timestamp_t now)
 {
-	rai::uint128_t result(0);
+	rai::uint128_t result (0);
 	rai::account_info info;
 	auto none (store.account_get (transaction_a, account_a, info));
 	if (!none)
@@ -739,9 +752,16 @@ std::string rai::ledger::block_text (rai::block_hash const & hash_a)
 
 rai::state_block_subtype rai::ledger::state_subtype (MDB_txn * transaction_a, rai::state_block const & block_a)
 {
-	rai::block_hash previous (block_a.hashables.previous);
-	auto previous_balance = balance (transaction_a, previous);
-	return block_a.get_subtype (previous_balance);
+	rai::block_hash previous_hash (block_a.hashables.previous);
+	if (previous_hash.is_zero ())
+	{
+		return block_a.get_subtype (0, 0);  // no previous block -- in this case time does not matter
+	}
+	auto previous_block (store.block_get (transaction_a, previous_hash));
+	assert (previous_block != nullptr);
+	if (previous_block == nullptr) return rai::state_block_subtype::undefined;
+	auto previous_balance = balance (transaction_a, previous_hash);  // could be retrieved directly from the block
+	return block_a.get_subtype (previous_balance, previous_block->creation_time ().number ());
 }
 
 rai::block_hash rai::ledger::block_destination (MDB_txn * transaction_a, rai::block const & block_a)

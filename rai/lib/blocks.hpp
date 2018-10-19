@@ -332,7 +332,8 @@ public:
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
 	bool valid_predecessor (rai::block const &) const override;
-	rai::state_block_subtype get_subtype (rai::uint128_t) const;
+	// Determining whether it is a send or receive block requires the previous balance too.  A more convenient version is through ledger, use that if possible.
+	rai::state_block_subtype get_subtype (rai::uint128_t, rai::timestamp_t) const;
 	bool is_valid_open_subtype () const;
 	bool is_valid_send_or_receive_subtype () const;
 	bool is_valid_change_subtype () const;

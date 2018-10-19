@@ -553,7 +553,7 @@ public:
 		{
 			previous_balance = ledger.balance_with_manna (transaction, block_a.hashables.previous, block_time);
 		}
-		rai::state_block_subtype subtype (block_a.get_subtype (previous_balance));
+		rai::state_block_subtype subtype (ledger.state_subtype (transaction, block_a));
 		switch (subtype)
 		{
 			case rai::state_block_subtype::send:

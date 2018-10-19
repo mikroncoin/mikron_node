@@ -49,7 +49,7 @@ public:
 	rai::block_hash current_balance;
 	rai::block_hash current_amount;
 	rai::uint128_t balance;
-	std::shared_ptr<rai::state_block> current_balance_block;
+	std::shared_ptr<rai::state_block> balance_block;
 };
 
 /**
@@ -277,11 +277,13 @@ extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
 extern std::string const & rai_test_genesis_legacy;
+extern rai::keypair const & test_manna_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::uint128_t const & genesis_amount;
 extern rai::timestamp_t const genesis_time;
+extern rai::account const & manna_account;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
@@ -314,8 +316,9 @@ public:
 	static uint32_t manna_freq;
 	static rai::uint128_t manna_increment;
 
-	static rai::uint128_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
 	static bool is_manna_account (rai::account const &);
+	static rai::uint128_t adjust_balance_with_manna (rai::uint128_t, rai::timestamp_t, rai::timestamp_t);
+	static rai::uint128_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
 };
 
 }
