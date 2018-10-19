@@ -22,18 +22,18 @@ const char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A
 const rai::uint128_t test_genesis_amount = std::numeric_limits<rai::uint128_t>::max ();
 const rai::uint128_t beta_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 const rai::uint128_t live_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
-const uint32_t test_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
-const uint32_t beta_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
-const uint32_t live_genesis_time = 3974400;  // 2018.10.17.  1539734400 - short_timestamp_epoch = 1539734400 - 1535760000 = 3974400
+const uint32_t test_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
+const uint32_t beta_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
+const uint32_t live_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const char const * test_manna_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
 const char const * test_manna_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
 const char const * beta_manna_public_key_data = beta_genesis_public_key_data;
 const char const * live_manna_public_key_data = live_genesis_public_key_data;
 const uint32_t test_manna_freq = 4;
-const uint32_t beta_manna_freq = 5;
+const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400;  // 1 day
 const rai::uint128_t test_manna_increment = 1000;
-const rai::uint128_t beta_manna_increment = (rai::uint128_t)1000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
+const rai::uint128_t beta_manna_increment = (rai::uint128_t)57 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 const rai::uint128_t live_manna_increment = (rai::uint128_t)82000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;  // Non-final
 
 char const * test_genesis_data = R"%%%({
@@ -1018,7 +1018,7 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 {
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
-	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash(0));
+	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash (0));
 	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, genesis_block->creation_time ().number (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
@@ -1055,13 +1055,13 @@ void rai::genesis_legacy_with_open::initialize(MDB_txn * transaction_a, rai::blo
 	auto hash_l (hash ());
 	assert (store_a.latest_begin(transaction_a) == store_a.latest_end());
 	store_a.block_put (transaction_a, hash_l, *genesis_block);
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash(), genesis_block->hash(), rai::genesis_amount, genesis_block->creation_time ().number (), 1 });
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), rai::genesis_amount, genesis_block->creation_time ().number (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, rai::genesis_amount);
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
 }
 
-rai::block_hash rai::genesis_legacy_with_open::hash() const
+rai::block_hash rai::genesis_legacy_with_open::hash () const
 {
 	return genesis_block->hash ();
 }
