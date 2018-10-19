@@ -211,6 +211,7 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 void ledger_processor::state_block_impl (rai::state_block const & block_a)
 {
 	auto hash (block_a.hash ());
+	auto now (block_a.creation_time ().number ());
 	auto existing (ledger.store.block_exists (transaction, hash));
 	result.code = existing ? rai::process_result::old : rai::process_result::progress; // Have we seen this block before? (Unambiguous)
 	if (result.code != rai::process_result::progress) return;
@@ -244,8 +245,9 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 					result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
 					if (result.code == rai::process_result::progress)
 					{
-						result.amount = (rai::state_block_subtype::send == subtype) ? (info.balance.number () - result.amount.number ()) : (result.amount.number () - info.balance.number ());
-						result.code = block_a.hashables.previous == info.head ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
+						auto prev_balance_with_manna (info.balance_with_manna (block_a.hashables.account, now).number ());
+						result.amount = (rai::state_block_subtype::send == subtype) ? (prev_balance_with_manna - result.amount.number ()) : (result.amount.number () - prev_balance_with_manna);
+						result.code = (block_a.hashables.previous == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
 					}
 				}
 			}
@@ -287,19 +289,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 						result.code = ledger.store.pending_get (transaction, key, pending) ? rai::process_result::unreceivable : rai::process_result::progress; // Has this source already been received (Malformed)
 						if (result.code == rai::process_result::progress)
 						{
-							// TODO  make it based on pending, with timestamp
-							///*
-							auto source_amount (ledger.amount (transaction, source_hash));
-							auto source_prev_block (ledger.store.block_get (transaction, source_block->previous ()));
-							auto pending_amount (pending.amount.number ());
-							//if (rai::manna_control::is_manna_account (block_a.hashables.account))
-							if (rai::manna_control::is_manna_account (ledger.account (transaction, source_hash)))
-							{
-								pending_amount = rai::manna_control::adjust_balance_with_manna (pending_amount, source_prev_block->creation_time ().number (), source_block->creation_time().number());
-							}
-							//*/
-							//auto pending_amount (ledger.amount (transaction, source_hash));
-							result.code = result.amount == pending_amount ? rai::process_result::progress : rai::process_result::balance_mismatch;
+							result.code = (result.amount == pending.amount) ? rai::process_result::progress : rai::process_result::balance_mismatch;
 						}
 					}
 				}

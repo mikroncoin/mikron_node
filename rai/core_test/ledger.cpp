@@ -2296,6 +2296,7 @@ TEST (ledger_manna, send)
 	rai::timestamp_t time1 = rai::genesis_time + 12345;
 	rai::state_block send0 (rai::genesis_account, genesis.hash (), time1, rai::genesis_account, rai::genesis_amount - 100000000, rai::manna_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send0).code);
+	ASSERT_EQ (rai::genesis_amount - 100000000, ledger.account_balance_with_manna (transaction, rai::genesis_account, time1));
 	// initial receive on manna account
 	rai::timestamp_t time2 = time1 + 30;
 	rai::state_block receive0 (rai::manna_account, 0, time2, rai::manna_account, 100000000, send0.hash (), rai::test_manna_key.prv, rai::test_manna_key.pub, 0);
@@ -2306,12 +2307,17 @@ TEST (ledger_manna, send)
 	// send from manna account
 	rai::keypair key3;
 	rai::timestamp_t time3 = time2 + 600;
+	ASSERT_FALSE (rai::manna_control::is_manna_account (rai::genesis_account));
+	ASSERT_TRUE (rai::manna_control::is_manna_account (rai::manna_account));
+	ASSERT_FALSE (rai::manna_control::is_manna_account (key3.pub));
+	ASSERT_GT (reference_manna_increment (time2, time3), 0);
 	rai::state_block send (rai::manna_account, receive0.hash (), time3, rai::manna_account, 100000000 + reference_manna_increment (time2, time3) - 100, key3.pub, rai::test_manna_key.prv, rai::test_manna_key.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::send, ledger.state_subtype (transaction, send));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 	ASSERT_EQ (100, ledger.amount (transaction, send.hash ()));
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time3) - 100, ledger.account_balance (transaction, rai::manna_account));
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time3) - 100, ledger.account_balance_with_manna (transaction, rai::manna_account, time3));
+	ASSERT_EQ (100, ledger.account_pending (transaction, key3.pub));
 	// receive from manna account
 	rai::timestamp_t time4 = time3 + 30;
 	rai::state_block receive (key3.pub, 0, time4, key3.pub, 100, send.hash (), key3.prv, key3.pub, 0);
@@ -2319,6 +2325,33 @@ TEST (ledger_manna, send)
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
 	ASSERT_EQ (100, ledger.amount (transaction, receive.hash ()));
 	ASSERT_EQ (100, ledger.account_balance_with_manna (transaction, key3.pub, time3));
+	ASSERT_EQ (0, ledger.account_pending (transaction, key3.pub));
 
-	// check at later time
+	// receive to manna account
+	rai::timestamp_t time7 = time4 + 1200;
+	rai::state_block send2 (key3.pub, receive.hash(), time7, key3.pub, 100 - 10, rai::manna_account, key3.prv, key3.pub, 0);
+	ASSERT_EQ (rai::state_block_subtype::send, ledger.state_subtype (transaction, send2));
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send2).code);
+	ASSERT_EQ (10, ledger.amount (transaction, send2.hash ()));
+	ASSERT_EQ (100 - 10, ledger.account_balance_with_manna (transaction, key3.pub, time7));
+	ASSERT_EQ (10, ledger.account_pending (transaction, rai::manna_account));
+	rai::timestamp_t time8 = time7 + 30;
+	rai::state_block receive2 (rai::manna_account, send.hash (), time8, rai::manna_account, 100000000 + reference_manna_increment (time2, time8) - 100 + 10, send2.hash (), rai::test_manna_key.prv, rai::test_manna_key.pub, 0);
+	ASSERT_EQ (rai::state_block_subtype::receive, ledger.state_subtype (transaction, receive2));
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive2).code);
+	ASSERT_EQ (10, ledger.amount (transaction, receive2.hash ()));
+	ASSERT_EQ (100000000 + reference_manna_increment (time2, time8) - 100 + 10, ledger.account_balance_with_manna (transaction, rai::manna_account, time8));
+	ASSERT_EQ (0, ledger.account_pending (transaction, rai::manna_account));
+
+	// check balances at later time
+	rai::timestamp_t time10 = time1 + 2000000;
+	ASSERT_EQ (rai::genesis_amount - 100000000, ledger.account_balance_with_manna (transaction, rai::genesis_account, time10));
+	ASSERT_EQ (100000000 + reference_manna_increment (time2, time10) - 100 + 10, ledger.account_balance_with_manna (transaction, rai::manna_account, time10));  // increases
+	ASSERT_EQ (100 - 10, ledger.account_balance_with_manna (transaction, key3.pub, time10));
+
+	// check balances at end-of-the-world (sometime in year 2150)
+	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
+	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
+	auto bal_at_eotw (100000000 + reference_manna_increment (time2, time_eotw) - 100 + 10);
+	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account, time_eotw));  // increases
 }
