@@ -1208,7 +1208,7 @@ void rai::state_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
-rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_balance_a) const
+rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_balance_a, rai::timestamp_t previous_block_time) const
 {
 	// if there is no previous: open
 	if (!has_previous ())
@@ -1227,6 +1227,11 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_
 	// has previous, has previous balance
 	// check balances: if decreasing: send
 	auto cur_balance (hashables.balance.number ());
+	if (rai::manna_control::is_manna_account (hashables.account))
+	{
+		// manna adjustment.  Note that here we want to reverse-adjust, that's why the times are in reverse order
+		cur_balance = rai::manna_control::adjust_balance_with_manna (cur_balance, creation_time ().number (), previous_block_time);
+	}
 	if (cur_balance < previous_balance_a)
 	{
 		return rai::state_block_subtype::send;

@@ -1586,7 +1586,7 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 		{
 			if (node.config.logging.ledger_duplicate_logging ())
 			{
-				BOOST_LOG (node.log) << boost::str (boost::format ("Old for: %1%") % block_a->hash ().to_string ());
+				BOOST_LOG (node.log) << boost::str (boost::format ("Old for (block exists): %1%") % block_a->hash ().to_string ());
 			}
 			queue_unchecked (transaction_a, hash);
 			break;
@@ -2388,6 +2388,16 @@ std::pair<rai::uint128_t, rai::uint128_t> rai::node::balance_pending (rai::accou
 	result.first = ledger.account_balance (transaction, account_a);
 	result.second = ledger.account_pending (transaction, account_a);
 	return result;
+}
+
+std::tuple<rai::uint128_t, rai::uint128_t, rai::uint128_t> rai::node::balance_pending_manna (rai::account const & account_a)
+{
+	rai::transaction transaction (store.environment, nullptr, false);
+	return std::make_tuple (
+		ledger.account_balance (transaction, account_a),
+		ledger.account_pending (transaction, account_a),
+		!rai::manna_control::is_manna_account (account_a) ? 0 : ledger.account_balance_with_manna (transaction, account_a, rai::short_timestamp::now ())
+	);
 }
 
 rai::uint128_t rai::node::weight (rai::account const & account_a)

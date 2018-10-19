@@ -108,13 +108,17 @@ wallet (wallet_a)
 
 void rai_qt::self_pane::refresh_balance ()
 {
-	auto balance (wallet.node.balance_pending (wallet.account));
-	auto final_text (std::string ("Balance: ") + wallet.format_balance (balance.first));
-	if (!balance.second.is_zero ())
+	auto balance (wallet.node.balance_pending_manna(wallet.account));
+	auto text (std::string ("Balance: ") + wallet.format_balance (std::get<0> (balance)));
+	if (!std::get<2> (balance).is_zero ())
 	{
-		final_text += "\nPending: " + wallet.format_balance (balance.second);
+		text += "  (with manna: " + wallet.format_balance (std::get<2> (balance)) + ")";
 	}
-	wallet.self.balance_label->setText (QString (final_text.c_str ()));
+	if (!std::get<1> (balance).is_zero ())
+	{
+		text += "\nPending: " + wallet.format_balance (std::get<1> (balance));
+	}
+	wallet.self.balance_label->setText (QString (text.c_str ()));
 }
 
 rai_qt::accounts::accounts (rai_qt::wallet & wallet_a) :
@@ -542,13 +546,14 @@ public:
 	void state_block (rai::state_block const & block_a)
 	{
 		block_time = block_a.creation_time ().number ();
+		rai::timestamp_t block_time = block_a.creation_time ().number ();
 		balance = block_a.hashables.balance.number ();
 		rai::uint128_t previous_balance (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
-			previous_balance = (ledger.balance (transaction, block_a.hashables.previous));
+			previous_balance = ledger.balance_with_manna (transaction, block_a.hashables.previous, block_time);
 		}
-		rai::state_block_subtype subtype (block_a.get_subtype (previous_balance));
+		rai::state_block_subtype subtype (ledger.state_subtype (transaction, block_a));
 		switch (subtype)
 		{
 			case rai::state_block_subtype::send:

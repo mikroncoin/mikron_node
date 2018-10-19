@@ -935,7 +935,9 @@ std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send
 					{
 						std::shared_ptr<rai::block> rep_block = node.ledger.store.block_get (transaction, info.rep_block);
 						assert (rep_block != nullptr);
-						block.reset (new rai::state_block (account, info.head, 0, rep_block->representative (), info.balance.number () + pending_info.amount.number (), hash, prv, account, cached_work));
+						auto now (rai::short_timestamp::now ());
+						auto previous_balance_with_manna (info.balance_with_manna (account, now).number ());
+						block.reset (new rai::state_block (account, info.head, now, rep_block->representative (), previous_balance_with_manna + pending_info.amount.number (), hash, prv, account, cached_work));
 					}
 					else
 					{
@@ -964,6 +966,10 @@ std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send
 	}
 	if (block != nullptr)
 	{
+		if (node.config.logging.ledger_logging ())
+		{
+			BOOST_LOG (node.log) << boost::str (boost::format ("Receiving send block %1%, rec hash %2%") % hash.to_string () % block->hash ().to_string ());
+		}
 		if (rai::work_validate (*block))
 		{
 			node.work_generate_blocking (*block);
@@ -1054,7 +1060,8 @@ std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & sourc
 				auto existing (store.find (transaction, source_a));
 				if (existing != store.end ())
 				{
-					auto balance (node.ledger.account_balance (transaction, source_a));
+					rai::timestamp_t now = rai::short_timestamp::now ();
+					auto balance (node.ledger.account_balance_with_manna (transaction, source_a, now));
 					if (!balance.is_zero () && balance >= amount_a)
 					{
 						rai::account_info info;
@@ -1067,7 +1074,7 @@ std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & sourc
 						assert (rep_block != nullptr);
 						uint64_t cached_work (0);
 						store.work_get (transaction, source_a, cached_work);
-						block.reset (new rai::state_block (source_a, info.head, 0, rep_block->representative (), balance - amount_a, account_a, prv, source_a, cached_work));
+						block.reset (new rai::state_block (source_a, info.head, now, rep_block->representative (), balance - amount_a, account_a, prv, source_a, cached_work));
 						if (id_mdb_val && block != nullptr)
 						{
 							auto status (mdb_put (transaction, node.wallets.send_action_ids, *id_mdb_val, rai::mdb_val (block->hash ()), 0));

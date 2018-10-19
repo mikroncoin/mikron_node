@@ -25,8 +25,8 @@ struct hash<rai::uint256_union>
 }
 namespace rai
 {
-const uint8_t protocol_version = 2;
-const uint8_t protocol_version_min = 2;
+const uint8_t protocol_version = 3;
+const uint8_t protocol_version_min = 3;
 const uint8_t protocol_version_legacy_min = 1;  // Not used as of version 1
 
 class block_store;
@@ -49,6 +49,7 @@ public:
 	rai::block_hash current_balance;
 	rai::block_hash current_amount;
 	rai::uint128_t balance;
+	std::shared_ptr<rai::state_block> balance_block;
 };
 
 /**
@@ -123,6 +124,7 @@ public:
 	//bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
+	rai::amount balance_with_manna (rai::account const &, rai::timestamp_t) const;
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
 	size_t db_size () const;
@@ -275,10 +277,13 @@ extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
 extern std::string const & rai_test_genesis_legacy;
+extern rai::keypair const & test_manna_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::uint128_t const & genesis_amount;
+extern rai::timestamp_t const genesis_time;
+extern rai::account const & manna_account;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
@@ -303,4 +308,17 @@ public:
 	rai::block_hash hash() const;
 	std::unique_ptr<rai::open_block> genesis_block;
 }; 
+
+class manna_control
+{
+public:
+	static uint32_t manna_start;
+	static uint32_t manna_freq;
+	static rai::uint128_t manna_increment;
+
+	static bool is_manna_account (rai::account const &);
+	static rai::uint128_t adjust_balance_with_manna (rai::uint128_t, rai::timestamp_t, rai::timestamp_t);
+	static rai::uint128_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
+};
+
 }
