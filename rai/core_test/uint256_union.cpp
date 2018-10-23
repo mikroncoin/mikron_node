@@ -5,41 +5,41 @@
 
 #include <ed25519-donna/ed25519.h>
 
-TEST (uint128_union, decode_dec)
+TEST (amount, decode_dec)
 {
-	rai::uint128_union value;
+	rai::amount value;
 	std::string text ("16");
 	ASSERT_FALSE (value.decode_dec (text));
 	ASSERT_EQ (16, value.bytes[15]);
 }
 
-TEST (uint128_union, decode_dec_negative)
+TEST (amount, decode_dec_negative)
 {
-	rai::uint128_union value;
+	rai::amount value;
 	std::string text ("-1");
 	auto error (value.decode_dec (text));
 	ASSERT_TRUE (error);
 }
 
-TEST (uint128_union, decode_dec_zero)
+TEST (amount, decode_dec_zero)
 {
-	rai::uint128_union value;
+	rai::amount value;
 	std::string text ("0");
 	ASSERT_FALSE (value.decode_dec (text));
 	ASSERT_TRUE (value.is_zero ());
 }
 
-TEST (uint128_union, decode_dec_leading_zero)
+TEST (amount, decode_dec_leading_zero)
 {
-	rai::uint128_union value;
+	rai::amount value;
 	std::string text ("010");
 	auto error (value.decode_dec (text));
 	ASSERT_TRUE (error);
 }
 
-TEST (uint128_union, decode_dec_overflow)
+TEST (amount, decode_dec_overflow)
 {
-	rai::uint128_union value;
+	rai::amount value;
 	std::string text ("340282366920938463463374607431768211456");
 	auto error (value.decode_dec (text));
 	ASSERT_TRUE (error);
@@ -69,24 +69,24 @@ struct test_punct : std::moneypunct<char>
 	}
 };
 
-TEST (uint128_union, balance_format)
+TEST (amount, balance_format)
 {
-	ASSERT_EQ ("0", rai::amount (rai::uint128_t ("0")).format_balance (rai::Mxrb_ratio, 0, false));
-	ASSERT_EQ ("0", rai::amount (rai::uint128_t ("0")).format_balance (rai::Mxrb_ratio, 2, true));
-	ASSERT_EQ ("340,282,366", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (rai::Mxrb_ratio, 0, true));
-	ASSERT_EQ ("340,282,366.920938463463374607431768211455", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (rai::Mxrb_ratio, 64, true));
-	ASSERT_EQ ("340,282,366,920,938,463,463,374,607,431,768,211,455", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (1, 4, true));
-	ASSERT_EQ ("340,282,366", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 0, true));
-	ASSERT_EQ ("340,282,366.920938463463374607431768211454", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 64, true));
-	ASSERT_EQ ("340282366920938463463374607431768211454", rai::amount (rai::uint128_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (1, 4, false));
-	ASSERT_EQ ("170,141,183", rai::amount (rai::uint128_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 0, true));
-	ASSERT_EQ ("170,141,183.460469231731687303715884105726", rai::amount (rai::uint128_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 64, true));
-	ASSERT_EQ ("170141183460469231731687303715884105726", rai::amount (rai::uint128_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (1, 4, false));
-	ASSERT_EQ ("1", rai::amount (rai::uint128_t ("1000000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
-	ASSERT_EQ ("1.2", rai::amount (rai::uint128_t ("1200000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
-	ASSERT_EQ ("1.23", rai::amount (rai::uint128_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
-	ASSERT_EQ ("1.2", rai::amount (rai::uint128_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 1, true));
-	ASSERT_EQ ("1", rai::amount (rai::uint128_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 0, true));
+	ASSERT_EQ ("0", rai::amount (rai::amount_t ("0")).format_balance (rai::Mxrb_ratio, 0, false));
+	ASSERT_EQ ("0", rai::amount (rai::amount_t ("0")).format_balance (rai::Mxrb_ratio, 2, true));
+	ASSERT_EQ ("340,282,366", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (rai::Mxrb_ratio, 0, true));
+	ASSERT_EQ ("340,282,366.920938463463374607431768211455", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (rai::Mxrb_ratio, 64, true));
+	ASSERT_EQ ("340,282,366,920,938,463,463,374,607,431,768,211,455", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).format_balance (1, 4, true));
+	ASSERT_EQ ("340,282,366", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 0, true));
+	ASSERT_EQ ("340,282,366.920938463463374607431768211454", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 64, true));
+	ASSERT_EQ ("340282366920938463463374607431768211454", rai::amount (rai::amount_t ("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (1, 4, false));
+	ASSERT_EQ ("170,141,183", rai::amount (rai::amount_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 0, true));
+	ASSERT_EQ ("170,141,183.460469231731687303715884105726", rai::amount (rai::amount_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (rai::Mxrb_ratio, 64, true));
+	ASSERT_EQ ("170141183460469231731687303715884105726", rai::amount (rai::amount_t ("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE")).format_balance (1, 4, false));
+	ASSERT_EQ ("1", rai::amount (rai::amount_t ("1000000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
+	ASSERT_EQ ("1.2", rai::amount (rai::amount_t ("1200000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
+	ASSERT_EQ ("1.23", rai::amount (rai::amount_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 2, true));
+	ASSERT_EQ ("1.2", rai::amount (rai::amount_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 1, true));
+	ASSERT_EQ ("1", rai::amount (rai::amount_t ("1230000000000000000000000000000")).format_balance (rai::Mxrb_ratio, 0, true));
 	ASSERT_EQ ("< 0.01", rai::amount (rai::xrb_ratio * 10).format_balance (rai::Mxrb_ratio, 2, true));
 	ASSERT_EQ ("< 0.1", rai::amount (rai::xrb_ratio * 10).format_balance (rai::Mxrb_ratio, 1, true));
 	ASSERT_EQ ("< 1", rai::amount (rai::xrb_ratio * 10).format_balance (rai::Mxrb_ratio, 0, true));
