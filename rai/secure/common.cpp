@@ -33,7 +33,7 @@ const uint32_t test_manna_freq = 4;
 const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400;  // 1 day
 const rai::uint128_t test_manna_increment = 1000;
-const rai::uint128_t beta_manna_increment = (rai::uint128_t)57 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
+const rai::uint128_t beta_manna_increment = (rai::uint128_t)50 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
 const rai::uint128_t live_manna_increment = (rai::uint128_t)82000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;  // Non-final
 
 char const * test_genesis_data = R"%%%({
