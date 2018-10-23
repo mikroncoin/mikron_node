@@ -145,7 +145,7 @@ void rai::rpc::start ()
 	}
 
 	acceptor.listen ();
-	node.observers.blocks.add ([this](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::uint128_t const &, bool) {
+	node.observers.blocks.add ([this](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::amount_t const &, bool) {
 		observer_action (account_a);
 	});
 
@@ -1911,7 +1911,7 @@ void rai::rpc_handler::ledger ()
 	response_errors ();
 }
 
-void rai::rpc_handler::mrai_from_raw (rai::uint128_t ratio)
+void rai::rpc_handler::mrai_from_raw (rai::amount_t ratio)
 {
 	auto amount (amount_impl ());
 	if (!ec)
@@ -1922,7 +1922,7 @@ void rai::rpc_handler::mrai_from_raw (rai::uint128_t ratio)
 	response_errors ();
 }
 
-void rai::rpc_handler::mrai_to_raw (rai::uint128_t ratio)
+void rai::rpc_handler::mrai_to_raw (rai::amount_t ratio)
 {
 	auto amount (amount_impl ());
 	if (!ec)
@@ -2630,7 +2630,7 @@ void rai::rpc_handler::send ()
 				if (!destination.decode_account (destination_text))
 				{
 					auto work (work_optional_impl ());
-					rai::uint128_t balance (0);
+					rai::amount_t balance (0);
 					if (!ec)
 					{
 						rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
@@ -2915,8 +2915,8 @@ void rai::rpc_handler::wallet_info ()
 	auto wallet (wallet_impl ());
 	if (!ec)
 	{
-		rai::uint128_t balance (0);
-		rai::uint128_t pending (0);
+		rai::amount_t balance (0);
+		rai::amount_t pending (0);
 		uint64_t count (0);
 		uint64_t deterministic_count (0);
 		uint64_t adhoc_count (0);
@@ -2959,11 +2959,11 @@ void rai::rpc_handler::wallet_balances ()
 		for (auto i (wallet->store.begin (transaction)), n (wallet->store.end ()); i != n; ++i)
 		{
 			rai::account account (i->first.uint256 ());
-			rai::uint128_t balance = node.ledger.account_balance (transaction, account);
+			rai::amount_t balance = node.ledger.account_balance (transaction, account);
 			if (balance >= threshold.number ())
 			{
 				boost::property_tree::ptree entry;
-				rai::uint128_t pending = node.ledger.account_pending (transaction, account);
+				rai::amount_t pending = node.ledger.account_pending (transaction, account);
 				entry.put ("balance", balance.convert_to<std::string> ());
 				entry.put ("pending", pending.convert_to<std::string> ());
 				balances.push_back (std::make_pair (account.to_account (), entry));

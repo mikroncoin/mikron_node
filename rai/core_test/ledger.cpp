@@ -597,8 +597,8 @@ TEST (system, generate_send_existing)
 	rai::thread_runner runner (system.service, system.nodes[0]->config.io_threads);
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	rai::keypair stake_preserver;
-	rai::uint128_t balance = rai::genesis_amount;
-	rai::uint128_t amount = balance / 3 * 2;
+	rai::amount_t balance = rai::genesis_amount;
+	rai::amount_t amount = balance / 3 * 2;
 	balance = balance - amount;
 	auto send_block (system.wallet (0)->send_action (rai::genesis_account, stake_preserver.pub, amount, true));
 	rai::account_info info1;
@@ -653,8 +653,8 @@ TEST (system, generate_send_new)
 		ASSERT_EQ (system.nodes[0]->store.latest_end (), iterator1);
 	}
 	rai::keypair stake_preserver;
-	rai::uint128_t balance = rai::genesis_amount;
-	rai::uint128_t amount = balance / 3 * 2;
+	rai::amount_t balance = rai::genesis_amount;
+	rai::amount_t amount = balance / 3 * 2;
 	balance = balance - amount;
 	auto send_block (system.wallet (0)->send_action (rai::genesis_account, stake_preserver.pub, amount, true));
 	{
@@ -1619,7 +1619,7 @@ TEST (ledger, bootstrap_rep_weight)
 		genesis.initialize (transaction, store);
 		ASSERT_FALSE (store.account_get (transaction, rai::test_genesis_key.pub, info1));
 		ASSERT_EQ (genesis.hash (), info1.head);
-		rai::state_block send (::ledger_create_send_state_block_helper (genesis.block (), key2.pub, std::numeric_limits<rai::uint128_t>::max () - 50, rai::test_genesis_key));
+		rai::state_block send (::ledger_create_send_state_block_helper (genesis.block (), key2.pub, std::numeric_limits<rai::amount_t>::max () - 50, rai::test_genesis_key));
 		send1_hash = send.hash ();
 		ledger.process (transaction, send);
 		ASSERT_FALSE (store.account_get (transaction, rai::test_genesis_key.pub, info1));
@@ -1633,7 +1633,7 @@ TEST (ledger, bootstrap_rep_weight)
 	}
 	{
 		rai::transaction transaction (store.environment, nullptr, true);
-		rai::state_block send (rai::genesis_account, send1_hash, 0, rai::genesis_account, std::numeric_limits<rai::uint128_t>::max() - 100, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::genesis_account, send1_hash, 0, rai::genesis_account, std::numeric_limits<rai::amount_t>::max() - 100, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ledger.process (transaction, send);
 	}
 	{
@@ -1653,7 +1653,7 @@ TEST (ledger, block_destination_source)
 	rai::transaction transaction (store.environment, nullptr, true);
 	genesis.initialize (transaction, store);
 	rai::keypair dest;
-	rai::uint128_t balance (rai::genesis_amount);
+	rai::amount_t balance (rai::genesis_amount);
 	balance -= rai::Gxrb_ratio;
 	rai::state_block block1 (::ledger_create_send_state_block_helper (genesis.block (), dest.pub, balance, rai::test_genesis_key));
 	balance -= rai::Gxrb_ratio;
@@ -2238,11 +2238,11 @@ TEST (ledger, epoch_blocks_receive_upgrade)
 TEST (ledger, epoch_blocks_fork)
 */
 
-rai::uint128_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
+rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
 {
 	uint32_t t1 = (uint32_t)(time1 / rai::manna_control::manna_freq);
 	uint32_t t2 = (uint32_t)(time2 / rai::manna_control::manna_freq);
-	return (rai::uint128_t) (t2 - t1) * (rai::uint128_t)rai::manna_control::manna_increment;
+	return (rai::amount_t) (t2 - t1) * (rai::amount_t)rai::manna_control::manna_increment;
 }
 
 TEST (ledger_manna, balance_later)

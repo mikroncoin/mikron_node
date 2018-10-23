@@ -19,9 +19,9 @@ const char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CE
 const char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 const char const * beta_genesis_public_key_data = "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"; // mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
 const char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
-const rai::uint128_t test_genesis_amount = std::numeric_limits<rai::uint128_t>::max ();
-const rai::uint128_t beta_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
-const rai::uint128_t live_genesis_amount = (rai::uint128_t)300000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
+const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max ();
+const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
+const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
 const uint32_t test_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t beta_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t live_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
@@ -32,9 +32,9 @@ const char const * live_manna_public_key_data = live_genesis_public_key_data;
 const uint32_t test_manna_freq = 4;
 const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400;  // 1 day
-const rai::uint128_t test_manna_increment = 1000;
-const rai::uint128_t beta_manna_increment = (rai::uint128_t)50 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;
-const rai::uint128_t live_manna_increment = (rai::uint128_t)82000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000 * (rai::uint128_t)10000000000;  // Non-final
+const rai::amount_t test_manna_increment = 1000;
+const rai::amount_t beta_manna_increment = (rai::amount_t)50 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
+const rai::amount_t live_manna_increment = (rai::amount_t)82000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;  // Non-final
 
 char const * test_genesis_data = R"%%%({
 	"type": "state",
@@ -131,13 +131,13 @@ public:
 	std::string rai_beta_genesis;
 	std::string rai_live_genesis;
 	std::string rai_test_genesis_legacy;
-	rai::uint128_t rai_test_genesis_amount;
-	rai::uint128_t rai_beta_genesis_amount;
-	rai::uint128_t rai_live_genesis_amount;
+	rai::amount_t rai_test_genesis_amount;
+	rai::amount_t rai_beta_genesis_amount;
+	rai::amount_t rai_live_genesis_amount;
 	rai::keypair test_manna_key;
 	rai::account genesis_account;
 	std::string genesis_block;
-	rai::uint128_t genesis_amount;
+	rai::amount_t genesis_amount;
 	static const rai::timestamp_t genesis_time =
 		rai::rai_network == rai::rai_networks::rai_test_network ? test_genesis_time :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_genesis_time :
@@ -169,7 +169,7 @@ rai::keypair const & rai::test_manna_key (globals.test_manna_key);
 
 rai::account const & rai::genesis_account (globals.genesis_account);
 std::string const & rai::genesis_block (globals.genesis_block);
-rai::uint128_t const & rai::genesis_amount (globals.genesis_amount);
+rai::amount_t const & rai::genesis_amount (globals.genesis_amount);
 rai::timestamp_t const rai::genesis_time (globals.genesis_time);
 rai::account const & rai::manna_account (globals.manna_account);
 rai::block_hash const & rai::not_a_block (globals.not_a_block);
@@ -291,13 +291,13 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 	{
 		return balance;
 	}
-	rai::uint128_t balance1 = balance.number ();
+	rai::amount_t balance1 = balance.number ();
 	rai::timestamp_t now = now_a;
 	if (now == 0)
 	{
 		now = rai::short_timestamp::now ();
 	}
-	rai::uint128_t balance2 = rai::manna_control::adjust_balance_with_manna (balance1, last_block_time (), now);
+	rai::amount_t balance2 = rai::manna_control::adjust_balance_with_manna (balance1, last_block_time (), now);
 	return balance2;
 }
 
@@ -612,7 +612,7 @@ void rai::amount_visitor::compute (rai::block_hash const & block_hash)
 		{
 			balance_visitor prev (transaction, store);
 			prev.compute (current_balance);
-			rai::uint128_t previous_balance = prev.balance;
+			rai::amount_t previous_balance = prev.balance;
 			assert (prev.balance_block != nullptr);
 			if (prev.balance_block != nullptr && rai::manna_control::is_manna_account (prev.balance_block->hashables.account))
 			{ 
@@ -1071,7 +1071,7 @@ uint32_t rai::manna_control::manna_freq =
 	rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_freq :
 	rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_freq :
 	live_manna_freq;
-rai::uint128_t rai::manna_control::manna_increment =
+rai::amount_t rai::manna_control::manna_increment =
 	rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_increment :
 	rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_increment :
 	live_manna_increment;
@@ -1085,16 +1085,16 @@ bool rai::manna_control::is_manna_account (rai::account const & account_a)
 	return false;
 }
 
-rai::uint128_t rai::manna_control::adjust_balance_with_manna (rai::uint128_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
+rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::amount_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
 {
 	if (from <= to)
 	{
-		rai::uint128_t manna_increment = compute_manna_increment (from, to);
+		rai::amount_t manna_increment = compute_manna_increment (from, to);
 		// possible overflow in the far future
 		return orig_balance + manna_increment;
 	}
 	// reverse order (e.g. due to out-of-sync clocks)
-	rai::uint128_t manna_decrement = compute_manna_increment (to, from);
+	rai::amount_t manna_decrement = compute_manna_increment (to, from);
 	if (manna_decrement < orig_balance)
 	{
 		return orig_balance - manna_decrement;
@@ -1102,12 +1102,12 @@ rai::uint128_t rai::manna_control::adjust_balance_with_manna (rai::uint128_t ori
 	return 0;  // prevent underflow
 }
 
-rai::uint128_t rai::manna_control::compute_manna_increment (rai::timestamp_t from, rai::timestamp_t to)
+rai::amount_t rai::manna_control::compute_manna_increment (rai::timestamp_t from, rai::timestamp_t to)
 {
 	assert (from <= to);
 	if (from >= to) return 0;
 	if (from < manna_start) from = manna_start;  // no change before manna_start
 	uint32_t t1 = (uint32_t) (from / manna_freq);
 	uint32_t t2 = (uint32_t) (to / manna_freq);
-	return (rai::uint128_t) (t2 - t1) * (rai::uint128_t) manna_increment;
+	return (rai::amount_t) (t2 - t1) * (rai::amount_t) manna_increment;
 }

@@ -152,7 +152,7 @@ TEST (wallet, spend_all_one)
 	rai::block_hash latest1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	rai::keypair key2;
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::uint128_t>::max ()));
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::amount_t>::max ()));
 	rai::account_info info2;
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, false);
@@ -179,7 +179,7 @@ TEST (wallet, send_async)
 		}
 	});
 	bool success (false);
-	system.wallet (0)->send_async (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::uint128_t>::max (), [&success](std::shared_ptr<rai::block> block_a) { ASSERT_NE (nullptr, block_a); success = true; });
+	system.wallet (0)->send_async (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::amount_t>::max (), [&success](std::shared_ptr<rai::block> block_a) { ASSERT_NE (nullptr, block_a); success = true; });
 	thread.join ();
 	ASSERT_TRUE (success);
 }
@@ -192,7 +192,7 @@ TEST (wallet, spend)
 	rai::keypair key2;
 	// Sending from empty accounts should always be an error.  Accounts need to be opened with an open block, not a send block.
 	ASSERT_EQ (nullptr, system.wallet (0)->send_action (0, key2.pub, 0));
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::uint128_t>::max ()));
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::amount_t>::max ()));
 	rai::account_info info2;
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, false);
@@ -225,7 +225,7 @@ TEST (wallet, partial_spend)
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	rai::keypair key2;
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, 500));
-	ASSERT_EQ (std::numeric_limits<rai::uint128_t>::max () - 500, system.nodes[0]->balance (rai::test_genesis_key.pub));
+	ASSERT_EQ (std::numeric_limits<rai::amount_t>::max () - 500, system.nodes[0]->balance (rai::test_genesis_key.pub));
 }
 
 TEST (wallet, spend_no_previous)
@@ -244,7 +244,7 @@ TEST (wallet, spend_no_previous)
 	}
 	rai::keypair key2;
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, 500));
-	ASSERT_EQ (std::numeric_limits<rai::uint128_t>::max () - 500, system.nodes[0]->balance (rai::test_genesis_key.pub));
+	ASSERT_EQ (std::numeric_limits<rai::amount_t>::max () - 500, system.nodes[0]->balance (rai::test_genesis_key.pub));
 }
 
 TEST (wallet, find_none)
@@ -622,7 +622,7 @@ TEST (wallet, work_generate)
 {
 	rai::system system (24000, 1);
 	auto wallet (system.wallet (0));
-	rai::uint128_t amount1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
+	rai::amount_t amount1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
 	uint64_t work1;
 	wallet->insert_adhoc (rai::test_genesis_key.prv);
 	rai::account account1;
@@ -870,7 +870,7 @@ TEST (wallet, no_work)
 	rai::system system (24000, 1);
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv, false);
 	rai::keypair key2;
-	auto block (system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::uint128_t>::max (), false));
+	auto block (system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, std::numeric_limits<rai::amount_t>::max (), false));
 	ASSERT_NE (nullptr, block);
 	ASSERT_NE (0, block->block_work ());
 	ASSERT_FALSE (rai::work_validate (block->root (), block->block_work ()));

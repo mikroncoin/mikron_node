@@ -88,13 +88,13 @@ public:
 	rai::store_iterator block_info_begin (MDB_txn *, rai::block_hash const &);
 	rai::store_iterator block_info_begin (MDB_txn *);
 	rai::store_iterator block_info_end ();
-	rai::uint128_t block_balance (MDB_txn *, rai::block_hash const &);
+	rai::amount_t block_balance (MDB_txn *, rai::block_hash const &);
 	//rai::epoch block_version (MDB_txn *, rai::block_hash const &);
 	static size_t const block_info_max = 32;
 
-	rai::uint128_t representation_get (MDB_txn *, rai::account const &);
-	void representation_put (MDB_txn *, rai::account const &, rai::uint128_t const &);
-	void representation_add (MDB_txn *, rai::account const &, rai::uint128_t const &);
+	rai::amount_t representation_get (MDB_txn *, rai::account const &);
+	void representation_put (MDB_txn *, rai::account const &, rai::amount_t const &);
+	void representation_add (MDB_txn *, rai::account const &, rai::amount_t const &);
 	rai::store_iterator representation_begin (MDB_txn *);
 	rai::store_iterator representation_end ();
 
@@ -210,7 +210,7 @@ public:
 
 	/**
 	 * Representative weights.
-	 * rai::account -> rai::uint128_t
+	 * rai::account -> rai::amount_t
 	 */
 	MDB_dbi representation;
 

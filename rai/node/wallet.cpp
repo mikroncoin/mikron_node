@@ -1022,7 +1022,7 @@ std::shared_ptr<rai::block> rai::wallet::change_action (rai::account const & sou
 	return block;
 }
 
-std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & source_a, rai::account const & account_a, rai::uint128_t const & amount_a, bool generate_work_a, boost::optional<std::string> id_a)
+std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & source_a, rai::account const & account_a, rai::amount_t const & amount_a, bool generate_work_a, boost::optional<std::string> id_a)
 {
 	std::shared_ptr<rai::block> block;
 	boost::optional<rai::mdb_val> id_mdb_val;
@@ -1123,7 +1123,7 @@ void rai::wallet::change_async (rai::account const & source_a, rai::account cons
 	});
 }
 
-bool rai::wallet::receive_sync (std::shared_ptr<rai::block> block_a, rai::account const & representative_a, rai::uint128_t const & amount_a)
+bool rai::wallet::receive_sync (std::shared_ptr<rai::block> block_a, rai::account const & representative_a, rai::amount_t const & amount_a)
 {
 	std::promise<bool> result;
 	receive_async (block_a, representative_a, amount_a, [&result](std::shared_ptr<rai::block> block_a) {
@@ -1133,7 +1133,7 @@ bool rai::wallet::receive_sync (std::shared_ptr<rai::block> block_a, rai::accoun
 	return result.get_future ().get ();
 }
 
-void rai::wallet::receive_async (std::shared_ptr<rai::block> block_a, rai::account const & representative_a, rai::uint128_t const & amount_a, std::function<void(std::shared_ptr<rai::block>)> const & action_a, bool generate_work_a)
+void rai::wallet::receive_async (std::shared_ptr<rai::block> block_a, rai::account const & representative_a, rai::amount_t const & amount_a, std::function<void(std::shared_ptr<rai::block>)> const & action_a, bool generate_work_a)
 {
 	//assert (dynamic_cast<rai::send_block *> (block_a.get ()) != nullptr);
 	node.wallets.queue_wallet_action (amount_a, [this, block_a, representative_a, amount_a, action_a, generate_work_a]() {
@@ -1142,7 +1142,7 @@ void rai::wallet::receive_async (std::shared_ptr<rai::block> block_a, rai::accou
 	});
 }
 
-rai::block_hash rai::wallet::send_sync (rai::account const & source_a, rai::account const & account_a, rai::uint128_t const & amount_a)
+rai::block_hash rai::wallet::send_sync (rai::account const & source_a, rai::account const & account_a, rai::amount_t const & amount_a)
 {
 	std::promise<rai::block_hash> result;
 	send_async (source_a, account_a, amount_a, [&result](std::shared_ptr<rai::block> block_a) {
@@ -1152,7 +1152,7 @@ rai::block_hash rai::wallet::send_sync (rai::account const & source_a, rai::acco
 	return result.get_future ().get ();
 }
 
-void rai::wallet::send_async (rai::account const & source_a, rai::account const & account_a, rai::uint128_t const & amount_a, std::function<void(std::shared_ptr<rai::block>)> const & action_a, bool generate_work_a, boost::optional<std::string> id_a)
+void rai::wallet::send_async (rai::account const & source_a, rai::account const & account_a, rai::amount_t const & amount_a, std::function<void(std::shared_ptr<rai::block>)> const & action_a, bool generate_work_a, boost::optional<std::string> id_a)
 {
 	this->node.wallets.queue_wallet_action (rai::wallets::high_priority, [this, source_a, account_a, amount_a, action_a, generate_work_a, id_a]() {
 		auto block (send_action (source_a, account_a, amount_a, generate_work_a, id_a));
@@ -1410,7 +1410,7 @@ void rai::wallets::do_wallet_actions ()
 	}
 }
 
-void rai::wallets::queue_wallet_action (rai::uint128_t const & amount_a, std::function<void()> const & action_a)
+void rai::wallets::queue_wallet_action (rai::amount_t const & amount_a, std::function<void()> const & action_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	actions.insert (std::make_pair (amount_a, std::move (action_a)));
@@ -1471,8 +1471,8 @@ void rai::wallets::stop ()
 	}
 }
 
-rai::uint128_t const rai::wallets::generate_priority = std::numeric_limits<rai::uint128_t>::max ();
-rai::uint128_t const rai::wallets::high_priority = std::numeric_limits<rai::uint128_t>::max () - 1;
+rai::amount_t const rai::wallets::generate_priority = std::numeric_limits<rai::amount_t>::max ();
+rai::amount_t const rai::wallets::high_priority = std::numeric_limits<rai::amount_t>::max () - 1;
 
 rai::store_iterator rai::wallet_store::begin (MDB_txn * transaction_a)
 {

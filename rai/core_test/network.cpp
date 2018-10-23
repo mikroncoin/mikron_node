@@ -305,7 +305,7 @@ TEST (receivable_processor, confirm_sufficient_pos)
 
 TEST (receivable_processor, send_with_receive)
 {
-	auto amount (std::numeric_limits<rai::uint128_t>::max ());
+	auto amount (std::numeric_limits<rai::amount_t>::max ());
 	rai::system system (24000, 2);
 	rai::keypair key2;
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
@@ -626,8 +626,8 @@ TEST (bootstrap_processor, process_new)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}
-	rai::uint128_t balance1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
-	rai::uint128_t balance2 (system.nodes[0]->balance (key2.pub));
+	rai::amount_t balance1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
+	rai::amount_t balance2 (system.nodes[0]->balance (key2.pub));
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24002, rai::unique_path (), system.alarm, system.logging, system.work));
 	ASSERT_FALSE (init1.error ());
@@ -703,7 +703,7 @@ TEST (bootstrap_processor, push_one)
 	auto wallet (node1->wallets.create (rai::uint256_union ()));
 	ASSERT_NE (nullptr, wallet);
 	wallet->insert_adhoc (rai::test_genesis_key.prv);
-	rai::uint128_t balance1 (node1->balance (rai::test_genesis_key.pub));
+	rai::amount_t balance1 (node1->balance (rai::test_genesis_key.pub));
 	ASSERT_NE (nullptr, wallet->send_action (rai::test_genesis_key.pub, key1.pub, 100));
 	ASSERT_NE (balance1, node1->balance (rai::test_genesis_key.pub));
 	node1->bootstrap_initiator.bootstrap (system.nodes[0]->network.endpoint ());

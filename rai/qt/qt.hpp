@@ -301,9 +301,9 @@ public:
 	void refresh ();
 	void update_connected ();
 	void empty_password ();
-	void change_rendering_ratio (rai::uint128_t const &);
-	std::string format_balance (rai::uint128_t const &) const;
-	rai::uint128_t rendering_ratio;
+	void change_rendering_ratio (rai::amount_t const &);
+	std::string format_balance (rai::amount_t const &) const;
+	rai::amount_t rendering_ratio;
 	rai::node & node;
 	std::shared_ptr<rai::wallet> wallet_m;
 	rai::account & account;

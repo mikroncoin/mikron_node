@@ -605,7 +605,7 @@ void rai::block_store::clear (MDB_dbi db_a)
 	assert (status == 0);
 }
 
-rai::uint128_t rai::block_store::block_balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
+rai::amount_t rai::block_store::block_balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
 	balance_visitor visitor (transaction_a, *this);
 	visitor.compute (hash_a);
@@ -622,7 +622,7 @@ rai::epoch rai::block_store::block_version (MDB_txn * transaction_a, rai::block_
 }
 */
 
-void rai::block_store::representation_add (MDB_txn * transaction_a, rai::block_hash const & source_a, rai::uint128_t const & amount_a)
+void rai::block_store::representation_add (MDB_txn * transaction_a, rai::block_hash const & source_a, rai::amount_t const & amount_a)
 {
 	auto source_block (block_get (transaction_a, source_a));
 	assert (source_block != nullptr);
@@ -1084,12 +1084,12 @@ bool rai::block_store::block_info_get (MDB_txn * transaction_a, rai::block_hash 
 	return result;
 }
 
-rai::uint128_t rai::block_store::representation_get (MDB_txn * transaction_a, rai::account const & account_a)
+rai::amount_t rai::block_store::representation_get (MDB_txn * transaction_a, rai::account const & account_a)
 {
 	rai::mdb_val value;
 	auto status (mdb_get (transaction_a, representation, rai::mdb_val (account_a), value));
 	assert (status == 0 || status == MDB_NOTFOUND);
-	rai::uint128_t result;
+	rai::amount_t result;
 	if (status == 0)
 	{
 		rai::uint128_union rep;
@@ -1105,7 +1105,7 @@ rai::uint128_t rai::block_store::representation_get (MDB_txn * transaction_a, ra
 	return result;
 }
 
-void rai::block_store::representation_put (MDB_txn * transaction_a, rai::account const & account_a, rai::uint128_t const & representation_a)
+void rai::block_store::representation_put (MDB_txn * transaction_a, rai::account const & account_a, rai::amount_t const & representation_a)
 {
 	rai::uint128_union rep (representation_a);
 	auto status (mdb_put (transaction_a, representation, rai::mdb_val (account_a), rai::mdb_val (rep), 0));

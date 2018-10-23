@@ -66,6 +66,8 @@ public:
 };
 // Balances are 128 bit.
 using amount = uint128_union;
+using amount_t = rai::uint128_t;
+
 class raw_key;
 union uint256_union
 {

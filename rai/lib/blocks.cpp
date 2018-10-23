@@ -1208,7 +1208,7 @@ void rai::state_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
-rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_balance_a, rai::timestamp_t previous_block_time) const
+rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_balance_a, rai::timestamp_t previous_block_time) const
 {
 	// if there is no previous: open
 	if (!has_previous ())

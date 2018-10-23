@@ -637,7 +637,7 @@ check_bootstrap_weights (true)
 }
 
 // Balance for account containing hash
-rai::uint128_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
+rai::amount_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
 	balance_visitor visitor (transaction_a, store);
 	visitor.compute (hash_a);
@@ -645,7 +645,7 @@ rai::uint128_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash co
 }
 
 // Balance for account containing hash.  Balance adjusted with current manna increment.
-rai::uint128_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::timestamp_t now)
+rai::amount_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::timestamp_t now)
 {
 	balance_visitor visitor (transaction_a, store);
 	visitor.compute (hash_a);
@@ -659,9 +659,9 @@ rai::uint128_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::bl
 }
 
 // Balance for an account by account number
-rai::uint128_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::account const & account_a)
+rai::amount_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::account const & account_a)
 {
-	rai::uint128_t result (0);
+	rai::amount_t result (0);
 	rai::account_info info;
 	auto none (store.account_get (transaction_a, account_a, info));
 	if (!none)
@@ -671,9 +671,9 @@ rai::uint128_t rai::ledger::account_balance (MDB_txn * transaction_a, rai::accou
 	return result;
 }
 
-rai::uint128_t rai::ledger::account_balance_with_manna (MDB_txn * transaction_a, rai::account const & account_a, rai::timestamp_t now)
+rai::amount_t rai::ledger::account_balance_with_manna (MDB_txn * transaction_a, rai::account const & account_a, rai::timestamp_t now)
 {
-	rai::uint128_t result (0);
+	rai::amount_t result (0);
 	rai::account_info info;
 	auto none (store.account_get (transaction_a, account_a, info));
 	if (!none)
@@ -683,9 +683,9 @@ rai::uint128_t rai::ledger::account_balance_with_manna (MDB_txn * transaction_a,
 	return result;
 }
 
-rai::uint128_t rai::ledger::account_pending (MDB_txn * transaction_a, rai::account const & account_a)
+rai::amount_t rai::ledger::account_pending (MDB_txn * transaction_a, rai::account const & account_a)
 {
-	rai::uint128_t result (0);
+	rai::amount_t result (0);
 	rai::account end (account_a.number () + 1);
 	for (auto i (store.pending_begin (transaction_a, rai::pending_key (account_a, 0))), n (store.pending_begin (transaction_a, rai::pending_key (end, 0))); i != n; ++i)
 	{
@@ -784,7 +784,7 @@ rai::block_hash rai::ledger::block_source (MDB_txn * transaction_a, rai::block c
 }
 
 // Vote weight of an account
-rai::uint128_t rai::ledger::weight (MDB_txn * transaction_a, rai::account const & account_a)
+rai::amount_t rai::ledger::weight (MDB_txn * transaction_a, rai::account const & account_a)
 {
 	if (check_bootstrap_weights.load ())
 	{
@@ -862,7 +862,7 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 }
 
 // Return amount decrease or increase for block
-rai::uint128_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash const & hash_a)
+rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
 	amount_visitor amount (transaction_a, store);
 	amount.compute (hash_a);

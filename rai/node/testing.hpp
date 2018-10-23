@@ -22,7 +22,7 @@ public:
 	void generate_usage_traffic (uint32_t, uint32_t, size_t);
 	void generate_usage_traffic (uint32_t, uint32_t);
 	rai::account get_random_account (std::vector<rai::account> &);
-	rai::uint128_t get_random_amount (MDB_txn *, rai::node &, rai::account const &);
+	rai::amount_t get_random_amount (MDB_txn *, rai::node &, rai::account const &);
 	void generate_rollback (rai::node &, std::vector<rai::account> &);
 	void generate_change_known (rai::node &, std::vector<rai::account> &);
 	void generate_change_unknown (rai::node &, std::vector<rai::account> &);
@@ -65,7 +65,7 @@ class landing
 public:
 	landing (rai::node &, std::shared_ptr<rai::wallet>, rai::landing_store &, boost::filesystem::path const &);
 	void write_store ();
-	rai::uint128_t distribution_amount (uint64_t);
+	rai::amount_t distribution_amount (uint64_t);
 	void distribute_one ();
 	void distribute_ongoing ();
 	boost::filesystem::path path;

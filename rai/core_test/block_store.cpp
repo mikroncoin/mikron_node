@@ -951,7 +951,7 @@ TEST (block_store, upgrade_v9_v10)
 		rai::account_info info;
 		store.account_get (transaction, rai::test_genesis_key.pub, info);
 		rai::keypair key0;
-		rai::uint128_t balance (rai::genesis_amount);
+		rai::amount_t balance (rai::genesis_amount);
 		hash = info.head;
 		for (auto i (1); i < 32; ++i) // Making 31 send blocks (+ 1 open = 32 total) (store.block_info_max)
 		{

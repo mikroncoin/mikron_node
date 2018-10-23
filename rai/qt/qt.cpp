@@ -258,8 +258,8 @@ wallet (wallet_a)
 void rai_qt::accounts::refresh_wallet_balance ()
 {
 	rai::transaction transaction (this->wallet.wallet_m->store.environment, nullptr, false);
-	rai::uint128_t balance (0);
-	rai::uint128_t pending (0);
+	rai::amount_t balance (0);
+	rai::amount_t pending (0);
 	for (auto i (this->wallet.wallet_m->store.begin (transaction)), j (this->wallet.wallet_m->store.end ()); i != j; ++i)
 	{
 		rai::public_key key (i->first.uint256 ());
@@ -548,7 +548,7 @@ public:
 		block_time = block_a.creation_time ().number ();
 		rai::timestamp_t block_time = block_a.creation_time ().number ();
 		balance = block_a.hashables.balance.number ();
-		rai::uint128_t previous_balance (0);
+		rai::amount_t previous_balance (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
 			previous_balance = ledger.balance_with_manna (transaction, block_a.hashables.previous, block_time);
@@ -592,8 +592,8 @@ public:
 	MDB_txn * transaction;
 	rai::ledger & ledger;
 	std::string type;
-	rai::uint128_t amount;
-	rai::uint128_t balance;
+	rai::amount_t amount;
+	rai::amount_t balance;
 	rai::account account;
 	rai::timestamp_t block_time;
 };
@@ -1102,7 +1102,7 @@ void rai_qt::wallet::start ()
 			rai::amount amount;
 			if (!amount.decode_dec (this_l->send_count->text ().toStdString ()))
 			{
-				rai::uint128_t actual (amount.number () * this_l->rendering_ratio);
+				rai::amount_t actual (amount.number () * this_l->rendering_ratio);
 				if (actual / this_l->rendering_ratio == amount.number ())
 				{
 					QString account_text (this_l->send_account->text ());
@@ -1257,7 +1257,7 @@ void rai_qt::wallet::start ()
 			this_l->push_main_stack (this_l->send_blocks_window);
 		}
 	});
-	node.observers.blocks.add ([this_w](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::uint128_t const & amount_a, bool) {
+	node.observers.blocks.add ([this_w](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::amount_t const & amount_a, bool) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->application.postEvent (&this_l->processor, new eventloop_event ([this_w, block_a, account_a]() {
@@ -1412,7 +1412,7 @@ void rai_qt::wallet::empty_password ()
 	});
 }
 
-void rai_qt::wallet::change_rendering_ratio (rai::uint128_t const & rendering_ratio_a)
+void rai_qt::wallet::change_rendering_ratio (rai::amount_t const & rendering_ratio_a)
 {
 	application.postEvent (&processor, new eventloop_event ([this, rendering_ratio_a]() {
 		this->rendering_ratio = rendering_ratio_a;
@@ -1420,7 +1420,7 @@ void rai_qt::wallet::change_rendering_ratio (rai::uint128_t const & rendering_ra
 	}));
 }
 
-std::string rai_qt::wallet::format_balance (rai::uint128_t const & balance) const
+std::string rai_qt::wallet::format_balance (rai::amount_t const & balance) const
 {
 	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 2, false);
 	auto unit = std::string ("MIK");
