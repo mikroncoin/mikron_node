@@ -7,7 +7,7 @@
 ### What is Mikron?
 
 **Mikron** is a decentralized block-lattice digital currency with fast and cheap transactions,
-mainly targeting reward points handling.
+focusing on community building.  See the Mikron website at https://mikron.io .
 
 Mikron is based on the great **Nano** (by Colin LeMahieu; formerly known as RaiBlocks; http://nano.org).
 
@@ -51,13 +51,25 @@ For more information, see [Nano.org](https://nano.org/) or read the [whitepaper]
 ### Links & Resources
 
 * [Mikron Website](https://mikron.io)
-* Nano Roadmap
-* Discord Chat
-* Reddit
-* Medium
-* Twitter
-* Forum
+* [Discord Chat](https://discord.gg/QBKr3hv)
 * [GitHub wiki](https://github.com/mikroncoin/mikron_node/wiki)
+* [Nano GitHub](https://github.com/nanocurrency/raiblocks)
+* (Roadmap)
+* (Reddit)
+* (Medium)
+* (Twitter)
+* (Forum)
+
+### FAQ
+
+#### How is Mikron different from Nano?
+Mikron has different targeted objectives -- community building, reward point handling; and some important differences, such as continuous reward genesis ('manna'), different balance representation, block creation times, etc.  See the [differences Wiki page](https://github.com/mikroncoin/mikron_node/wiki/Differences-to-Nano) for more details.
+
+#### Why is the mikron_node source repo not a 'GitHub fork' of the original Nano repo?
+Git is a great source control system, very flexible with regards to repository migration (with full history), and supporting transfering branches between different origin repositories.  The GitHub fork is an even handier feature for forking repositories.  However, the mikron_node repository is not a 'GitHub fork' of the original Nano.  The rationale for this is that being a hard fork with some fundamental changes, downstream merging is not planned as a regular feature, visibility of the upstream master branch is not desired.  The Nano repository is nonetheless easy to find from Mikron pages, and easy to work with.  For example, consider the commands:
+
+    git checkout upstream
+    git pull https://github.com/nanocurrency/raiblocks.git master
 
 ### Links & Resources -- Nano
 
