@@ -644,7 +644,7 @@ bool rai::uint128_union::decode_dec (std::string const & text)
 	return error;
 }
 
-void format_frac (std::ostringstream & stream, rai::uint128_t value, rai::uint128_t scale, int precision)
+void format_frac (std::ostringstream & stream, rai::amount_t value, rai::amount_t scale, int precision)
 {
 	auto reduce = scale;
 	auto rem = value;
@@ -658,7 +658,7 @@ void format_frac (std::ostringstream & stream, rai::uint128_t value, rai::uint12
 	}
 }
 
-void format_dec (std::ostringstream & stream, rai::uint128_t value, char group_sep, const std::string & groupings)
+void format_dec (std::ostringstream & stream, rai::amount_t value, char group_sep, const std::string & groupings)
 {
 	auto largestPow10 = rai::uint256_t (1);
 	int dec_count = 1;
@@ -701,8 +701,8 @@ void format_dec (std::ostringstream & stream, rai::uint128_t value, char group_s
 		}
 	}
 
-	auto reduce = rai::uint128_t (largestPow10);
-	rai::uint128_t rem = value;
+	auto reduce = rai::amount_t (largestPow10);
+	rai::amount_t rem = value;
 	while (reduce > 0)
 	{
 		auto val = rem / reduce;
@@ -717,7 +717,7 @@ void format_dec (std::ostringstream & stream, rai::uint128_t value, char group_s
 	}
 }
 
-std::string format_balance (rai::uint128_t balance, rai::uint128_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
+std::string format_balance (rai::amount_t balance, rai::amount_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
 {
 	std::ostringstream stream;
 	auto int_part = balance / scale;

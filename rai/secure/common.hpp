@@ -135,8 +135,8 @@ public:
 	rai::block_hash rep_block;  // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
 	rai::amount balance;
-	uint64_t last_block_time_intern;  // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
-	uint64_t block_count;
+	::uint64_t last_block_time_intern;  // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
+	::uint64_t block_count;
 };
 
 /**

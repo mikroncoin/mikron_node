@@ -12,13 +12,6 @@ extern thread_local CryptoPP::AutoSeededRandomPool random_pool;
 using uint128_t = boost::multiprecision::uint128_t;
 using uint256_t = boost::multiprecision::uint256_t;
 using uint512_t = boost::multiprecision::uint512_t;
-// SI dividers
-rai::uint128_t const Gxrb_ratio = rai::uint128_t ("1000000000000000000000000000000000"); // 10^33
-rai::uint128_t const Mxrb_ratio = rai::uint128_t ("1000000000000000000000000000000"); // 10^30
-rai::uint128_t const kxrb_ratio = rai::uint128_t ("1000000000000000000000000000"); // 10^27
-rai::uint128_t const xrb_ratio = rai::uint128_t ("1000000000000000000000000"); // 10^24
-rai::uint128_t const mxrb_ratio = rai::uint128_t ("1000000000000000000000"); // 10^21
-rai::uint128_t const uxrb_ratio = rai::uint128_t ("1000000000000000000"); // 10^18
 
 struct uint32_union
 {
@@ -67,6 +60,13 @@ public:
 // Balances are 128 bit.
 using amount = uint128_union;
 using amount_t = rai::uint128_t;
+// SI dividers
+rai::amount_t const Gxrb_ratio = rai::amount_t ("1000000000000000000000000000000000"); // 10^33
+rai::amount_t const Mxrb_ratio = rai::amount_t ("1000000000000000000000000000000"); // 10^30
+rai::amount_t const kxrb_ratio = rai::amount_t ("1000000000000000000000000000"); // 10^27
+rai::amount_t const xrb_ratio = rai::amount_t ("1000000000000000000000000"); // 10^24
+rai::amount_t const mxrb_ratio = rai::amount_t ("1000000000000000000000"); // 10^21
+//rai::amount_t const uxrb_ratio = rai::amount_t ("1000000000000000000"); // 10^18
 
 class raw_key;
 union uint256_union
