@@ -1930,10 +1930,11 @@ stats (config.stat_config)
 						break;
 					}
 					rai::amount weight;
-					if (rai::read (weight_stream, weight.bytes))
+					if (rai::read (weight_stream, weight.data))
 					{
 						break;
 					}
+					boost::endian::big_to_native_inplace (weight.data);
 					BOOST_LOG (log) << "Using bootstrap rep weight: " << account.to_account () << " -> " << weight.format_balance (Mxrb_ratio, 0, true) << " XRB";
 					ledger.bootstrap_weights[account] = weight.number ();
 				}

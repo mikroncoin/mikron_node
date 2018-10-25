@@ -4,6 +4,7 @@
 #include <rai/node/node.hpp>
 
 #include <boost/log/trivial.hpp>
+#include <boost/endian/conversion.hpp>
 
 constexpr double bootstrap_connection_scale_target_blocks = 50000.0;
 constexpr double bootstrap_connection_warmup_time_sec = 5.0;
@@ -1906,7 +1907,7 @@ void rai::bulk_pull_account_server::send_next_block ()
 			}
 
 			write (output_stream, block_info_key->hash.bytes);
-			write (output_stream, block_info->amount.bytes);
+			write (output_stream, boost::endian::native_to_big (block_info->amount.data));
 		}
 
 		auto this_l (shared_from_this ());

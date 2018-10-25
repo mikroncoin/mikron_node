@@ -247,7 +247,7 @@ rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node
 	rai::amount_t balance (node_a.ledger.account_balance (transaction_a, account_a));
 	std::string balance_text (std::to_string (balance));
 	rai::uint64_struct random_amount;
-	random_pool.GenerateBlock (random_amount.bytes.data (), sizeof (random_amount.bytes));
+	random_pool.GenerateBlock ((uint8_t *)&random_amount.data, sizeof (random_amount.data));
 	auto result (((rai::uint256_t{ random_amount.number () } * balance) / rai::uint256_t{ std::numeric_limits<rai::amount_t>::max () }).convert_to<rai::amount_t> ());
 	std::string text (std::to_string (result));
 	return result;

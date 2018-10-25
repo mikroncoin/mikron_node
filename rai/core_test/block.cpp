@@ -417,9 +417,9 @@ TEST (state_block, hashing)
 	ASSERT_NE (hash, block.hash ());
 	block.hashables.representative.bytes[0] ^= 0x1;
 	ASSERT_EQ (hash, block.hash ());
-	block.hashables.balance.bytes[0] ^= 0x1;
+	((uint8_t *)&block.hashables.balance.data)[0] ^= 0x1;
 	ASSERT_NE (hash, block.hash ());
-	block.hashables.balance.bytes[0] ^= 0x1;
+	((uint8_t *)&block.hashables.balance.data)[0] ^= 0x1;
 	ASSERT_EQ (hash, block.hash ());
 	block.hashables.link.bytes[0] ^= 0x1;
 	ASSERT_NE (hash, block.hash ());
@@ -451,30 +451,30 @@ TEST (state_block, subtype)
 	ASSERT_TRUE (open.is_valid_open_subtype ());
 	ASSERT_FALSE (open.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (open.is_valid_change_subtype ());
-	ASSERT_EQ (rai::process_result::progress, ledger.process(transaction, open).code);
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, open).code);
 	rai::state_block send2 (rai::genesis_account, send.hash (), 0, rai::genesis_account, rai::genesis_amount - 210, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::send, send2.get_subtype (rai::genesis_amount - 100, 0));
 	ASSERT_FALSE (send2.is_valid_open_subtype ());
 	ASSERT_TRUE (send2.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (send2.is_valid_change_subtype ());
-	ASSERT_EQ (rai::process_result::progress, ledger.process(transaction, send2).code);
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send2).code);
 	rai::state_block receive (key.pub, open.hash (), 0, key.pub, 210, send2.hash(), key.prv, key.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::receive, receive.get_subtype (100, 0));
 	ASSERT_FALSE (receive.is_valid_open_subtype ());
 	ASSERT_TRUE (receive.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (receive.is_valid_change_subtype ());
-	ASSERT_EQ (rai::process_result::progress, ledger.process(transaction, receive).code);
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
 	rai::state_block change (key.pub, receive.hash (), 0, rai::genesis_account, 210, 0, key.prv, key.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::change, change.get_subtype (210, 0));
 	ASSERT_FALSE (change.is_valid_open_subtype ());
 	ASSERT_FALSE (change.is_valid_send_or_receive_subtype ());
 	ASSERT_TRUE (change.is_valid_change_subtype ());
-	ASSERT_EQ (rai::process_result::progress, ledger.process(transaction, change).code);
+	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, change).code);
 	// invalid block
 	rai::state_block invalid (key.pub, receive.hash (), 0, rai::genesis_account, 210, send2.hash (), key.prv, key.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::undefined, invalid.get_subtype (210, 0));
 	ASSERT_FALSE (invalid.is_valid_open_subtype ());
 	ASSERT_TRUE (invalid.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (invalid.is_valid_change_subtype ());
-	ASSERT_EQ(rai::process_result::invalid_state_block, ledger.process(transaction, invalid).code);
+	ASSERT_EQ(rai::process_result::invalid_state_block, ledger.process (transaction, invalid).code);
 }

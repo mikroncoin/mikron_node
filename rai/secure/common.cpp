@@ -7,6 +7,7 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/endian/conversion.hpp>
 
 #include <queue>
 
@@ -360,7 +361,8 @@ amount (amount_a)
 void rai::pending_info::serialize (rai::stream & stream_a) const
 {
 	rai::write (stream_a, source.bytes);
-	rai::write (stream_a, amount.bytes);
+	//rai::write (stream_a, boost::endian::native_to_big (amount.data));
+	rai::write (stream_a, amount.data);
 }
 
 bool rai::pending_info::deserialize (rai::stream & stream_a)
@@ -368,7 +370,8 @@ bool rai::pending_info::deserialize (rai::stream & stream_a)
 	auto result (rai::read (stream_a, source.bytes));
 	if (!result)
 	{
-		result = rai::read (stream_a, amount.bytes);
+		result = rai::read (stream_a, amount.data);
+		//boost::endian::big_to_native_inplace (amount.data);
 	}
 	return result;
 }
@@ -446,7 +449,7 @@ balance (balance_a)
 void rai::block_info::serialize (rai::stream & stream_a) const
 {
 	rai::write (stream_a, account.bytes);
-	rai::write (stream_a, balance.bytes);
+	rai::write (stream_a, boost::endian::native_to_big (balance.data));  // TODO check if needed
 }
 
 bool rai::block_info::deserialize (rai::stream & stream_a)
@@ -454,7 +457,8 @@ bool rai::block_info::deserialize (rai::stream & stream_a)
 	auto error (rai::read (stream_a, account.bytes));
 	if (!error)
 	{
-		error = rai::read (stream_a, balance.bytes);
+		error = rai::read (stream_a, balance.data);
+		boost::endian::big_to_native_inplace (balance.data);  // TODO check if needed
 	}
 	return error;
 }

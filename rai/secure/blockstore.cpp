@@ -1074,7 +1074,7 @@ bool rai::block_store::block_info_get (MDB_txn * transaction_a, rai::block_hash 
 	else
 	{
 		result = false;
-		assert (value.size () == sizeof (block_info_a.account.bytes) + sizeof (block_info_a.balance.bytes));
+		assert (value.size () == sizeof (block_info_a.account.bytes) + sizeof (block_info_a.balance.data));
 		rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
 		auto error1 (rai::read (stream, block_info_a.account));
 		assert (!error1);

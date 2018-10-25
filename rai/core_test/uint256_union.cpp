@@ -5,12 +5,15 @@
 
 #include <ed25519-donna/ed25519.h>
 
+#include <boost/endian/conversion.hpp>
+
 TEST (amount, decode_dec)
 {
 	rai::amount value;
 	std::string text ("16");
 	ASSERT_FALSE (value.decode_dec (text));
-	ASSERT_EQ (16, value.bytes[7]);
+	uint64_t value_big_endian = boost::endian::native_to_big (value.data);
+	ASSERT_EQ (16, ((uint8_t *)&value_big_endian)[7]);
 }
 
 TEST (amount, decode_dec_negative)
@@ -541,20 +544,21 @@ TEST (uint64_t, parse)
 	ASSERT_TRUE (rai::from_string_hex ("", value4));
 }
 
-TEST (uint32_union, serialize)
+TEST (uint32_struct, serialize)
 {
-	rai::uint32_union a1 = rai::uint32_union (267);
+	rai::uint32_struct a1 = rai::uint32_struct (267);
 	ASSERT_EQ (267, a1.number ());
-	ASSERT_EQ (0, a1.bytes[0]);
-	ASSERT_EQ (0, a1.bytes[1]);
-	ASSERT_EQ (1, a1.bytes[2]);
-	ASSERT_EQ (11, a1.bytes[3]);
+	uint32_t data_big_endian = boost::endian::native_to_big (a1.data);
+	ASSERT_EQ (0, ((uint8_t *)&data_big_endian)[0]);
+	ASSERT_EQ (0, ((uint8_t *)&data_big_endian)[1]);
+	ASSERT_EQ (1, ((uint8_t *)&data_big_endian)[2]);
+	ASSERT_EQ (11, ((uint8_t *)&data_big_endian)[3]);
 	ASSERT_EQ ("267", a1.to_string_dec ());
 
 	std::vector<uint8_t> buf;
 	{
 		rai::vectorstream stream (buf);
-		rai::write (stream, a1);
+		rai::write (stream, boost::endian::native_to_big (a1.data));
 	}
 	ASSERT_EQ (4, buf.size ());
 	ASSERT_EQ (0, buf[0]);
@@ -563,17 +567,14 @@ TEST (uint32_union, serialize)
 	ASSERT_EQ (11, buf[3]);
 }
 
-TEST (uint32_union, deserialize)
+TEST (uint32_struct, deserialize)
 {
-	rai::uint32_union a1 = rai::uint32_union ("267");
+	rai::uint32_struct a1 = rai::uint32_struct ("267");
 	ASSERT_EQ (267, a1.number ());
-
-	std::array<uint8_t, 4> buf2 = {0, 0, 1, 12};
-	a1.bytes = buf2;
-	ASSERT_EQ (268, a1.number ());
 
 	std::array<uint8_t, 4> buf3 = {0, 0, 1, 13};
 	rai::bufferstream stream (buf3.data (), buf3.size ());
-	rai::read (stream, a1);
+	rai::read (stream, a1.data);
+	boost::endian::big_to_native_inplace (a1.data);
 	ASSERT_EQ (269, a1.number ());
 }

@@ -11,7 +11,7 @@ TEST (interface, xrb_uint64_to_dec)
 {
 	rai::uint64_struct zero (0);
 	char text[20+1] = { 0 };
-	xrb_uint64_to_dec (zero.bytes.data (), text);
+	xrb_uint64_to_dec ((uint8_t *)&zero.data, text);
 	ASSERT_STREQ ("0", text);
 }
 

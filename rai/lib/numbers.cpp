@@ -38,36 +38,31 @@ uint8_t account_decode (char value)
 }
 }
 
-rai::uint32_union::uint32_union (std::string const & string_a)
+rai::uint32_struct::uint32_struct (std::string const & string_a)
 {
 	decode_dec (string_a);
 }
 
-rai::uint32_union::uint32_union (uint32_t value_a)
+rai::uint32_struct::uint32_struct (uint32_t value_a)
 {
-	uint32_t number_l (value_a);
-	for (auto i (bytes.rbegin ()), n (bytes.rend ()); i != n; ++i)
-	{
-		*i = static_cast<uint8_t> (number_l & static_cast<uint8_t> (0xff));
-		number_l >>= 8;
-	}
+	data = value_a;
 }
 
-bool rai::uint32_union::operator== (rai::uint32_union const & other_a) const
+bool rai::uint32_struct::operator== (rai::uint32_struct const & other_a) const
 {
-	return bytes == other_a.bytes;
+	return data == other_a.data;
 }
 
-void rai::uint32_union::encode_dec (std::string & text) const
+void rai::uint32_struct::encode_dec (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
 	stream << std::dec << std::noshowbase;
-	stream << number ();
+	stream << data;
 	text = stream.str ();
 }
 
-bool rai::uint32_union::decode_dec (std::string const & text)
+bool rai::uint32_struct::decode_dec (std::string const & text)
 {
 	auto error (text.size () > 10 || (text.size () > 1 && text[0] == '0') || (text.size () > 0 && text[0] == '-'));
 	if (!error)
@@ -93,34 +88,26 @@ bool rai::uint32_union::decode_dec (std::string const & text)
 	return error;
 }
 
-std::string rai::uint32_union::to_string_dec () const
+std::string rai::uint32_struct::to_string_dec () const
 {
 	std::string result;
 	encode_dec (result);
 	return result;
 }
 
-bool rai::uint32_union::is_zero () const
+bool rai::uint32_struct::is_zero () const
 {
-	return number() == 0;
+	return (data == 0);
 }
 
-void rai::uint32_union::clear ()
+void rai::uint32_struct::clear ()
 {
-	bytes.fill (0);
+	data = 0;
 }
 
-uint32_t rai::uint32_union::number () const
+uint32_t rai::uint32_struct::number () const
 {
-	uint32_t result = 0;
-	auto shift (0);
-	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
-	{
-		result <<= shift;
-		result |= *i;
-		shift = 8;
-	}
-	return result;
+	return data;
 }
 
 void rai::uint256_union::encode_account (std::string & destination_a) const
@@ -594,45 +581,32 @@ rai::uint64_struct::uint64_struct (std::string const & string_a)
 
 rai::uint64_struct::uint64_struct (rai::uint64_t value_a)
 {
-	rai::uint64_t number_l (value_a);
-	for (auto i (bytes.rbegin ()), n (bytes.rend ()); i != n; ++i)
-	{
-		*i = static_cast<uint8_t> (number_l & static_cast<uint8_t> (0xff));
-		number_l >>= 8;
-	}
+	data = value_a;
 }
 
 bool rai::uint64_struct::operator== (rai::uint64_struct const & other_a) const
 {
-	return number () == other_a.number ();  // TODO: if 64 bit, use native number type
+	return (data == other_a.data);
 }
 
 bool rai::uint64_struct::operator!= (rai::uint64_struct const & other_a) const
 {
-	return !(*this == other_a);
+	return (data != other_a.data);
 }
 
 bool rai::uint64_struct::operator< (rai::uint64_struct const & other_a) const
 {
-	return number () < other_a.number ();  // TODO
+	return (data < other_a.data);
 }
 
 bool rai::uint64_struct::operator> (rai::uint64_struct const & other_a) const
 {
-	return number () > other_a.number ();   // TODO
+	return (data > other_a.data);
 }
 
 rai::uint64_t rai::uint64_struct::number () const
 {
-	rai::uint64_t result = 0;
-	auto shift (0);
-	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
-	{
-		result <<= shift;
-		result |= *i;
-		shift = 8;
-	}
-	return result;
+	return data;
 }
 
 void rai::uint64_struct::encode_hex (std::string & text) const
@@ -640,7 +614,7 @@ void rai::uint64_struct::encode_hex (std::string & text) const
 	assert (text.empty ());
 	std::stringstream stream;
 	stream << std::hex << std::noshowbase << std::setw (16) << std::setfill ('0');
-	stream << number ();
+	stream << data;
 	text = stream.str ();
 }
 
@@ -674,7 +648,7 @@ void rai::uint64_struct::encode_dec (std::string & text) const
 	assert (text.empty ());
 	std::stringstream stream;
 	stream << std::dec << std::noshowbase;
-	stream << number ();
+	stream << data;
 	text = stream.str ();
 }
 
@@ -824,7 +798,7 @@ std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precisi
 	auto thousands_sep = std::use_facet<std::numpunct<char>> (std::locale ()).thousands_sep ();
 	auto decimal_point = std::use_facet<std::numpunct<char>> (std::locale ()).decimal_point ();
 	std::string grouping = "\3";
-	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
+	return ::format_balance (data, scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
 std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale)
@@ -832,17 +806,17 @@ std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precisi
 	auto thousands_sep = std::use_facet<std::moneypunct<char>> (locale).thousands_sep ();
 	auto decimal_point = std::use_facet<std::moneypunct<char>> (locale).decimal_point ();
 	std::string grouping = std::use_facet<std::moneypunct<char>> (locale).grouping ();
-	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
+	return ::format_balance (data, scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
 void rai::uint64_struct::clear ()
 {
-	bytes.fill (0);
+	data = 0;
 }
 
 bool rai::uint64_struct::is_zero () const
 {
-	return number () == (rai::amount_t)0;  // TODO use 64 bit native number
+	return (data == 0);
 }
 
 std::string rai::uint64_struct::to_string () const

@@ -201,7 +201,8 @@ rai::send_hashables::send_hashables (bool & error_a, rai::stream & stream_a)
 		error_a = rai::read (stream_a, destination.bytes);
 		if (!error_a)
 		{
-			error_a = rai::read (stream_a, balance.bytes);
+			error_a = rai::read (stream_a, balance.data);
+			boost::endian::big_to_native_inplace (balance.data);
 		}
 	}
 }
@@ -235,7 +236,8 @@ void rai::send_hashables::hash (blake2b_state & hash_a) const
 	assert (status == 0);
 	status = blake2b_update (&hash_a, destination.bytes.data (), sizeof (destination.bytes));
 	assert (status == 0);
-	status = blake2b_update (&hash_a, balance.bytes.data (), sizeof (balance.bytes));
+	uint64_t balance_big_endian (boost::endian::native_to_big (balance.data));
+	status = blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
 	assert (status == 0);
 }
 
@@ -243,7 +245,7 @@ void rai::send_block::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, hashables.previous.bytes);
 	write (stream_a, hashables.destination.bytes);
-	write (stream_a, hashables.balance.bytes);
+	write (stream_a, boost::endian::native_to_big (hashables.balance.data));
 	write (stream_a, signature.bytes);
 	write (stream_a, work);
 }
@@ -277,9 +279,10 @@ bool rai::send_block::deserialize (rai::stream & stream_a)
 		error = read (stream_a, hashables.destination.bytes);
 		if (!error)
 		{
-			error = read (stream_a, hashables.balance.bytes);
+			error = read (stream_a, hashables.balance.data);
 			if (!error)
 			{
+				boost::endian::big_to_native_inplace (hashables.balance.data);
 				error = read (stream_a, signature.bytes);
 				if (!error)
 				{
@@ -942,14 +945,16 @@ rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a)
 {
 	error_a = rai::read (stream_a, account);
 	if (error_a) return;
-	error_a = rai::read (stream_a, creation_time.data);
+	error_a = rai::read (stream_a, creation_time.data.data);
 	if (error_a) return;
+	boost::endian::big_to_native_inplace (creation_time.data.data);
 	error_a = rai::read (stream_a, previous);
 	if (error_a) return;
 	error_a = rai::read (stream_a, representative);
 	if (error_a) return;
-	error_a = rai::read (stream_a, balance);
+	error_a = rai::read (stream_a, balance.data);
 	if (error_a) return;
+	boost::endian::big_to_native_inplace (balance.data);
 	error_a = rai::read (stream_a, link);
 }
 
@@ -984,10 +989,12 @@ rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptr
 void rai::state_hashables::hash (blake2b_state & hash_a) const
 {
 	blake2b_update (&hash_a, account.bytes.data (), sizeof (account.bytes));
-	blake2b_update (&hash_a, creation_time.data.bytes.data (), sizeof (creation_time.data.bytes));
+	uint32_t creation_time_big_endian (boost::endian::native_to_big (creation_time.data.data));
+	blake2b_update (&hash_a, &creation_time_big_endian, sizeof (creation_time_big_endian));
 	blake2b_update (&hash_a, previous.bytes.data (), sizeof (previous.bytes));
 	blake2b_update (&hash_a, representative.bytes.data (), sizeof (representative.bytes));
-	blake2b_update (&hash_a, balance.bytes.data (), sizeof (balance.bytes));
+	uint64_t balance_big_endian (boost::endian::native_to_big (balance.data));
+	blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
 	blake2b_update (&hash_a, link.bytes.data (), sizeof (link.bytes));
 }
 
@@ -1070,10 +1077,10 @@ rai::block_hash rai::state_block::previous () const
 void rai::state_block::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, hashables.account);
-	write (stream_a, hashables.creation_time.data);
+	write (stream_a, boost::endian::native_to_big (hashables.creation_time.data.data));
 	write (stream_a, hashables.previous);
 	write (stream_a, hashables.representative);
-	write (stream_a, hashables.balance);
+	write (stream_a, boost::endian::native_to_big (hashables.balance.data));
 	write (stream_a, hashables.link);
 	write (stream_a, signature);
 	write (stream_a, boost::endian::native_to_big (work));
@@ -1104,14 +1111,16 @@ bool rai::state_block::deserialize (rai::stream & stream_a)
 {
 	auto error (read (stream_a, hashables.account));
 	if (error) return error;
-	error = read (stream_a, hashables.creation_time.data);
+	error = read (stream_a, hashables.creation_time.data.data);
 	if (error) return error;
+	boost::endian::big_to_native_inplace (hashables.creation_time.data.data);
 	error = read (stream_a, hashables.previous);
 	if (error) return error;
 	error = read (stream_a, hashables.representative);
 	if (error) return error;
 	error = read (stream_a, hashables.balance);
 	if (error) return error;
+	boost::endian::big_to_native_inplace (hashables.balance.data);
 	error = read (stream_a, hashables.link);
 	if (error) return error;
 	error = read (stream_a, signature);

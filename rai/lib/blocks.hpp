@@ -66,7 +66,7 @@ public:
 	std::string to_date_string_local () const;
 	bool is_zero () const;
 	void clear ();
-	uint32_union data;
+	uint32_struct data;
 };
 
 class block

@@ -17,20 +17,21 @@ using uint256_t = boost::multiprecision::uint256_t;
 using uint512_t = boost::multiprecision::uint512_t;
 
 // Used for timestamp
-struct uint32_union
+struct uint32_struct
 {
 public:
-	uint32_union () = default;
-	uint32_union (uint32_t);
-	uint32_union (std::string const &);
-	bool operator== (rai::uint32_union const &) const;
+	uint32_struct () = default;
+	uint32_struct (uint32_t);
+	uint32_struct (std::string const &);
+	bool operator== (rai::uint32_struct const &) const;
 	void encode_dec (std::string &) const;
 	bool decode_dec (std::string const &);
 	std::string to_string_dec () const;
 	bool is_zero () const;
 	void clear ();
 	uint32_t number () const;
-	std::array<uint8_t, 4> bytes;
+	// wrapped storage is a native int type, not an always-big-endian byte array
+	::uint32_t data;
 };
 
 // Used for amounts
@@ -57,7 +58,8 @@ public:
 	bool is_zero () const;
 	std::string to_string () const;
 	std::string to_string_dec () const;
-	std::array<uint8_t, 8> bytes;   // TODO: if 64 bit, use native numeric type; watch out for byte order at serialization
+	// wrapped storage is a native int type, not an always-big-endian byte array
+	::uint64_t data;
 };
 
 // Balances are 128 bit.
