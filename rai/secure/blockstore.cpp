@@ -1092,7 +1092,7 @@ rai::amount_t rai::block_store::representation_get (MDB_txn * transaction_a, rai
 	rai::amount_t result;
 	if (status == 0)
 	{
-		rai::uint128_union rep;
+		rai::amount rep;
 		rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
 		auto error (rai::read (stream, rep));
 		assert (!error);
@@ -1107,7 +1107,7 @@ rai::amount_t rai::block_store::representation_get (MDB_txn * transaction_a, rai
 
 void rai::block_store::representation_put (MDB_txn * transaction_a, rai::account const & account_a, rai::amount_t const & representation_a)
 {
-	rai::uint128_union rep (representation_a);
+	rai::amount rep (representation_a);
 	auto status (mdb_put (transaction_a, representation, rai::mdb_val (account_a), rai::mdb_val (rep), 0));
 	assert (status == 0);
 }

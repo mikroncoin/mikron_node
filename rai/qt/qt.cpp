@@ -110,11 +110,11 @@ void rai_qt::self_pane::refresh_balance ()
 {
 	auto balance (wallet.node.balance_pending_manna(wallet.account));
 	auto text (std::string ("Balance: ") + wallet.format_balance (std::get<0> (balance)));
-	if (!std::get<2> (balance).is_zero ())
+	if (std::get<2> (balance) != 0)
 	{
 		text += "  (with manna: " + wallet.format_balance (std::get<2> (balance)) + ")";
 	}
-	if (!std::get<1> (balance).is_zero ())
+	if (std::get<1> (balance) != 0)
 	{
 		text += "\nPending: " + wallet.format_balance (std::get<1> (balance));
 	}
@@ -267,7 +267,7 @@ void rai_qt::accounts::refresh_wallet_balance ()
 		pending = pending + (this->wallet.node.ledger.account_pending (transaction, key));
 	}
 	auto final_text (std::string ("Balance: ") + wallet.format_balance (balance));
-	if (!pending.is_zero ())
+	if (pending != 0)
 	{
 		final_text += "\nPending: " + wallet.format_balance (pending);
 	}
@@ -294,7 +294,7 @@ void rai_qt::accounts::refresh ()
 			case rai::key_type::adhoc:
 			{
 				brush.setColor ("red");
-				display = !balance_amount.is_zero ();
+				display = (balance_amount != 0);
 				break;
 			}
 			default:
@@ -763,7 +763,7 @@ wallet (wallet_a)
 			this->history.refresh ();
 			auto balance (this->wallet.node.balance_pending (account));
 			auto final_text (std::string ("Balance (XRB): ") + wallet.format_balance (balance.first));
-			if (!balance.second.is_zero ())
+			if (balance.second != 0)
 			{
 				final_text += "\nPending: " + wallet.format_balance (balance.second);
 			}
@@ -1424,11 +1424,14 @@ std::string rai_qt::wallet::format_balance (rai::amount_t const & balance) const
 {
 	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 2, false);
 	auto unit = std::string ("MIK");
+	/*
 	if (rendering_ratio == rai::kxrb_ratio)
 	{
 		unit = std::string ("kxrb");
 	}
-	else if (rendering_ratio == rai::xrb_ratio)
+	else 
+	*/
+	if (rendering_ratio == rai::xrb_ratio)
 	{
 		unit = std::string ("xrb");
 	}
@@ -1798,7 +1801,7 @@ wallet (wallet_a)
 	QObject::connect (krai, &QRadioButton::toggled, [this]() {
 		if (krai->isChecked ())
 		{
-			this->wallet.change_rendering_ratio (rai::kxrb_ratio);
+			//this->wallet.change_rendering_ratio (rai::kxrb_ratio);
 		}
 	});
 	QObject::connect (rai, &QRadioButton::toggled, [this]() {

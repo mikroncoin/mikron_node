@@ -19,9 +19,9 @@ const char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CE
 const char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 const char const * beta_genesis_public_key_data = "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"; // mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
 const char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
-const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max ();
-const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
-const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
+const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max ();  // 2^64-1 18446744073709551615
+const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
+const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
 const uint32_t test_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t beta_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t live_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
@@ -33,8 +33,8 @@ const uint32_t test_manna_freq = 4;
 const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400;  // 1 day
 const rai::amount_t test_manna_increment = 1000;
-const rai::amount_t beta_manna_increment = (rai::amount_t)50 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;
-const rai::amount_t live_manna_increment = (rai::amount_t)82000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000 * (rai::amount_t)10000000000;  // Non-final
+const rai::amount_t beta_manna_increment = (rai::amount_t)50 * (rai::amount_t)10000000000;
+const rai::amount_t live_manna_increment = (rai::amount_t)82000 * (rai::amount_t)10000000000;  // Non-final
 
 char const * test_genesis_data = R"%%%({
 	"type": "state",
@@ -42,7 +42,7 @@ char const * test_genesis_data = R"%%%({
 	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
-	"balance": "340282366920938463463374607431768211455",
+	"balance": "18446744073709551615",
 	"link": "0000000000000000000000000000000000000000000000000000000000000000",
 	"work": "d0c54a27352bf9b1",
 	"signature": "59D0ED5D0A7243BBB24EDE9FFE76E8F7548E406E66CCD65A88FED1B1E423CE669DF5A8CDCE60A41A70B547C3711CA70A50755478C07EFC890B096932CC4D8F09"
@@ -63,7 +63,7 @@ char const * beta_genesis_data = R"%%%({
 	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
-	"balance": "300000000000000000000000000000000000000",
+	"balance": "3000000000000000000",
 	"link": "0000000000000000000000000000000000000000000000000000000000000000",
 	"work": "8374208633b49332",
 	"signature": "FE6AE6DEA56D2DE5706101BBDA6CF6261657632E4BE0FAD5537BF32DDCF0D1AD189613876CCDD817DA62731E748E6BB3D1B630673EC0697DB7AE9745BEDF1F08"
@@ -76,7 +76,7 @@ char const * live_genesis_data = R"%%%({
 	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
-	"balance": "300000000000000000000000000000000000000",
+	"balance": "3000000000000000000",
 	"link": "0000000000000000000000000000000000000000000000000000000000000000",
 	"work": "744f96cdce4c96a8",
 	"signature": "9EDBC55F4EEA81D5748B9C31FA7269DC1C2C133BC603B85D51DE5EC25B1C56DA137E22FA6722C17658C02C67E9E8C5DC7F5F8DC591428416A8032CD99F0F2603"

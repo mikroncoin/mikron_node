@@ -173,7 +173,7 @@ TEST (wallet, send_async)
 	rai::keypair key2;
 	std::thread thread ([&system]() {
 		system.deadline_set (10s);
-		while (!system.nodes[0]->balance (rai::test_genesis_key.pub).is_zero ())
+		while (system.nodes[0]->balance (rai::test_genesis_key.pub) != 0)
 		{
 			ASSERT_NO_ERROR (system.poll ());
 		}

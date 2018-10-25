@@ -1031,7 +1031,7 @@ bool rai::node_config::upgrade_json (unsigned version, boost::property_tree::ptr
 		}
 		case 2:
 		{
-			tree_a.put ("inactive_supply", rai::uint128_union (0).to_string_dec ());
+			tree_a.put ("inactive_supply", rai::uint128_struct (0).to_string_dec ());
 			tree_a.put ("password_fanout", std::to_string (1024));
 			tree_a.put ("io_threads", std::to_string (io_threads));
 			tree_a.put ("work_threads", std::to_string (work_threads));
@@ -1041,13 +1041,13 @@ bool rai::node_config::upgrade_json (unsigned version, boost::property_tree::ptr
 		}
 		case 3:
 			tree_a.erase ("receive_minimum");
-			tree_a.put ("receive_minimum", rai::xrb_ratio.convert_to<std::string> ());
+			tree_a.put ("receive_minimum", std::to_string (rai::xrb_ratio));
 			tree_a.erase ("version");
 			tree_a.put ("version", "4");
 			result = true;
 		case 4:
 			tree_a.erase ("receive_minimum");
-			tree_a.put ("receive_minimum", rai::xrb_ratio.convert_to<std::string> ());
+			tree_a.put ("receive_minimum", std::to_string (rai::xrb_ratio));
 			tree_a.erase ("version");
 			tree_a.put ("version", "5");
 			result = true;
@@ -1914,7 +1914,7 @@ stats (config.stat_config)
 		extern unsigned char rai_bootstrap_weights[];
 		extern size_t rai_bootstrap_weights_size;
 		rai::bufferstream weight_stream ((const uint8_t *)rai_bootstrap_weights, rai_bootstrap_weights_size);
-		rai::uint128_union block_height;
+		rai::uint128_struct block_height;
 		if (!rai::read (weight_stream, block_height))
 		{
 			auto max_blocks = (uint64_t)block_height.number ();
@@ -2544,7 +2544,7 @@ int rai::node::price (rai::amount_t const & balance_a, int amount_a)
 	for (auto i (0); i < amount_a; ++i)
 	{
 		balance_l -= rai::Gxrb_ratio;
-		auto balance_scaled ((balance_l / rai::Mxrb_ratio).convert_to<double> ());
+		auto balance_scaled ((double)(balance_l / rai::Mxrb_ratio));
 		auto units (balance_scaled / 1000.0);
 		auto unit_price (((free_cutoff - units) / free_cutoff) * price_max);
 		result += std::min (std::max (0.0, unit_price), price_max);
@@ -3706,7 +3706,7 @@ void rai::election::log_votes (rai::tally_t const & tally_a)
 	BOOST_LOG (node.log) << boost::str (boost::format ("Vote tally for root %1%") % status.winner->root ().to_string ());
 	for (auto i (tally_a.begin ()), n (tally_a.end ()); i != n; ++i)
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Block %1% weight %2%") % i->second->hash ().to_string () % i->first.convert_to<std::string> ());
+		BOOST_LOG (node.log) << boost::str (boost::format ("Block %1% weight %2%") % i->second->hash ().to_string () % std::to_string (i->first));
 	}
 	for (auto i (last_votes.begin ()), n (last_votes.end ()); i != n; ++i)
 	{

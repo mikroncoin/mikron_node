@@ -622,7 +622,7 @@ TEST (bootstrap_processor, process_new)
 	system.wallet (1)->insert_adhoc (key2.prv);
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, system.nodes[0]->config.receive_minimum.number ()));
 	system.deadline_set (10s);
-	while (system.nodes[0]->balance (key2.pub).is_zero ())
+	while (system.nodes[0]->balance (key2.pub) == 0)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}

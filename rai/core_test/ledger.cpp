@@ -49,7 +49,7 @@ TEST (ledger, empty)
 	rai::account account;
 	rai::transaction transaction (store.environment, nullptr, false);
 	auto balance (ledger.account_balance (transaction, account));
-	ASSERT_TRUE (balance.is_zero ());
+	ASSERT_TRUE (balance == 0);
 }
 
 // Genesis account should have the max balance on empty initialization
@@ -654,7 +654,7 @@ TEST (system, generate_send_new)
 	}
 	rai::keypair stake_preserver;
 	rai::amount_t balance = rai::genesis_amount;
-	rai::amount_t amount = balance / 3 * 2;
+	rai::amount_t amount = (balance / 3) * 2;
 	balance = balance - amount;
 	auto send_block (system.wallet (0)->send_action (rai::genesis_account, stake_preserver.pub, amount, true));
 	{

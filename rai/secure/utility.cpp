@@ -117,8 +117,14 @@ value ({ size_a, data_a })
 {
 }
 
-rai::mdb_val::mdb_val (rai::uint128_union const & val_a) :
-mdb_val (sizeof (val_a), const_cast<rai::uint128_union *> (&val_a))
+// TODO serialization byte order
+rai::mdb_val::mdb_val (rai::uint64_struct const & val_a) :
+mdb_val (sizeof (val_a), const_cast<rai::uint64_struct *> (&val_a))
+{
+}
+
+rai::mdb_val::mdb_val (rai::uint128_struct const & val_a) :
+mdb_val (sizeof (val_a), const_cast<rai::uint128_struct *> (&val_a))
 {
 }
 

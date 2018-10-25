@@ -349,7 +349,14 @@ TEST (state_block, serialization)
 		block1.serialize (stream);
 	}
 	ASSERT_EQ (rai::state_block::size, bytes.size ());
-	ASSERT_EQ (0x5, bytes[219]); // Ensure work is serialized big-endian
+	ASSERT_EQ (212, bytes.size ());
+	ASSERT_EQ (32 + 4 + 32 + 32 + 8 + 32 + 64 + 8, bytes.size ());
+	ASSERT_EQ (0x39, bytes[32 + 3]); // Ensure creation_time is serialized big-endian
+	ASSERT_EQ (0x00, bytes[32 + 0]);
+	ASSERT_EQ (0x02, bytes[32 + 4 + 32 + 32 + 7]); // Ensure amount is serialized big-endian
+	ASSERT_EQ (0x00, bytes[32 + 4 + 32 + 32 + 0]);
+	ASSERT_EQ (0x05, bytes[32 + 4 + 32 + 32 + 8 + 32 + 64 + 7]); // Ensure work is serialized big-endian
+	ASSERT_EQ (0x00, bytes[32 + 4 + 32 + 32 + 8 + 32 + 64 + 0]);
 	bool error1 (false);
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	rai::state_block block2 (error1, stream);

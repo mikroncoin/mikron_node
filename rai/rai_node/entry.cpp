@@ -126,7 +126,7 @@ int main (int argc, char * const * argv)
 				rai::account account (i->first.uint256 ());
 				auto amount (node.node->store.representation_get (transaction, account));
 				total += amount;
-				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % account.to_account () % amount.convert_to<std::string> () % total.convert_to<std::string> ());
+				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % account.to_account () % std::to_string (amount) % std::to_string (total));
 			}
 			std::map<rai::account, rai::amount_t> calculated;
 			for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
@@ -140,7 +140,7 @@ int main (int argc, char * const * argv)
 			for (auto i (calculated.begin ()), n (calculated.end ()); i != n; ++i)
 			{
 				total += i->second;
-				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % i->first.to_account () % i->second.convert_to<std::string> () % total.convert_to<std::string> ());
+				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % i->first.to_account () % std::to_string (i->second) % std::to_string (total));
 			}
 		}
 		else if (vm.count ("debug_account_count"))

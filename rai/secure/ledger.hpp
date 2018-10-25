@@ -40,7 +40,7 @@ public:
 	rai::block_hash block_source (MDB_txn *, rai::block const &);
 	rai::process_return process (MDB_txn *, rai::block const &);
 	void rollback (MDB_txn *, rai::block_hash const &);
-	void change_latest (MDB_txn *, rai::account const &, rai::block_hash const &, rai::account const &, rai::uint128_union const &, rai::timestamp_t, uint64_t, bool = false);
+	void change_latest (MDB_txn *, rai::account const &, rai::block_hash const &, rai::account const &, rai::amount const &, rai::timestamp_t, uint64_t, bool = false);
 	void checksum_update (MDB_txn *, rai::block_hash const &);
 	rai::checksum checksum (MDB_txn *, rai::account const &, rai::account const &);
 	void dump_account_chain (rai::account const &);

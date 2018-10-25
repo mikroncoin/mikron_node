@@ -245,11 +245,11 @@ rai::account rai::system::get_random_account (std::vector<rai::account> & accoun
 rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node & node_a, rai::account const & account_a)
 {
 	rai::amount_t balance (node_a.ledger.account_balance (transaction_a, account_a));
-	std::string balance_text (balance.convert_to<std::string> ());
-	rai::uint128_union random_amount;
+	std::string balance_text (std::to_string (balance));
+	rai::uint64_struct random_amount;
 	random_pool.GenerateBlock (random_amount.bytes.data (), sizeof (random_amount.bytes));
 	auto result (((rai::uint256_t{ random_amount.number () } * balance) / rai::uint256_t{ std::numeric_limits<rai::amount_t>::max () }).convert_to<rai::amount_t> ());
-	std::string text (result.convert_to<std::string> ());
+	std::string text (std::to_string (result));
 	return result;
 }
 
@@ -272,7 +272,7 @@ void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::a
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if (!amount.is_zero ())
+	if (amount != 0)
 	{
 		auto hash (wallet (0)->send_sync (source, destination, amount));
 		assert (!hash.is_zero ());
@@ -312,7 +312,7 @@ void rai::system::generate_send_new (rai::node & node_a, std::vector<rai::accoun
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if (!amount.is_zero ())
+	if (amount != 0)
 	{
 		auto pub (node_a.wallets.items.begin ()->second->deterministic_insert ());
 		accounts_a.push_back (pub);
@@ -448,6 +448,7 @@ void rai::landing::write_store ()
 
 rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 {
+	// TODO: adjust for smaller amount representation (64 bit)
 	// Halving period ~= Exponent of 2 in seconds approximately 1 year = 2^25 = 33554432
 	// Interval = Exponent of 2 in seconds approximately 1 minute = 2^10 = 64
 	uint64_t intervals_per_period (1 << (25 - interval_exponent));

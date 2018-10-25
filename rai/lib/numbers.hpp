@@ -9,10 +9,14 @@ namespace rai
 // Random pool used by RaiBlocks.
 // This must be thread_local as long as the AutoSeededRandomPool implementation requires it
 extern thread_local CryptoPP::AutoSeededRandomPool random_pool;
+
+using uint32_t = ::uint32_t;
+using uint64_t = ::uint64_t;
 using uint128_t = boost::multiprecision::uint128_t;
 using uint256_t = boost::multiprecision::uint256_t;
 using uint512_t = boost::multiprecision::uint512_t;
 
+// Used for timestamp
 struct uint32_union
 {
 public:
@@ -29,44 +33,71 @@ public:
 	std::array<uint8_t, 4> bytes;
 };
 
-union uint128_union
+// Used for amounts
+struct uint64_struct
 {
 public:
-	uint128_union () = default;
-	uint128_union (std::string const &);
-	uint128_union (uint64_t);
-	uint128_union (rai::uint128_union const &) = default;
-	uint128_union (rai::uint128_t const &);
-	bool operator== (rai::uint128_union const &) const;
-	bool operator!= (rai::uint128_union const &) const;
-	bool operator< (rai::uint128_union const &) const;
-	bool operator> (rai::uint128_union const &) const;
+	uint64_struct () = default;
+	uint64_struct (std::string const &);
+	uint64_struct (rai::uint64_t);
+	uint64_struct (rai::uint64_struct const &) = default;
+	//uint64_struct (rai::uint64_t const &);
+	bool operator== (rai::uint64_struct const &) const;
+	bool operator!= (rai::uint64_struct const &) const;
+	bool operator< (rai::uint64_struct const &) const;
+	bool operator> (rai::uint64_struct const &) const;
 	void encode_hex (std::string &) const;
 	bool decode_hex (std::string const &);
 	void encode_dec (std::string &) const;
 	bool decode_dec (std::string const &);
-	std::string format_balance (rai::uint128_t scale, int precision, bool group_digits);
-	std::string format_balance (rai::uint128_t scale, int precision, bool group_digits, const std::locale & locale);
-	rai::uint128_t number () const;
+	std::string format_balance (rai::uint64_t scale, int precision, bool group_digits);
+	std::string format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale);
+	rai::uint64_t number () const;
 	void clear ();
 	bool is_zero () const;
 	std::string to_string () const;
 	std::string to_string_dec () const;
-	std::array<uint8_t, 16> bytes;
-	std::array<char, 16> chars;
-	std::array<uint32_t, 4> dwords;
-	std::array<uint64_t, 2> qwords;
+	std::array<uint8_t, 8> bytes;   // TODO: if 64 bit, use native numeric type; watch out for byte order at serialization
 };
+
 // Balances are 128 bit.
-using amount = uint128_union;
-using amount_t = rai::uint128_t;
+using amount_t = ::uint64_t;
+using amount = uint64_struct;
+
 // SI dividers
-rai::amount_t const Gxrb_ratio = rai::amount_t ("1000000000000000000000000000000000"); // 10^33
-rai::amount_t const Mxrb_ratio = rai::amount_t ("1000000000000000000000000000000"); // 10^30
-rai::amount_t const kxrb_ratio = rai::amount_t ("1000000000000000000000000000"); // 10^27
-rai::amount_t const xrb_ratio = rai::amount_t ("1000000000000000000000000"); // 10^24
-rai::amount_t const mxrb_ratio = rai::amount_t ("1000000000000000000000"); // 10^21
-//rai::amount_t const uxrb_ratio = rai::amount_t ("1000000000000000000"); // 10^18
+rai::amount_t const Gxrb_ratio = rai::amount_t(10000000000000); // 10^13  // TODO test-only
+rai::amount_t const Mxrb_ratio = rai::amount_t(10000000000); // 10^10
+rai::amount_t const xrb_ratio = rai::amount_t(10000); // 10^4
+
+// Used in keys
+union uint128_struct
+{
+public:
+	uint128_struct () = default;
+	//uint128_struct (std::string const &);
+	//uint128_struct (uint64_t);
+	//uint128_struct (rai::uint128_struct const &) = default;
+	uint128_struct (rai::uint128_t const &);
+	//bool operator== (rai::uint128_struct const &) const;
+	//bool operator!= (rai::uint128_struct const &) const;
+	//bool operator< (rai::uint128_struct const &) const;
+	//bool operator> (rai::uint128_struct const &) const;
+	//void encode_hex (std::string &) const;
+	//bool decode_hex (std::string const &);
+	void encode_dec (std::string &) const;
+	bool decode_dec (std::string const &);
+	//std::string format_balance (rai::uint64_t scale, int precision, bool group_digits);
+	//std::string format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale);
+	rai::uint128_t number () const;
+	//void clear ();
+	//bool is_zero () const;
+	//std::string to_string () const;
+	std::string to_string_dec () const;
+	std::array<uint8_t, 16> bytes;
+	//std::array<char, 16> chars;
+	//std::array<uint32_t, 4> dwords;
+	//std::array<uint64_t, 2> qwords;
+};
 
 class raw_key;
 union uint256_union
@@ -75,7 +106,7 @@ union uint256_union
 	uint256_union (std::string const &);
 	uint256_union (uint64_t);
 	uint256_union (rai::uint256_t const &);
-	void encrypt (rai::raw_key const &, rai::raw_key const &, uint128_union const &);
+	void encrypt (rai::raw_key const &, rai::raw_key const &, uint128_struct const &);
 	uint256_union & operator^= (rai::uint256_union const &);
 	uint256_union operator^ (rai::uint256_union const &) const;
 	bool operator== (rai::uint256_union const &) const;
@@ -93,7 +124,7 @@ union uint256_union
 	std::array<char, 32> chars;
 	std::array<uint32_t, 8> dwords;
 	std::array<uint64_t, 4> qwords;
-	std::array<uint128_union, 2> owords;
+	std::array<uint128_struct, 2> owords;
 	void clear ();
 	bool is_zero () const;
 	std::string to_string () const;
@@ -111,7 +142,7 @@ class raw_key
 public:
 	raw_key () = default;
 	~raw_key ();
-	void decrypt (rai::uint256_union const &, rai::raw_key const &, uint128_union const &);
+	void decrypt (rai::uint256_union const &, rai::raw_key const &, uint128_struct const &);
 	bool operator== (rai::raw_key const &) const;
 	bool operator!= (rai::raw_key const &) const;
 	rai::uint256_union data;

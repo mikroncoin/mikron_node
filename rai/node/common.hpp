@@ -22,7 +22,7 @@ bool reserved_address (rai::endpoint const &, bool);
 static uint64_t endpoint_hash_raw (rai::endpoint const & endpoint_a)
 {
 	assert (endpoint_a.address ().is_v6 ());
-	rai::uint128_union address;
+	rai::uint128_struct address;
 	address.bytes = endpoint_a.address ().to_v6 ().to_bytes ();
 	XXH64_state_t hash;
 	XXH64_reset (&hash, 0);
@@ -35,7 +35,7 @@ static uint64_t endpoint_hash_raw (rai::endpoint const & endpoint_a)
 static uint64_t ip_address_hash_raw (boost::asio::ip::address const & ip_a)
 {
 	assert (ip_a.is_v6 ());
-	rai::uint128_union bytes;
+	rai::uint128_struct bytes;
 	bytes.bytes = ip_a.to_v6 ().to_bytes ();
 	XXH64_state_t hash;
 	XXH64_reset (&hash, 0);
@@ -315,7 +315,7 @@ public:
 	void serialize (rai::stream &) override;
 	void visit (rai::message_visitor &) const override;
 	rai::uint256_union account;
-	rai::uint128_union minimum_amount;
+	rai::amount minimum_amount;
 	bulk_pull_account_flags flags;
 };
 class bulk_pull_blocks : public message

@@ -233,7 +233,7 @@ bool rai::uint256_union::operator== (rai::uint256_union const & other_a) const
 }
 
 // Construct a uint256_union = AES_ENC_CTR (cleartext, key, iv)
-void rai::uint256_union::encrypt (rai::raw_key const & cleartext, rai::raw_key const & key, uint128_union const & iv)
+void rai::uint256_union::encrypt (rai::raw_key const & cleartext, rai::raw_key const & key, uint128_struct const & iv)
 {
 	CryptoPP::AES::Encryption alg (key.data.bytes.data (), sizeof (key.data.bytes));
 	CryptoPP::CTR_Mode_ExternalCipher::Encryption enc (alg, iv.bytes.data ());
@@ -485,7 +485,7 @@ bool rai::raw_key::operator!= (rai::raw_key const & other_a) const
 }
 
 // This this = AES_DEC_CTR (ciphertext, key, iv)
-void rai::raw_key::decrypt (rai::uint256_union const & ciphertext, rai::raw_key const & key_a, uint128_union const & iv)
+void rai::raw_key::decrypt (rai::uint256_union const & ciphertext, rai::raw_key const & key_a, uint128_struct const & iv)
 {
 	CryptoPP::AES::Encryption alg (key_a.data.bytes.data (), sizeof (key_a.data.bytes));
 	CryptoPP::CTR_Mode_ExternalCipher::Decryption dec (alg, iv.bytes.data ());
@@ -522,17 +522,7 @@ bool rai::validate_message (rai::public_key const & public_key, rai::uint256_uni
 	return result;
 }
 
-rai::uint128_union::uint128_union (std::string const & string_a)
-{
-	decode_hex (string_a);
-}
-
-rai::uint128_union::uint128_union (uint64_t value_a)
-{
-	*this = rai::uint128_t (value_a);
-}
-
-rai::uint128_union::uint128_union (rai::uint128_t const & value_a)
+rai::uint128_struct::uint128_struct (rai::uint128_t const & value_a)
 {
 	rai::uint128_t number_l (value_a);
 	for (auto i (bytes.rbegin ()), n (bytes.rend ()); i != n; ++i)
@@ -542,27 +532,7 @@ rai::uint128_union::uint128_union (rai::uint128_t const & value_a)
 	}
 }
 
-bool rai::uint128_union::operator== (rai::uint128_union const & other_a) const
-{
-	return qwords[0] == other_a.qwords[0] && qwords[1] == other_a.qwords[1];
-}
-
-bool rai::uint128_union::operator!= (rai::uint128_union const & other_a) const
-{
-	return !(*this == other_a);
-}
-
-bool rai::uint128_union::operator< (rai::uint128_union const & other_a) const
-{
-	return number () < other_a.number ();
-}
-
-bool rai::uint128_union::operator> (rai::uint128_union const & other_a) const
-{
-	return number () > other_a.number ();
-}
-
-rai::uint128_t rai::uint128_union::number () const
+rai::uint128_t rai::uint128_struct::number () const
 {
 	rai::uint128_t result = 0;
 	auto shift (0);
@@ -575,41 +545,7 @@ rai::uint128_t rai::uint128_union::number () const
 	return result;
 }
 
-void rai::uint128_union::encode_hex (std::string & text) const
-{
-	assert (text.empty ());
-	std::stringstream stream;
-	stream << std::hex << std::noshowbase << std::setw (32) << std::setfill ('0');
-	stream << number ();
-	text = stream.str ();
-}
-
-bool rai::uint128_union::decode_hex (std::string const & text)
-{
-	auto error (text.size () > 32);
-	if (!error)
-	{
-		std::stringstream stream (text);
-		stream << std::hex << std::noshowbase;
-		rai::uint128_t number_l;
-		try
-		{
-			stream >> number_l;
-			*this = number_l;
-			if (!stream.eof ())
-			{
-				error = true;
-			}
-		}
-		catch (std::runtime_error &)
-		{
-			error = true;
-		}
-	}
-	return error;
-}
-
-void rai::uint128_union::encode_dec (std::string & text) const
+void rai::uint128_struct::encode_dec (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -618,7 +554,7 @@ void rai::uint128_union::encode_dec (std::string & text) const
 	text = stream.str ();
 }
 
-bool rai::uint128_union::decode_dec (std::string const & text)
+bool rai::uint128_struct::decode_dec (std::string const & text)
 {
 	auto error (text.size () > 39 || (text.size () > 1 && text[0] == '0') || (text.size () > 0 && text[0] == '-'));
 	if (!error)
@@ -644,7 +580,136 @@ bool rai::uint128_union::decode_dec (std::string const & text)
 	return error;
 }
 
-void format_frac (std::ostringstream & stream, rai::amount_t value, rai::amount_t scale, int precision)
+std::string rai::uint128_struct::to_string_dec () const
+{
+	std::string result;
+	encode_dec (result);
+	return result;
+}
+
+rai::uint64_struct::uint64_struct (std::string const & string_a)
+{
+	decode_hex (string_a);
+}
+
+rai::uint64_struct::uint64_struct (rai::uint64_t value_a)
+{
+	rai::uint64_t number_l (value_a);
+	for (auto i (bytes.rbegin ()), n (bytes.rend ()); i != n; ++i)
+	{
+		*i = static_cast<uint8_t> (number_l & static_cast<uint8_t> (0xff));
+		number_l >>= 8;
+	}
+}
+
+bool rai::uint64_struct::operator== (rai::uint64_struct const & other_a) const
+{
+	return number () == other_a.number ();  // TODO: if 64 bit, use native number type
+}
+
+bool rai::uint64_struct::operator!= (rai::uint64_struct const & other_a) const
+{
+	return !(*this == other_a);
+}
+
+bool rai::uint64_struct::operator< (rai::uint64_struct const & other_a) const
+{
+	return number () < other_a.number ();  // TODO
+}
+
+bool rai::uint64_struct::operator> (rai::uint64_struct const & other_a) const
+{
+	return number () > other_a.number ();   // TODO
+}
+
+rai::uint64_t rai::uint64_struct::number () const
+{
+	rai::uint64_t result = 0;
+	auto shift (0);
+	for (auto i (bytes.begin ()), n (bytes.end ()); i != n; ++i)
+	{
+		result <<= shift;
+		result |= *i;
+		shift = 8;
+	}
+	return result;
+}
+
+void rai::uint64_struct::encode_hex (std::string & text) const
+{
+	assert (text.empty ());
+	std::stringstream stream;
+	stream << std::hex << std::noshowbase << std::setw (16) << std::setfill ('0');
+	stream << number ();
+	text = stream.str ();
+}
+
+bool rai::uint64_struct::decode_hex (std::string const & text)
+{
+	auto error (text.size () > 16);
+	if (!error)
+	{
+		std::stringstream stream (text);
+		stream << std::hex << std::noshowbase;
+		rai::uint64_t number_l;
+		try
+		{
+			stream >> number_l;
+			*this = number_l;
+			if (!stream.eof ())
+			{
+				error = true;
+			}
+		}
+		catch (std::runtime_error &)
+		{
+			error = true;
+		}
+	}
+	return error;
+}
+
+void rai::uint64_struct::encode_dec (std::string & text) const
+{
+	assert (text.empty ());
+	std::stringstream stream;
+	stream << std::dec << std::noshowbase;
+	stream << number ();
+	text = stream.str ();
+}
+
+bool rai::uint64_struct::decode_dec (std::string const & text)
+{
+	if (text.size () > 20 || (text.size () > 1 && text[0] == '0') || (text.size () > 0 && text[0] == '-'))
+	{
+		return true;
+	}
+	std::stringstream stream (text);
+	stream << std::dec << std::noshowbase;
+	boost::multiprecision::checked_uint128_t number_l;  // checked and larger
+	try
+	{
+		stream >> number_l;
+		if ((rai::uint128_t)number_l > (rai::uint128_t)std::numeric_limits<uint64_t>::max ())
+		{
+			// overflow
+			return true;
+		}
+		rai::uint64_t unchecked (number_l);
+		*this = unchecked;
+		if (!stream.eof ())
+		{
+			return true;
+		}
+	}
+	catch (std::runtime_error &)
+	{
+		return true;
+	}
+	return false;
+}
+
+void format_frac (std::ostringstream & stream, rai::uint64_t value, rai::uint64_t scale, int precision)
 {
 	auto reduce = scale;
 	auto rem = value;
@@ -658,9 +723,9 @@ void format_frac (std::ostringstream & stream, rai::amount_t value, rai::amount_
 	}
 }
 
-void format_dec (std::ostringstream & stream, rai::amount_t value, char group_sep, const std::string & groupings)
+void format_dec (std::ostringstream & stream, rai::uint64_t value, char group_sep, const std::string & groupings)
 {
-	auto largestPow10 = rai::uint256_t (1);
+	auto largestPow10 = rai::uint128_t (1);  // larger range
 	int dec_count = 1;
 	while (1)
 	{
@@ -673,14 +738,14 @@ void format_dec (std::ostringstream & stream, rai::amount_t value, char group_se
 		dec_count++;
 	}
 
-	if (dec_count > 39)
+	if (dec_count > 20)
 	{
 		// Impossible.
 		return;
 	}
 
 	// This could be cached per-locale.
-	bool emit_group[39];
+	bool emit_group[20];
 	if (group_sep != 0)
 	{
 		int group_index = 0;
@@ -701,7 +766,7 @@ void format_dec (std::ostringstream & stream, rai::amount_t value, char group_se
 		}
 	}
 
-	auto reduce = rai::amount_t (largestPow10);
+	auto reduce = rai::uint64_t (largestPow10);
 	rai::amount_t rem = value;
 	while (reduce > 0)
 	{
@@ -717,7 +782,7 @@ void format_dec (std::ostringstream & stream, rai::amount_t value, char group_se
 	}
 }
 
-std::string format_balance (rai::amount_t balance, rai::amount_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
+std::string format_balance (rai::uint64_t balance, rai::uint64_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
 {
 	std::ostringstream stream;
 	auto int_part = balance / scale;
@@ -754,7 +819,7 @@ std::string format_balance (rai::amount_t balance, rai::amount_t scale, int prec
 	return stream.str ();
 }
 
-std::string rai::uint128_union::format_balance (rai::uint128_t scale, int precision, bool group_digits)
+std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precision, bool group_digits)
 {
 	auto thousands_sep = std::use_facet<std::numpunct<char>> (std::locale ()).thousands_sep ();
 	auto decimal_point = std::use_facet<std::numpunct<char>> (std::locale ()).decimal_point ();
@@ -762,7 +827,7 @@ std::string rai::uint128_union::format_balance (rai::uint128_t scale, int precis
 	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
-std::string rai::uint128_union::format_balance (rai::uint128_t scale, int precision, bool group_digits, const std::locale & locale)
+std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale)
 {
 	auto thousands_sep = std::use_facet<std::moneypunct<char>> (locale).thousands_sep ();
 	auto decimal_point = std::use_facet<std::moneypunct<char>> (locale).decimal_point ();
@@ -770,24 +835,24 @@ std::string rai::uint128_union::format_balance (rai::uint128_t scale, int precis
 	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
-void rai::uint128_union::clear ()
+void rai::uint64_struct::clear ()
 {
-	qwords.fill (0);
+	bytes.fill (0);
 }
 
-bool rai::uint128_union::is_zero () const
+bool rai::uint64_struct::is_zero () const
 {
-	return qwords[0] == 0 && qwords[1] == 0;
+	return number () == (rai::amount_t)0;  // TODO use 64 bit native number
 }
 
-std::string rai::uint128_union::to_string () const
+std::string rai::uint64_struct::to_string () const
 {
 	std::string result;
 	encode_hex (result);
 	return result;
 }
 
-std::string rai::uint128_union::to_string_dec () const
+std::string rai::uint64_struct::to_string_dec () const
 {
 	std::string result;
 	encode_dec (result);
