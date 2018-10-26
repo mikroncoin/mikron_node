@@ -1,4 +1,5 @@
 #include <rai/lib/numbers.hpp>
+#include <rai/lib/blocks.hpp>
 
 #include <rai/node/common.hpp>
 
@@ -8,6 +9,8 @@
 
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
+
+#include <boost/endian/conversion.hpp>
 
 thread_local CryptoPP::AutoSeededRandomPool rai::random_pool;
 
@@ -108,6 +111,24 @@ void rai::uint32_struct::clear ()
 uint32_t rai::uint32_struct::number () const
 {
 	return data;
+}
+
+uint32_t rai::uint32_struct::number_big_endian () const
+{
+	return boost::endian::native_to_big (data);
+}
+
+void rai::uint32_struct::serialize (rai::stream & stream_a) const
+{
+	write (stream_a, boost::endian::native_to_big (data));
+}
+
+bool rai::uint32_struct::deserialize (rai::stream & stream_a)
+{
+	auto error (rai::read (stream_a, data));
+	if (error) return error;
+	boost::endian::big_to_native_inplace (data);
+	return false;
 }
 
 void rai::uint256_union::encode_account (std::string & destination_a) const
@@ -609,6 +630,11 @@ rai::uint64_t rai::uint64_struct::number () const
 	return data;
 }
 
+rai::uint64_t rai::uint64_struct::number_big_endian () const
+{
+	return boost::endian::native_to_big (data);
+}
+
 void rai::uint64_struct::encode_hex (std::string & text) const
 {
 	assert (text.empty ());
@@ -681,6 +707,53 @@ bool rai::uint64_struct::decode_dec (std::string const & text)
 		return true;
 	}
 	return false;
+}
+
+void rai::uint64_struct::clear ()
+{
+	data = 0;
+}
+
+bool rai::uint64_struct::is_zero () const
+{
+	return (data == 0);
+}
+
+std::string rai::uint64_struct::to_string () const
+{
+	std::string result;
+	encode_hex (result);
+	return result;
+}
+
+std::string rai::uint64_struct::to_string_dec () const
+{
+	std::string result;
+	encode_dec (result);
+	return result;
+}
+
+void rai::uint64_struct::serialize (rai::stream & stream_a) const
+{
+	write (stream_a, boost::endian::native_to_big (data));
+}
+
+bool rai::uint64_struct::deserialize (rai::stream & stream_a)
+{
+	auto error (rai::read (stream_a, data));
+	if (error) return error;
+	boost::endian::big_to_native_inplace (data);
+	return false;
+}
+
+rai::amount::amount (std::string const & string_a)
+{
+	decode_dec (string_a);
+}
+
+rai::amount::amount (rai::amount_t value_a)
+{
+	data = value_a;
 }
 
 void format_frac (std::ostringstream & stream, rai::uint64_t value, rai::uint64_t scale, int precision)
@@ -793,7 +866,7 @@ std::string format_balance (rai::uint64_t balance, rai::uint64_t scale, int prec
 	return stream.str ();
 }
 
-std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precision, bool group_digits)
+std::string rai::amount::format_balance (rai::uint64_t scale, int precision, bool group_digits)
 {
 	auto thousands_sep = std::use_facet<std::numpunct<char>> (std::locale ()).thousands_sep ();
 	auto decimal_point = std::use_facet<std::numpunct<char>> (std::locale ()).decimal_point ();
@@ -801,34 +874,10 @@ std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precisi
 	return ::format_balance (data, scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
-std::string rai::uint64_struct::format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale)
+std::string rai::amount::format_balance (rai::uint64_t scale, int precision, bool group_digits, const std::locale & locale)
 {
 	auto thousands_sep = std::use_facet<std::moneypunct<char>> (locale).thousands_sep ();
 	auto decimal_point = std::use_facet<std::moneypunct<char>> (locale).decimal_point ();
 	std::string grouping = std::use_facet<std::moneypunct<char>> (locale).grouping ();
 	return ::format_balance (data, scale, precision, group_digits, thousands_sep, decimal_point, grouping);
-}
-
-void rai::uint64_struct::clear ()
-{
-	data = 0;
-}
-
-bool rai::uint64_struct::is_zero () const
-{
-	return (data == 0);
-}
-
-std::string rai::uint64_struct::to_string () const
-{
-	std::string result;
-	encode_hex (result);
-	return result;
-}
-
-std::string rai::uint64_struct::to_string_dec () const
-{
-	std::string result;
-	encode_dec (result);
-	return result;
 }
