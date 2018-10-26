@@ -936,16 +936,15 @@ lmdb_max_dbs (128)
 		case rai::rai_networks::rai_beta_network:
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
-			//preconfigured_peers.push_back("::ffff:127.0.0.1");
 			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04"));  // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
 			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65"));  // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
 			preconfigured_representatives.push_back (rai::account ("F2A6163F9F0E911A8027AF044128577C78C462D014095DF2DB302965103D939D"));  // Rep3 mik_3wo84rzsy5nj5c14hdr6a6n7gz5rrjjf171bdqsfpe3bena5u6wxe3izxrq8
-			preconfigured_representatives.push_back (rai::genesis_account);  // Genesis mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
 			break;
 
 		case rai::rai_networks::rai_live_network:
 			preconfigured_peers.push_back ("node.mikron.io");
 			preconfigured_peers.push_back ("node2.mikron.io");
+			preconfigured_peers.push_back ("node3.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF"));
 			// 2018-09-01 UTC 00:00 in unix time
 			// Technically, time_t is never defined to be unix time, but compilers implement it as such
@@ -1031,7 +1030,7 @@ bool rai::node_config::upgrade_json (unsigned version, boost::property_tree::ptr
 		}
 		case 2:
 		{
-			tree_a.put ("inactive_supply", rai::uint128_union (0).to_string_dec ());
+			tree_a.put ("inactive_supply", rai::uint128_struct (0).to_string_dec ());
 			tree_a.put ("password_fanout", std::to_string (1024));
 			tree_a.put ("io_threads", std::to_string (io_threads));
 			tree_a.put ("work_threads", std::to_string (work_threads));
@@ -1041,13 +1040,13 @@ bool rai::node_config::upgrade_json (unsigned version, boost::property_tree::ptr
 		}
 		case 3:
 			tree_a.erase ("receive_minimum");
-			tree_a.put ("receive_minimum", rai::xrb_ratio.convert_to<std::string> ());
+			tree_a.put ("receive_minimum", std::to_string (rai::xrb_ratio));
 			tree_a.erase ("version");
 			tree_a.put ("version", "4");
 			result = true;
 		case 4:
 			tree_a.erase ("receive_minimum");
-			tree_a.put ("receive_minimum", rai::xrb_ratio.convert_to<std::string> ());
+			tree_a.put ("receive_minimum", std::to_string (rai::xrb_ratio));
 			tree_a.erase ("version");
 			tree_a.put ("version", "5");
 			result = true;
@@ -1586,7 +1585,7 @@ rai::process_return rai::block_processor::process_receive_one (MDB_txn * transac
 		{
 			if (node.config.logging.ledger_duplicate_logging ())
 			{
-				BOOST_LOG (node.log) << boost::str (boost::format ("Old for: %1%") % block_a->hash ().to_string ());
+				BOOST_LOG (node.log) << boost::str (boost::format ("Old for (block exists): %1%") % block_a->hash ().to_string ());
 			}
 			queue_unchecked (transaction_a, hash);
 			break;
@@ -1851,8 +1850,8 @@ stats (config.stat_config)
 		assert (endpoint_a.address ().is_v6 ());
 		this->gap_cache.vote (vote_a);
 		this->online_reps.vote (vote_a);
-		rai::uint128_t rep_weight;
-		rai::uint128_t min_rep_weight;
+		rai::amount_t rep_weight;
+		rai::amount_t min_rep_weight;
 		{
 			rai::transaction transaction (store.environment, nullptr, false);
 			rep_weight = ledger.weight (transaction, vote_a->account);
@@ -1914,7 +1913,7 @@ stats (config.stat_config)
 		extern unsigned char rai_bootstrap_weights[];
 		extern size_t rai_bootstrap_weights_size;
 		rai::bufferstream weight_stream ((const uint8_t *)rai_bootstrap_weights, rai_bootstrap_weights_size);
-		rai::uint128_union block_height;
+		rai::uint128_struct block_height;
 		if (!rai::read (weight_stream, block_height))
 		{
 			auto max_blocks = (uint64_t)block_height.number ();
@@ -1930,10 +1929,11 @@ stats (config.stat_config)
 						break;
 					}
 					rai::amount weight;
-					if (rai::read (weight_stream, weight.bytes))
+					if (rai::read (weight_stream, weight.data))
 					{
 						break;
 					}
+					boost::endian::big_to_native_inplace (weight.data);
 					BOOST_LOG (log) << "Using bootstrap rep weight: " << account.to_account () << " -> " << weight.format_balance (Mxrb_ratio, 0, true) << " XRB";
 					ledger.bootstrap_weights[account] = weight.number ();
 				}
@@ -2063,7 +2063,7 @@ void rai::gap_cache::vote (std::shared_ptr<rai::vote> vote_a)
 	}
 }
 
-rai::uint128_t rai::gap_cache::bootstrap_threshold (MDB_txn * transaction_a)
+rai::amount_t rai::gap_cache::bootstrap_threshold (MDB_txn * transaction_a)
 {
 	auto result ((node.online_reps.online_stake () / 256) * node.config.bootstrap_fraction_numerator);
 	return result;
@@ -2369,7 +2369,7 @@ rai::block_hash rai::node::latest (rai::account const & account_a)
 	return ledger.latest (transaction, account_a);
 }
 
-rai::uint128_t rai::node::balance (rai::account const & account_a)
+rai::amount_t rai::node::balance (rai::account const & account_a)
 {
 	rai::transaction transaction (store.environment, nullptr, false);
 	return ledger.account_balance (transaction, account_a);
@@ -2381,16 +2381,26 @@ std::unique_ptr<rai::block> rai::node::block (rai::block_hash const & hash_a)
 	return store.block_get (transaction, hash_a);
 }
 
-std::pair<rai::uint128_t, rai::uint128_t> rai::node::balance_pending (rai::account const & account_a)
+std::pair<rai::amount_t, rai::amount_t> rai::node::balance_pending (rai::account const & account_a)
 {
-	std::pair<rai::uint128_t, rai::uint128_t> result;
+	std::pair<rai::amount_t, rai::amount_t> result;
 	rai::transaction transaction (store.environment, nullptr, false);
 	result.first = ledger.account_balance (transaction, account_a);
 	result.second = ledger.account_pending (transaction, account_a);
 	return result;
 }
 
-rai::uint128_t rai::node::weight (rai::account const & account_a)
+std::tuple<rai::amount_t, rai::amount_t, rai::amount_t> rai::node::balance_pending_manna (rai::account const & account_a)
+{
+	rai::transaction transaction (store.environment, nullptr, false);
+	return std::make_tuple (
+		ledger.account_balance (transaction, account_a),
+		ledger.account_pending (transaction, account_a),
+		!rai::manna_control::is_manna_account (account_a) ? 0 : ledger.account_balance_with_manna (transaction, account_a, rai::short_timestamp::now ())
+	);
+}
+
+rai::amount_t rai::node::weight (rai::account const & account_a)
 {
 	rai::transaction transaction (store.environment, nullptr, false);
 	return ledger.weight (transaction, account_a);
@@ -2526,7 +2536,7 @@ void rai::node::backup_wallet ()
 	});
 }
 
-int rai::node::price (rai::uint128_t const & balance_a, int amount_a)
+int rai::node::price (rai::amount_t const & balance_a, int amount_a)
 {
 	assert (balance_a >= amount_a * rai::Gxrb_ratio);
 	auto balance_l (balance_a);
@@ -2534,7 +2544,7 @@ int rai::node::price (rai::uint128_t const & balance_a, int amount_a)
 	for (auto i (0); i < amount_a; ++i)
 	{
 		balance_l -= rai::Gxrb_ratio;
-		auto balance_scaled ((balance_l / rai::Mxrb_ratio).convert_to<double> ());
+		auto balance_scaled ((double)(balance_l / rai::Mxrb_ratio));
 		auto units (balance_scaled / 1000.0);
 		auto unit_price (((free_cutoff - units) / free_cutoff) * price_max);
 		result += std::min (std::max (0.0, unit_price), price_max);
@@ -2843,7 +2853,7 @@ void rai::node::block_confirm (std::shared_ptr<rai::block> block_a)
 	network.broadcast_confirm_req (block_a);
 }
 
-rai::uint128_t rai::node::delta ()
+rai::amount_t rai::node::delta ()
 {
 	auto result ((online_reps.online_stake () / 100) * config.online_weight_quorum);
 	return result;
@@ -3028,7 +3038,7 @@ void rai::online_reps::vote (std::shared_ptr<rai::vote> const & vote_a)
 		if (online_stake_total < old_stake)
 		{
 			// overflow
-			online_stake_total = std::numeric_limits<rai::uint128_t>::max ();
+			online_stake_total = std::numeric_limits<rai::amount_t>::max ();
 		}
 		reps.insert (info);
 	}
@@ -3057,7 +3067,7 @@ void rai::online_reps::recalculate_stake ()
 	});
 }
 
-rai::uint128_t rai::online_reps::online_stake ()
+rai::amount_t rai::online_reps::online_stake ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return std::max (online_stake_total, node.config.online_weight_minimum.number ());
@@ -3225,9 +3235,9 @@ size_t rai::peer_container::size_sqrt ()
 	return result;
 }
 
-rai::uint128_t rai::peer_container::total_weight ()
+rai::amount_t rai::peer_container::total_weight ()
 {
-	rai::uint128_t result (0);
+	rai::amount_t result (0);
 	std::unordered_set<rai::account> probable_reps;
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto i (peers.get<6> ().begin ()), n (peers.get<6> ().end ()); i != n; ++i)
@@ -3645,7 +3655,7 @@ bool rai::election::have_quorum (rai::tally_t const & tally_a)
 
 rai::tally_t rai::election::tally (MDB_txn * transaction_a)
 {
-	std::unordered_map<rai::block_hash, rai::uint128_t> block_weights;
+	std::unordered_map<rai::block_hash, rai::amount_t> block_weights;
 	for (auto vote_info : last_votes)
 	{
 		block_weights[vote_info.second.hash] += node.ledger.weight (transaction_a, vote_info.first);
@@ -3670,7 +3680,7 @@ void rai::election::confirm_if_quorum (MDB_txn * transaction_a)
 	auto winner (tally_l.begin ());
 	auto block_l (winner->second);
 	status.tally = winner->first;
-	rai::uint128_t sum (0);
+	rai::amount_t sum (0);
 	for (auto & i : tally_l)
 	{
 		sum += i.first;
@@ -3696,7 +3706,7 @@ void rai::election::log_votes (rai::tally_t const & tally_a)
 	BOOST_LOG (node.log) << boost::str (boost::format ("Vote tally for root %1%") % status.winner->root ().to_string ());
 	for (auto i (tally_a.begin ()), n (tally_a.end ()); i != n; ++i)
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Block %1% weight %2%") % i->second->hash ().to_string () % i->first.convert_to<std::string> ());
+		BOOST_LOG (node.log) << boost::str (boost::format ("Block %1% weight %2%") % i->second->hash ().to_string () % std::to_string (i->first));
 	}
 	for (auto i (last_votes.begin ()), n (last_votes.end ()); i != n; ++i)
 	{
@@ -3847,7 +3857,7 @@ void rai::active_transactions::announce_votes ()
 			{
 				auto reps (std::make_shared<std::vector<rai::peer_information>> (node.peers.representatives (std::numeric_limits<size_t>::max ())));
 				std::unordered_set<rai::account> probable_reps;
-				rai::uint128_t total_weight (0);
+				rai::amount_t total_weight (0);
 				for (auto j (reps->begin ()), m (reps->end ()); j != m;)
 				{
 					auto & rep_votes (i->election->last_votes);

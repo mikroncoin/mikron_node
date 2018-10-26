@@ -258,11 +258,11 @@ TEST (wallet, send)
 	QTest::keyClicks (wallet->send_count, "2");
 	QTest::mouseClick (wallet->send_blocks_send, Qt::LeftButton);
 	system.deadline_set (10s);
-	while (wallet->node.balance (key1).is_zero ())
+	while (wallet->node.balance (key1) == 0)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}
-	rai::uint128_t amount (wallet->node.balance (key1));
+	rai::amount_t amount (wallet->node.balance (key1));
 	ASSERT_EQ (2 * wallet->rendering_ratio, amount);
 	QTest::mouseClick (wallet->send_blocks_back, Qt::LeftButton);
 	QTest::mouseClick (wallet->show_advanced, Qt::LeftButton);
@@ -595,9 +595,9 @@ TEST (wallet, republish)
 	ASSERT_EQ (wallet->block_viewer.window, wallet->main_stack->currentWidget ());
 	QTest::keyClicks (wallet->block_viewer.hash, hash.to_string ().c_str ());
 	QTest::mouseClick (wallet->block_viewer.rebroadcast, Qt::LeftButton);
-	ASSERT_FALSE (system.nodes[1]->balance (rai::test_genesis_key.pub).is_zero ());
+	ASSERT_FALSE (system.nodes[1]->balance (rai::test_genesis_key.pub) == 0);
 	system.deadline_set (10s);
-	while (system.nodes[1]->balance (rai::test_genesis_key.pub).is_zero ())
+	while (system.nodes[1]->balance (rai::test_genesis_key.pub) == 0)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}

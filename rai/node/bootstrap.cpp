@@ -4,6 +4,7 @@
 #include <rai/node/node.hpp>
 
 #include <boost/log/trivial.hpp>
+#include <boost/endian/conversion.hpp>
 
 constexpr double bootstrap_connection_scale_target_blocks = 50000.0;
 constexpr double bootstrap_connection_warmup_time_sec = 5.0;
@@ -1353,7 +1354,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::bulk_pull_account, rai::stat::dir::in);
 					auto this_l (shared_from_this ());
-					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (rai::uint128_union) + sizeof (uint8_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
+					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (rai::uint128_struct) + sizeof (uint8_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_account_action (ec, size_a, header);
 					});
 					break;
@@ -1426,7 +1427,7 @@ void rai::bootstrap_server::receive_bulk_pull_account_action (boost::system::err
 	if (!ec)
 	{
 		auto error (false);
-		assert (size_a == (sizeof (rai::uint256_union) + sizeof (rai::uint128_union) + sizeof (uint8_t)));
+		assert (size_a == (sizeof (rai::uint256_union) + sizeof (rai::uint128_struct) + sizeof (uint8_t)));
 		rai::bufferstream stream (receive_buffer->data (), size_a);
 		std::unique_ptr<rai::bulk_pull_account> request (new rai::bulk_pull_account (error, stream, header_a));
 		if (!error)
@@ -1846,7 +1847,7 @@ void rai::bulk_pull_account_server::send_frontier ()
 	 **/
 	auto account_frontier_hash (connection->node->ledger.latest (stream_transaction, request->account));
 	auto account_frontier_balance_int (connection->node->ledger.account_balance (stream_transaction, request->account));
-	rai::uint128_union account_frontier_balance (account_frontier_balance_int);
+	rai::uint128_struct account_frontier_balance (account_frontier_balance_int);
 
 	/**
 	 ** Write the frontier block hash and balance into a buffer
@@ -1906,7 +1907,7 @@ void rai::bulk_pull_account_server::send_next_block ()
 			}
 
 			write (output_stream, block_info_key->hash.bytes);
-			write (output_stream, block_info->amount.bytes);
+			write (output_stream, boost::endian::native_to_big (block_info->amount.data));
 		}
 
 		auto this_l (shared_from_this ());
@@ -2026,7 +2027,7 @@ void rai::bulk_pull_account_server::send_finished ()
 	{
 		rai::vectorstream output_stream (*send_buffer);
 		rai::uint256_union account_zero (0);
-		rai::uint128_union balance_zero (0);
+		rai::uint128_struct balance_zero (0);
 
 		write (output_stream, account_zero.bytes);
 
@@ -2397,8 +2398,8 @@ void rai::frontier_req_server::skip_old ()
 {
 	if (request->age != std::numeric_limits<decltype (request->age)>::max ())
 	{
-		auto now (rai::seconds_since_epoch ());
-		while (!current.is_zero () && (now - info.modified) >= request->age)
+		auto now (rai::short_timestamp::now ());
+		while (!current.is_zero () && (now - info.last_block_time ()) >= request->age)
 		{
 			next ();
 		}

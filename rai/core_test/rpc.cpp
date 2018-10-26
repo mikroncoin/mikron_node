@@ -101,7 +101,7 @@ TEST (rpc, account_balance)
 	}
 	ASSERT_EQ (200, response.status);
 	std::string balance_text (response.json.get<std::string> ("balance"));
-	ASSERT_EQ ("340282366920938463463374607431768211455", balance_text);
+	ASSERT_EQ ("18446744073709551615", balance_text);
 	std::string pending_text (response.json.get<std::string> ("pending"));
 	ASSERT_EQ ("0", pending_text);
 }
@@ -164,7 +164,7 @@ TEST (rpc, account_weight)
 	}
 	ASSERT_EQ (200, response.status);
 	std::string balance_text (response.json.get<std::string> ("weight"));
-	ASSERT_EQ ("340282366920938463463374607431768211455", balance_text);
+	ASSERT_EQ ("18446744073709551615", balance_text);
 }
 
 TEST (rpc, wallet_contains)
@@ -312,6 +312,7 @@ TEST (rpc, send_fail)
 		system.poll ();
 	}
 	done = true;
+	ASSERT_NE (0, response.status);
 	ASSERT_EQ (response.json.get<std::string> ("error"), "Error generating block");
 	thread2.join ();
 }
@@ -958,34 +959,34 @@ TEST (rpc, history)
 	ASSERT_EQ (5, history_l.size ());
 	ASSERT_EQ ("receive", std::get<0> (history_l[0]));
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), std::get<1> (history_l[0]));
-	ASSERT_EQ (rai::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[0]));
+	ASSERT_EQ (std::to_string (rai::Gxrb_ratio), std::get<2> (history_l[0]));
 	ASSERT_EQ (ureceive.hash ().to_string (), std::get<3> (history_l[0]));
-	ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), std::get<4> (history_l[0]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), std::get<4> (history_l[0]));
 	ASSERT_EQ (std::to_string (ureceive.creation_time().to_posix_time ()), std::get<5> (history_l[0]));
 	ASSERT_EQ ("send", std::get<0> (history_l[1]));
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), std::get<1> (history_l[1]));
-	ASSERT_EQ (rai::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[1]));
+	ASSERT_EQ (std::to_string (rai::Gxrb_ratio), std::get<2> (history_l[1]));
 	ASSERT_EQ (usend.hash ().to_string (), std::get<3> (history_l[1]));
-	ASSERT_EQ ((rai::genesis_amount - rai::Gxrb_ratio).convert_to<std::string> (), std::get<4> (history_l[1]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount - rai::Gxrb_ratio), std::get<4> (history_l[1]));
 	ASSERT_EQ (std::to_string (usend.creation_time().to_posix_time ()), std::get<5> (history_l[1]));
 	ASSERT_EQ ("receive", std::get<0> (history_l[2]));
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), std::get<1> (history_l[2]));
 	ASSERT_EQ (unit.to_string_dec (), std::get<2> (history_l[2]));
 	ASSERT_EQ (receive->hash ().to_string (), std::get<3> (history_l[2]));
-	ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), std::get<4> (history_l[2]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), std::get<4> (history_l[2]));
 	ASSERT_EQ (std::to_string (receive->creation_time().to_posix_time ()), std::get<5> (history_l[2]));
 	ASSERT_EQ ("send", std::get<0> (history_l[3]));
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), std::get<1> (history_l[3]));
 	ASSERT_EQ (unit.to_string_dec (), std::get<2> (history_l[3]));
 	ASSERT_EQ (send->hash ().to_string (), std::get<3> (history_l[3]));
-	ASSERT_EQ ((rai::genesis_amount - unit.number ()).convert_to<std::string> (), std::get<4> (history_l[3]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount - unit.number ()), std::get<4> (history_l[3]));
 	ASSERT_EQ (std::to_string (send->creation_time().to_posix_time ()), std::get<5> (history_l[3]));
 	ASSERT_EQ ("receive", std::get<0> (history_l[4]));
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), std::get<1> (history_l[4]));
-	ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), std::get<2> (history_l[4]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), std::get<2> (history_l[4]));
 	rai::genesis genesis;
 	ASSERT_EQ (genesis.hash ().to_string (), std::get<3> (history_l[4]));
-	ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), std::get<4> (history_l[4]));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), std::get<4> (history_l[4]));
 	ASSERT_EQ (std::to_string (genesis.block ().creation_time().to_posix_time ()), std::get<5> (history_l[4]));
 }
 
@@ -1418,12 +1419,12 @@ TEST (rpc, pending)
 	ASSERT_EQ (200, response0.status);
 	blocks_node = response0.json.get_child ("blocks");
 	ASSERT_EQ (1, blocks_node.size ());
-	std::unordered_map<rai::block_hash, rai::uint128_union> blocks;
+	std::unordered_map<rai::block_hash, rai::amount> blocks;
 	for (auto i (blocks_node.begin ()), j (blocks_node.end ()); i != j; ++i)
 	{
 		rai::block_hash hash;
 		hash.decode_hex (i->first);
-		rai::uint128_union amount;
+		rai::amount amount;
 		amount.decode_dec (i->second.get<std::string> (""));
 		blocks[hash] = amount;
 		boost::optional<std::string> source (i->second.get_optional<std::string> ("source"));
@@ -1452,7 +1453,7 @@ TEST (rpc, pending)
 	ASSERT_EQ (200, response2.status);
 	blocks_node = response2.json.get_child ("blocks");
 	ASSERT_EQ (1, blocks_node.size ());
-	std::unordered_map<rai::block_hash, rai::uint128_union> amounts;
+	std::unordered_map<rai::block_hash, rai::amount> amounts;
 	std::unordered_map<rai::block_hash, rai::account> sources;
 	for (auto i (blocks_node.begin ()), j (blocks_node.end ()); i != j; ++i)
 	{
@@ -1802,7 +1803,7 @@ TEST (rpc, mrai_to_raw)
 		system.poll ();
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (rai::Mxrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (std::to_string (rai::Mxrb_ratio), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, mrai_from_raw)
@@ -1814,7 +1815,7 @@ TEST (rpc, mrai_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "mrai_from_raw");
-	request1.put ("amount", rai::Mxrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", std::to_string (rai::Mxrb_ratio));
 	test_response response1 (request1, rpc, system.service);
 	while (response1.status == 0)
 	{
@@ -1824,6 +1825,7 @@ TEST (rpc, mrai_from_raw)
 	ASSERT_EQ ("1", response1.json.get<std::string> ("amount"));
 }
 
+/*
 TEST (rpc, krai_to_raw)
 {
 	rai::system system (24000, 1);
@@ -1840,7 +1842,7 @@ TEST (rpc, krai_to_raw)
 		system.poll ();
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (rai::kxrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (std::to_string (rai::kxrb_ratio), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, krai_from_raw)
@@ -1852,7 +1854,7 @@ TEST (rpc, krai_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "krai_from_raw");
-	request1.put ("amount", rai::kxrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", std::to_string (rai::kxrb_ratio));
 	test_response response1 (request1, rpc, system.service);
 	while (response1.status == 0)
 	{
@@ -1861,6 +1863,7 @@ TEST (rpc, krai_from_raw)
 	ASSERT_EQ (200, response1.status);
 	ASSERT_EQ ("1", response1.json.get<std::string> ("amount"));
 }
+*/
 
 TEST (rpc, rai_to_raw)
 {
@@ -1878,7 +1881,7 @@ TEST (rpc, rai_to_raw)
 		system.poll ();
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (rai::xrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (std::to_string (rai::xrb_ratio), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, rai_from_raw)
@@ -1890,7 +1893,7 @@ TEST (rpc, rai_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "rai_from_raw");
-	request1.put ("amount", rai::xrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", std::to_string (rai::xrb_ratio));
 	test_response response1 (request1, rpc, system.service);
 	while (response1.status == 0)
 	{
@@ -2298,7 +2301,7 @@ TEST (rpc, accounts_balances)
 		std::string account_text (balances.first);
 		ASSERT_EQ (rai::test_genesis_key.pub.to_account (), account_text);
 		std::string balance_text (balances.second.get<std::string> ("balance"));
-		ASSERT_EQ ("340282366920938463463374607431768211455", balance_text);
+		ASSERT_EQ ("18446744073709551615", balance_text);
 		std::string pending_text (balances.second.get<std::string> ("pending"));
 		ASSERT_EQ ("0", pending_text);
 	}
@@ -2375,7 +2378,7 @@ TEST (rpc, accounts_pending)
 		system.poll ();
 	}
 	ASSERT_EQ (200, response1.status);
-	std::unordered_map<rai::block_hash, rai::uint128_union> blocks;
+	std::unordered_map<rai::block_hash, rai::amount> blocks;
 	for (auto & pending : response1.json.get_child ("blocks"))
 	{
 		std::string account_text (pending.first);
@@ -2384,7 +2387,7 @@ TEST (rpc, accounts_pending)
 		{
 			rai::block_hash hash;
 			hash.decode_hex (i->first);
-			rai::uint128_union amount;
+			rai::amount amount;
 			amount.decode_dec (i->second.get<std::string> (""));
 			blocks[hash] = amount;
 			boost::optional<std::string> source (i->second.get_optional<std::string> ("source"));
@@ -2399,7 +2402,7 @@ TEST (rpc, accounts_pending)
 		system.poll ();
 	}
 	ASSERT_EQ (200, response2.status);
-	std::unordered_map<rai::block_hash, rai::uint128_union> amounts;
+	std::unordered_map<rai::block_hash, rai::amount> amounts;
 	std::unordered_map<rai::block_hash, rai::account> sources;
 	for (auto & pending : response2.json.get_child ("blocks"))
 	{
@@ -2469,7 +2472,7 @@ TEST (rpc, wallet_info)
 	}
 	ASSERT_EQ (200, response.status);
 	std::string balance_text (response.json.get<std::string> ("balance"));
-	ASSERT_EQ ("340282366920938463463374607431768211454", balance_text);
+	ASSERT_EQ ("18446744073709551614", balance_text);
 	std::string pending_text (response.json.get<std::string> ("pending"));
 	ASSERT_EQ ("1", pending_text);
 	std::string count_text (response.json.get<std::string> ("accounts_count"));
@@ -2502,7 +2505,7 @@ TEST (rpc, wallet_balances)
 		std::string account_text (balances.first);
 		ASSERT_EQ (rai::test_genesis_key.pub.to_account (), account_text);
 		std::string balance_text (balances.second.get<std::string> ("balance"));
-		ASSERT_EQ ("340282366920938463463374607431768211455", balance_text);
+		ASSERT_EQ ("18446744073709551615", balance_text);
 		std::string pending_text (balances.second.get<std::string> ("pending"));
 		ASSERT_EQ ("0", pending_text);
 	}
@@ -2521,7 +2524,7 @@ TEST (rpc, wallet_balances)
 		std::string account_text (balances.first);
 		ASSERT_EQ (rai::test_genesis_key.pub.to_account (), account_text);
 		std::string balance_text (balances.second.get<std::string> ("balance"));
-		ASSERT_EQ ("340282366920938463463374607431768211454", balance_text);
+		ASSERT_EQ ("18446744073709551614", balance_text);
 		std::string pending_text (balances.second.get<std::string> ("pending"));
 		ASSERT_EQ ("0", pending_text);
 	}
@@ -2599,7 +2602,7 @@ TEST (rpc, wallet_pending)
 		system0.poll ();
 	}
 	ASSERT_EQ (200, response0.status);
-	std::unordered_map<rai::block_hash, rai::uint128_union> blocks;
+	std::unordered_map<rai::block_hash, rai::amount> blocks;
 	ASSERT_EQ (1, response0.json.get_child ("blocks").size ());
 	for (auto & pending : response0.json.get_child ("blocks"))
 	{
@@ -2609,7 +2612,7 @@ TEST (rpc, wallet_pending)
 		{
 			rai::block_hash hash;
 			hash.decode_hex (i->first);
-			rai::uint128_union amount;
+			rai::amount amount;
 			amount.decode_dec (i->second.get<std::string> (""));
 			blocks[hash] = amount;
 			boost::optional<std::string> source (i->second.get_optional<std::string> ("source"));
@@ -2637,7 +2640,7 @@ TEST (rpc, wallet_pending)
 		system0.poll ();
 	}
 	ASSERT_EQ (200, response2.status);
-	std::unordered_map<rai::block_hash, rai::uint128_union> amounts;
+	std::unordered_map<rai::block_hash, rai::amount> amounts;
 	std::unordered_map<rai::block_hash, rai::account> sources;
 	ASSERT_EQ (1, response0.json.get_child ("blocks").size ());
 	for (auto & pending : response2.json.get_child ("blocks"))
@@ -2868,7 +2871,7 @@ TEST (rpc, delegators)
 	}
 	ASSERT_EQ (2, delegators.size ());
 	ASSERT_EQ ("100", delegators.get<std::string> (rai::test_genesis_key.pub.to_account ()));
-	ASSERT_EQ ("340282366920938463463374607431768211355", delegators.get<std::string> (key.pub.to_account ()));
+	ASSERT_EQ ("18446744073709551515", delegators.get<std::string> (key.pub.to_account ()));
 }
 
 TEST (rpc, delegators_count)
@@ -2930,8 +2933,8 @@ TEST (rpc, account_info)
 	ASSERT_EQ (send.hash ().to_string (), representative_block);
 	std::string balance (response.json.get<std::string> ("balance"));
 	ASSERT_EQ ("100", balance);
-	std::string modified_timestamp (response.json.get<std::string> ("modified_timestamp"));
-	ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+	std::string last_block_time (response.json.get<std::string> ("last_block_time"));
+	ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 	std::string block_count (response.json.get<std::string> ("block_count"));
 	ASSERT_EQ ("2", block_count);
 	//ASSERT_EQ (1, response.json.get<uint8_t> ("account_version"));
@@ -2983,7 +2986,7 @@ TEST (rpc, blocks_info)
 		std::string account_text (blocks.second.get<std::string> ("block_account"));
 		ASSERT_EQ (rai::test_genesis_key.pub.to_account (), account_text);
 		std::string amount_text (blocks.second.get<std::string> ("amount"));
-		ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), amount_text);
+		ASSERT_EQ (std::to_string (rai::genesis_amount), amount_text);
 		std::string blocks_text (blocks.second.get<std::string> ("contents"));
 		ASSERT_FALSE (blocks_text.empty ());
 		boost::optional<std::string> pending (blocks.second.get_optional<std::string> ("pending"));
@@ -3010,7 +3013,7 @@ TEST (rpc, blocks_info)
 		std::string pending (blocks.second.get<std::string> ("pending"));
 		ASSERT_EQ ("0", pending);
 		std::string balance_text (blocks.second.get<std::string> ("balance"));
-		ASSERT_EQ (rai::genesis_amount.convert_to<std::string> (), balance_text);
+		ASSERT_EQ (std::to_string (rai::genesis_amount), balance_text);
 	}
 }
 
@@ -3136,9 +3139,9 @@ TEST (rpc, ledger)
 		std::string representative_block (accounts.second.get<std::string> ("representative_block"));
 		ASSERT_EQ (open.hash ().to_string (), representative_block);
 		std::string balance_text (accounts.second.get<std::string> ("balance"));
-		ASSERT_EQ ("340282366920938463463374607431768211355", balance_text);
-		std::string modified_timestamp (accounts.second.get<std::string> ("modified_timestamp"));
-		ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+		ASSERT_EQ ("18446744073709551515", balance_text);
+		std::string last_block_time (accounts.second.get<std::string> ("last_block_time"));
+		ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 		std::string block_count (accounts.second.get<std::string> ("block_count"));
 		ASSERT_EQ ("1", block_count);
 		boost::optional<std::string> weight (accounts.second.get_optional<std::string> ("weight"));
@@ -3207,7 +3210,7 @@ TEST (rpc, block_create)
 	auto & node1 (*system.nodes[0]);
 	auto latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	auto send_work = node1.work_generate_blocking (latest);
-	rai::timestamp_t creation_time (12345);
+	rai::timestamp_t creation_time (rai::genesis_time + 12345);
 	rai::state_block send (rai::genesis_account, latest, creation_time, rai::genesis_account, 100, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, send_work);
 	auto open_work = node1.work_generate_blocking (key.pub);
 	rai::state_block open (key.pub, 0, creation_time, rai::genesis_account, rai::genesis_amount - 100, send.hash (), key.prv, key.pub, open_work);
@@ -3221,7 +3224,7 @@ TEST (rpc, block_create)
 	request.put ("previous", latest.to_string ());
 	request.put ("creation_time", std::to_string (creation_time));
 	request.put ("representative", rai::test_genesis_key.pub.to_account());
-	//request.put ("amount", "340282366920938463463374607431768211355");
+	//request.put ("amount", "18446744073709551515");
 	request.put ("balance", "100");
 	request.put ("link", key.pub.to_string ());
 	request.put ("work", rai::to_string_hex (send_work));
@@ -3339,15 +3342,16 @@ TEST (rpc, block_create_state)
 	rai::keypair key;
 	rai::genesis genesis;
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	rai::timestamp_t creation_time (rai::genesis_time + 12345);
 	boost::property_tree::ptree request;
 	request.put ("action", "block_create");
 	request.put ("type", "state");
 	request.put ("wallet", system.nodes[0]->wallets.items.begin ()->first.to_string ());
 	request.put ("account", rai::test_genesis_key.pub.to_account ());
 	request.put ("previous", genesis.hash ().to_string ());
-	request.put ("creation_time", "12345");
+	request.put ("creation_time", std::to_string (creation_time));
 	request.put ("representative", rai::test_genesis_key.pub.to_account ());
-	request.put ("balance", (rai::genesis_amount - rai::Gxrb_ratio).convert_to<std::string> ());
+	request.put ("balance", std::to_string (rai::genesis_amount - rai::Gxrb_ratio));
 	request.put ("link", key.pub.to_account ());
 	request.put ("work", rai::to_string_hex (system.nodes[0]->work_generate_blocking (genesis.hash ())));
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
@@ -3387,7 +3391,7 @@ TEST (rpc, block_create_state_open)
 	request.put ("previous", 0);
 	request.put ("creation_time", "0");  // now, has to be after the send node
 	request.put ("representative", rai::test_genesis_key.pub.to_account ());
-	request.put ("balance", rai::Gxrb_ratio.convert_to<std::string> ());
+	request.put ("balance", std::to_string (rai::Gxrb_ratio));
 	request.put ("link", send_block->hash ().to_string ());
 	request.put ("work", rai::to_string_hex (system.nodes[0]->work_generate_blocking (send_block->hash ())));
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
@@ -3427,14 +3431,15 @@ TEST (rpc, block_create_state_request_work)
 		rai::keypair key;
 		rai::genesis genesis;
 		system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+		rai::timestamp_t creation_time (rai::genesis_time + 12345);
 		boost::property_tree::ptree request;
 		request.put ("action", "block_create");
 		request.put ("type", "state");
 		request.put ("wallet", system.nodes[0]->wallets.items.begin ()->first.to_string ());
 		request.put ("account", rai::test_genesis_key.pub.to_account ());
-		request.put ("creation_time", "12345");
+		request.put ("creation_time", std::to_string (creation_time));
 		request.put ("representative", rai::test_genesis_key.pub.to_account ());
-		request.put ("balance", (rai::genesis_amount - rai::Gxrb_ratio).convert_to<std::string> ());
+		request.put ("balance", std::to_string (rai::genesis_amount - rai::Gxrb_ratio));
 		request.put ("link", key.pub.to_account ());
 		request.put ("previous", previous);
 		rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
@@ -3578,9 +3583,9 @@ TEST (rpc, wallet_ledger)
 		std::string representative_block (accounts.second.get<std::string> ("representative_block"));
 		ASSERT_EQ (open.hash ().to_string (), representative_block);
 		std::string balance_text (accounts.second.get<std::string> ("balance"));
-		ASSERT_EQ ("340282366920938463463374607431768211355", balance_text);
-		std::string modified_timestamp (accounts.second.get<std::string> ("modified_timestamp"));
-		ASSERT_LT (std::abs ((long)time - stol (modified_timestamp)), 5);
+		ASSERT_EQ ("18446744073709551515", balance_text);
+		std::string last_block_time (accounts.second.get<std::string> ("last_block_time"));
+		ASSERT_LT (std::abs ((long)time - stol (last_block_time)), 5);
 		std::string block_count (accounts.second.get<std::string> ("block_count"));
 		ASSERT_EQ ("1", block_count);
 		boost::optional<std::string> weight (accounts.second.get_optional<std::string> ("weight"));

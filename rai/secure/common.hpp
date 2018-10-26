@@ -25,8 +25,8 @@ struct hash<rai::uint256_union>
 }
 namespace rai
 {
-const uint8_t protocol_version = 2;
-const uint8_t protocol_version_min = 2;
+const uint8_t protocol_version = 3;
+const uint8_t protocol_version_min = 3;
 const uint8_t protocol_version_legacy_min = 1;  // Not used as of version 1
 
 class block_store;
@@ -48,7 +48,8 @@ public:
 	rai::block_store & store;
 	rai::block_hash current_balance;
 	rai::block_hash current_amount;
-	rai::uint128_t balance;
+	rai::amount_t balance;
+	std::shared_ptr<rai::state_block> balance_block;
 };
 
 /**
@@ -70,7 +71,7 @@ public:
 	rai::block_store & store;
 	rai::block_hash current_amount;
 	rai::block_hash current_balance;
-	rai::uint128_t amount;
+	rai::amount_t amount;
 };
 
 /**
@@ -118,22 +119,22 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, uint64_t, uint64_t);
-	//void serialize (rai::stream &) const;
-	//bool deserialize (rai::stream &);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
+	rai::amount balance_with_manna (rai::account const &, rai::timestamp_t) const;
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
-	size_t db_size () const;
+	size_t size_in_db () const;
+	rai::timestamp_t last_block_time () const { return static_cast<rai::timestamp_t> (last_block_time_intern); }
+	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
 	// members, they must be all value types
 	rai::block_hash head;
-	rai::block_hash rep_block;
+	rai::block_hash rep_block;  // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
 	rai::amount balance;
-	/** Seconds since posix epoch */
-	uint64_t modified;
-	uint64_t block_count;
+	::uint64_t last_block_time_intern;  // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
+	::uint64_t block_count;
 };
 
 /**
@@ -145,13 +146,14 @@ public:
 	pending_info ();
 	pending_info (rai::mdb_val const &);
 	pending_info (rai::account const &, rai::amount const &);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
 	bool operator== (rai::pending_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
+	size_t size_in_db () const;
 	rai::account source;
 	rai::amount amount;
 };
+
 class pending_key
 {
 public:
@@ -164,16 +166,17 @@ public:
 	rai::account account;
 	rai::block_hash hash;
 };
+
 class block_info
 {
 public:
 	block_info ();
-	block_info (MDB_val const &);
+	block_info (rai::mdb_val const &);
 	block_info (rai::account const &, rai::amount const &);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
 	bool operator== (rai::block_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
+	size_t size_in_db () const;
 	rai::account account;
 	rai::amount balance;
 };
@@ -274,10 +277,13 @@ extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
 extern std::string const & rai_test_genesis_legacy;
+extern rai::keypair const & test_manna_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
-extern rai::uint128_t const & genesis_amount;
+extern rai::amount_t const & genesis_amount;
+extern rai::timestamp_t const genesis_time;
+extern rai::account const & manna_account;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
@@ -302,4 +308,17 @@ public:
 	rai::block_hash hash() const;
 	std::unique_ptr<rai::open_block> genesis_block;
 }; 
+
+class manna_control
+{
+public:
+	static uint32_t manna_start;
+	static uint32_t manna_freq;
+	static rai::amount_t manna_increment;
+
+	static bool is_manna_account (rai::account const &);
+	static rai::amount_t adjust_balance_with_manna (rai::amount_t, rai::timestamp_t, rai::timestamp_t);
+	static rai::amount_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
+};
+
 }

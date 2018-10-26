@@ -305,7 +305,7 @@ TEST (receivable_processor, confirm_sufficient_pos)
 
 TEST (receivable_processor, send_with_receive)
 {
-	auto amount (std::numeric_limits<rai::uint128_t>::max ());
+	auto amount (std::numeric_limits<rai::amount_t>::max ());
 	rai::system system (24000, 2);
 	rai::keypair key2;
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
@@ -622,12 +622,12 @@ TEST (bootstrap_processor, process_new)
 	system.wallet (1)->insert_adhoc (key2.prv);
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, system.nodes[0]->config.receive_minimum.number ()));
 	system.deadline_set (10s);
-	while (system.nodes[0]->balance (key2.pub).is_zero ())
+	while (system.nodes[0]->balance (key2.pub) == 0)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}
-	rai::uint128_t balance1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
-	rai::uint128_t balance2 (system.nodes[0]->balance (key2.pub));
+	rai::amount_t balance1 (system.nodes[0]->balance (rai::test_genesis_key.pub));
+	rai::amount_t balance2 (system.nodes[0]->balance (key2.pub));
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24002, rai::unique_path (), system.alarm, system.logging, system.work));
 	ASSERT_FALSE (init1.error ());
@@ -703,7 +703,7 @@ TEST (bootstrap_processor, push_one)
 	auto wallet (node1->wallets.create (rai::uint256_union ()));
 	ASSERT_NE (nullptr, wallet);
 	wallet->insert_adhoc (rai::test_genesis_key.prv);
-	rai::uint128_t balance1 (node1->balance (rai::test_genesis_key.pub));
+	rai::amount_t balance1 (node1->balance (rai::test_genesis_key.pub));
 	ASSERT_NE (nullptr, wallet->send_action (rai::test_genesis_key.pub, key1.pub, 100));
 	ASSERT_NE (balance1, node1->balance (rai::test_genesis_key.pub));
 	node1->bootstrap_initiator.bootstrap (system.nodes[0]->network.endpoint ());
@@ -779,14 +779,23 @@ TEST (frontier_req, time_cutoff)
 	rai::system system (24000, 1);
 	auto connection (std::make_shared<rai::bootstrap_server> (nullptr, system.nodes[0]));
 	std::unique_ptr<rai::frontier_req> req (new rai::frontier_req);
+	// with small time -- genesis will not fall into
 	req->start.clear ();
 	req->age = 10;
 	req->count = std::numeric_limits<decltype (req->count)>::max ();
 	connection->requests.push (std::unique_ptr<rai::message>{});
 	auto request (std::make_shared<rai::frontier_req_server> (connection, std::move (req)));
-	ASSERT_EQ (rai::test_genesis_key.pub, request->current);
+	ASSERT_TRUE (request->current.is_zero ());
+	// with larger time
+	std::unique_ptr<rai::frontier_req> req2 (new rai::frontier_req);
 	rai::genesis genesis;
-	ASSERT_EQ (genesis.hash (), request->info.head);
+	req2->start.clear ();
+	req2->age = rai::short_timestamp::now () - genesis.block ().creation_time ().number () + 10;
+	req2->count = std::numeric_limits<decltype (req2->count)>::max ();
+	connection->requests.push (std::unique_ptr<rai::message>{});
+	auto request2 (std::make_shared<rai::frontier_req_server> (connection, std::move (req2)));
+	ASSERT_EQ (rai::test_genesis_key.pub, request2->current);
+	ASSERT_EQ (genesis.hash (), request2->info.head);
 }
 
 TEST (bulk, genesis)

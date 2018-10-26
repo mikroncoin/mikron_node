@@ -73,7 +73,7 @@ bool rai::short_timestamp::operator== (rai::short_timestamp const & other_a) con
 	return data == other_a.data;
 }
 
-rai::timestamp_t rai::short_timestamp::number() const
+rai::timestamp_t rai::short_timestamp::number () const
 {
 	return data.number ();
 }
@@ -85,20 +85,30 @@ void rai::short_timestamp::set_time_now ()
 	return set_from_posix_time (now);
 }
 
-rai::short_timestamp rai::short_timestamp::now ()
+rai::timestamp_t rai::short_timestamp::now ()
 {
-	uint64_t now = (uint64_t)std::time(nullptr);
-	return rai::short_timestamp (now);
+	uint64_t now = (uint64_t)std::time (nullptr);
+	return convert_from_posix_time (now);
 }
 
-void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)
+rai::timestamp_t rai::short_timestamp::convert_from_posix_time (uint64_t time_posix)
 {
 	uint64_t current_time_since_epoch = 0;
 	if (time_posix >= (uint64_t)short_timestamp_epoch)
 	{
 		current_time_since_epoch = time_posix - (uint64_t)short_timestamp_epoch;
 	}
-	data = (rai::timestamp_t)current_time_since_epoch;
+	return (rai::timestamp_t)current_time_since_epoch;
+}
+
+uint64_t rai::short_timestamp::convert_to_posix_time (rai::timestamp_t time)
+{
+	return (uint64_t)short_timestamp_epoch + (uint64_t)time;
+}
+
+void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)
+{
+	data = convert_from_posix_time (time_posix);
 }
 
 bool rai::short_timestamp::decode_dec (std::string const & text)
@@ -132,7 +142,9 @@ std::string rai::short_timestamp::to_date_string_utc () const
 std::string rai::short_timestamp::to_date_string_local () const
 {
 	std::time_t timet = (std::time_t)to_posix_time ();
-	return std::asctime (std::localtime (&timet));
+	std::stringstream ss;
+	ss << std::put_time (std::localtime (&timet), "%x %X");  // locale-dependent, 	08/23/01 14:55:02
+	return ss.str ();
 }
 
 std::string rai::block::to_json ()
@@ -189,7 +201,7 @@ rai::send_hashables::send_hashables (bool & error_a, rai::stream & stream_a)
 		error_a = rai::read (stream_a, destination.bytes);
 		if (!error_a)
 		{
-			error_a = rai::read (stream_a, balance.bytes);
+			error_a = balance.deserialize(stream_a);
 		}
 	}
 }
@@ -223,7 +235,8 @@ void rai::send_hashables::hash (blake2b_state & hash_a) const
 	assert (status == 0);
 	status = blake2b_update (&hash_a, destination.bytes.data (), sizeof (destination.bytes));
 	assert (status == 0);
-	status = blake2b_update (&hash_a, balance.bytes.data (), sizeof (balance.bytes));
+	uint64_t balance_big_endian (balance.number_big_endian ());
+	status = blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
 	assert (status == 0);
 }
 
@@ -231,7 +244,7 @@ void rai::send_block::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, hashables.previous.bytes);
 	write (stream_a, hashables.destination.bytes);
-	write (stream_a, hashables.balance.bytes);
+	hashables.balance.serialize (stream_a);
 	write (stream_a, signature.bytes);
 	write (stream_a, work);
 }
@@ -265,7 +278,7 @@ bool rai::send_block::deserialize (rai::stream & stream_a)
 		error = read (stream_a, hashables.destination.bytes);
 		if (!error)
 		{
-			error = read (stream_a, hashables.balance.bytes);
+			error = hashables.balance.deserialize (stream_a);
 			if (!error)
 			{
 				error = read (stream_a, signature.bytes);
@@ -930,13 +943,13 @@ rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a)
 {
 	error_a = rai::read (stream_a, account);
 	if (error_a) return;
-	error_a = rai::read (stream_a, creation_time.data);
+	error_a = creation_time.data.deserialize (stream_a);
 	if (error_a) return;
 	error_a = rai::read (stream_a, previous);
 	if (error_a) return;
 	error_a = rai::read (stream_a, representative);
 	if (error_a) return;
-	error_a = rai::read (stream_a, balance);
+	error_a = balance.deserialize (stream_a);
 	if (error_a) return;
 	error_a = rai::read (stream_a, link);
 }
@@ -972,10 +985,12 @@ rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptr
 void rai::state_hashables::hash (blake2b_state & hash_a) const
 {
 	blake2b_update (&hash_a, account.bytes.data (), sizeof (account.bytes));
-	blake2b_update (&hash_a, creation_time.data.bytes.data (), sizeof (creation_time.data.bytes));
+	uint32_t creation_time_big_endian (creation_time.data.number_big_endian ());
+	blake2b_update (&hash_a, &creation_time_big_endian, sizeof (creation_time_big_endian));
 	blake2b_update (&hash_a, previous.bytes.data (), sizeof (previous.bytes));
 	blake2b_update (&hash_a, representative.bytes.data (), sizeof (representative.bytes));
-	blake2b_update (&hash_a, balance.bytes.data (), sizeof (balance.bytes));
+	uint64_t balance_big_endian (balance.number_big_endian ());
+	blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
 	blake2b_update (&hash_a, link.bytes.data (), sizeof (link.bytes));
 }
 
@@ -995,8 +1010,7 @@ hashables (error_a, stream_a)
 		error_a = rai::read (stream_a, signature);
 		if (!error_a)
 		{
-			error_a = rai::read (stream_a, work);
-			boost::endian::big_to_native_inplace (work);
+			error_a = work.deserialize (stream_a);
 		}
 	}
 }
@@ -1014,7 +1028,7 @@ hashables (error_a, tree_a)
 			error_a = type_l != "state";
 			if (!error_a)
 			{
-				error_a = rai::from_string_hex (work_l, work);
+				error_a = work.decode_hex (work_l);
 				if (!error_a)
 				{
 					error_a = signature.decode_hex (signature_l);
@@ -1037,7 +1051,7 @@ void rai::state_block::hash (blake2b_state & hash_a) const
 
 uint64_t rai::state_block::block_work () const
 {
-	return work;
+	return work.number ();
 }
 
 void rai::state_block::block_work_set (uint64_t work_a)
@@ -1058,13 +1072,13 @@ rai::block_hash rai::state_block::previous () const
 void rai::state_block::serialize (rai::stream & stream_a) const
 {
 	write (stream_a, hashables.account);
-	write (stream_a, hashables.creation_time.data);
+	hashables.creation_time.data.serialize (stream_a);
 	write (stream_a, hashables.previous);
 	write (stream_a, hashables.representative);
-	write (stream_a, hashables.balance);
+	hashables.balance.serialize (stream_a);
 	write (stream_a, hashables.link);
 	write (stream_a, signature);
-	write (stream_a, boost::endian::native_to_big (work));
+	work.serialize (stream_a);
 }
 
 void rai::state_block::serialize_json (std::string & string_a) const
@@ -1082,7 +1096,7 @@ void rai::state_block::serialize_json (std::string & string_a) const
 	std::string signature_l;
 	signature.encode_hex (signature_l);
 	tree.put ("signature", signature_l);
-	tree.put ("work", rai::to_string_hex (work));
+	tree.put ("work", work.to_string ());
 	std::stringstream ostream;
 	boost::property_tree::write_json (ostream, tree);
 	string_a = ostream.str ();
@@ -1092,20 +1106,19 @@ bool rai::state_block::deserialize (rai::stream & stream_a)
 {
 	auto error (read (stream_a, hashables.account));
 	if (error) return error;
-	error = read (stream_a, hashables.creation_time.data);
+	error = hashables.creation_time.data.deserialize (stream_a);
 	if (error) return error;
 	error = read (stream_a, hashables.previous);
 	if (error) return error;
 	error = read (stream_a, hashables.representative);
 	if (error) return error;
-	error = read (stream_a, hashables.balance);
+	error = hashables.balance.deserialize (stream_a);
 	if (error) return error;
 	error = read (stream_a, hashables.link);
 	if (error) return error;
 	error = read (stream_a, signature);
 	if (error) return error;
-	error = read (stream_a, work);
-	boost::endian::big_to_native_inplace (work);
+	error = work.deserialize (stream_a);
 	return error;
 }
 
@@ -1135,7 +1148,7 @@ bool rai::state_block::deserialize_json (boost::property_tree::ptree const & tre
 		if (error) return error;
 		error = hashables.link.decode_account (link_l) && hashables.link.decode_hex (link_l);
 		if (error) return error;
-		error = rai::from_string_hex (work_l, work);
+		error = work.decode_hex (work_l);
 		if (error) return error;
 		error = signature.decode_hex (signature_l);
 	}
@@ -1196,7 +1209,7 @@ void rai::state_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
-rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_balance_a) const
+rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_balance_a, rai::timestamp_t previous_block_time) const
 {
 	// if there is no previous: open
 	if (!has_previous ())
@@ -1215,6 +1228,11 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::uint128_t previous_
 	// has previous, has previous balance
 	// check balances: if decreasing: send
 	auto cur_balance (hashables.balance.number ());
+	if (rai::manna_control::is_manna_account (hashables.account))
+	{
+		// manna adjustment.  Note that here we want to reverse-adjust, that's why the times are in reverse order
+		cur_balance = rai::manna_control::adjust_balance_with_manna (cur_balance, creation_time ().number (), previous_block_time);
+	}
 	if (cur_balance < previous_balance_a)
 	{
 		return rai::state_block_subtype::send;

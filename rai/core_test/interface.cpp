@@ -7,11 +7,11 @@
 #include <rai/lib/numbers.hpp>
 #include <rai/lib/work.hpp>
 
-TEST (interface, xrb_uint128_to_dec)
+TEST (interface, xrb_uint64_to_dec)
 {
-	rai::uint128_union zero (0);
-	char text[40] = { 0 };
-	xrb_uint128_to_dec (zero.bytes.data (), text);
+	rai::uint64_struct zero (0);
+	char text[20+1] = { 0 };
+	xrb_uint64_to_dec ((uint8_t *)&zero.data, text);
 	ASSERT_STREQ ("0", text);
 }
 
@@ -39,12 +39,13 @@ TEST (interface, xrb_uint512_to_string)
 	ASSERT_STREQ ("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", text);
 }
 
-TEST (interface, xrb_uint128_from_dec)
+TEST (interface, xrb_uint64_from_dec)
 {
-	rai::uint128_union zero (0);
-	ASSERT_EQ (0, xrb_uint128_from_dec ("340282366920938463463374607431768211455", zero.bytes.data ()));
-	ASSERT_EQ (1, xrb_uint128_from_dec ("340282366920938463463374607431768211456", zero.bytes.data ()));
-	ASSERT_EQ (1, xrb_uint128_from_dec ("3402823669209384634633%4607431768211455", zero.bytes.data ()));
+	rai::uint128_struct zero (0);
+	ASSERT_EQ (0, xrb_uint64_from_dec ("0", zero.bytes.data ()));
+	ASSERT_EQ (0, xrb_uint64_from_dec ("18446744073709551615", zero.bytes.data ()));  // 2^64-1
+	ASSERT_EQ (1, xrb_uint64_from_dec ("18446744073709551616", zero.bytes.data ()));
+	ASSERT_EQ (1, xrb_uint64_from_dec ("18446744073%09551615", zero.bytes.data ()));
 }
 
 TEST (interface, xrb_uint256_from_string)

@@ -108,13 +108,17 @@ wallet (wallet_a)
 
 void rai_qt::self_pane::refresh_balance ()
 {
-	auto balance (wallet.node.balance_pending (wallet.account));
-	auto final_text (std::string ("Balance: ") + wallet.format_balance (balance.first));
-	if (!balance.second.is_zero ())
+	auto balance (wallet.node.balance_pending_manna(wallet.account));
+	auto text (std::string ("Balance: ") + wallet.format_balance (std::get<0> (balance)));
+	if (std::get<2> (balance) != 0)
 	{
-		final_text += "\nPending: " + wallet.format_balance (balance.second);
+		text += "  (with manna: " + wallet.format_balance (std::get<2> (balance)) + ")";
 	}
-	wallet.self.balance_label->setText (QString (final_text.c_str ()));
+	if (std::get<1> (balance) != 0)
+	{
+		text += "\nPending: " + wallet.format_balance (std::get<1> (balance));
+	}
+	wallet.self.balance_label->setText (QString (text.c_str ()));
 }
 
 rai_qt::accounts::accounts (rai_qt::wallet & wallet_a) :
@@ -254,8 +258,8 @@ wallet (wallet_a)
 void rai_qt::accounts::refresh_wallet_balance ()
 {
 	rai::transaction transaction (this->wallet.wallet_m->store.environment, nullptr, false);
-	rai::uint128_t balance (0);
-	rai::uint128_t pending (0);
+	rai::amount_t balance (0);
+	rai::amount_t pending (0);
 	for (auto i (this->wallet.wallet_m->store.begin (transaction)), j (this->wallet.wallet_m->store.end ()); i != j; ++i)
 	{
 		rai::public_key key (i->first.uint256 ());
@@ -263,7 +267,7 @@ void rai_qt::accounts::refresh_wallet_balance ()
 		pending = pending + (this->wallet.node.ledger.account_pending (transaction, key));
 	}
 	auto final_text (std::string ("Balance: ") + wallet.format_balance (balance));
-	if (!pending.is_zero ())
+	if (pending != 0)
 	{
 		final_text += "\nPending: " + wallet.format_balance (pending);
 	}
@@ -290,7 +294,7 @@ void rai_qt::accounts::refresh ()
 			case rai::key_type::adhoc:
 			{
 				brush.setColor ("red");
-				display = !balance_amount.is_zero ();
+				display = (balance_amount != 0);
 				break;
 			}
 			default:
@@ -480,10 +484,12 @@ wallet (wallet_a)
 	tx_layout->addWidget (tx_count);
 	tx_layout->setContentsMargins (0, 0, 0, 0);
 	tx_window->setLayout (tx_layout);*/
-	model->setHorizontalHeaderItem (0, new QStandardItem ("Type"));
-	model->setHorizontalHeaderItem (1, new QStandardItem ("Account"));
+	model->setHorizontalHeaderItem (0, new QStandardItem ("Date"));
+	model->setHorizontalHeaderItem (1, new QStandardItem ("Type"));
 	model->setHorizontalHeaderItem (2, new QStandardItem ("Amount"));
-	model->setHorizontalHeaderItem (3, new QStandardItem ("Hash"));
+	model->setHorizontalHeaderItem (3, new QStandardItem ("Balance"));
+	model->setHorizontalHeaderItem (4, new QStandardItem ("Account"));
+	model->setHorizontalHeaderItem (5, new QStandardItem ("Hash"));
 	view->setModel (model);
 	view->setEditTriggers (QAbstractItemView::NoEditTriggers);
 	view->verticalHeader ()->hide ();
@@ -539,13 +545,15 @@ public:
 	}
 	void state_block (rai::state_block const & block_a)
 	{
-		auto balance (block_a.hashables.balance.number ());
-		rai::uint128_t previous_balance (0);
+		block_time = block_a.creation_time ().number ();
+		rai::timestamp_t block_time = block_a.creation_time ().number ();
+		balance = block_a.hashables.balance.number ();
+		rai::amount_t previous_balance (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
-			previous_balance = (ledger.balance (transaction, block_a.hashables.previous));
+			previous_balance = ledger.balance_with_manna (transaction, block_a.hashables.previous, block_time);
 		}
-		rai::state_block_subtype subtype (block_a.get_subtype (previous_balance));
+		rai::state_block_subtype subtype (ledger.state_subtype (transaction, block_a));
 		switch (subtype)
 		{
 			case rai::state_block_subtype::send:
@@ -584,8 +592,10 @@ public:
 	MDB_txn * transaction;
 	rai::ledger & ledger;
 	std::string type;
-	rai::uint128_t amount;
+	rai::amount_t amount;
+	rai::amount_t balance;
 	rai::account account;
+	rai::timestamp_t block_time;
 };
 }
 
@@ -601,11 +611,16 @@ void rai_qt::history::refresh ()
 		auto block (ledger.store.block_get (transaction, hash));
 		assert (block != nullptr);
 		block->visit (visitor);
+		rai::short_timestamp block_time (visitor.block_time);
+		items.push_back (new QStandardItem (QString (block_time.to_date_string_local ().c_str ())));
 		items.push_back (new QStandardItem (QString (visitor.type.c_str ())));
-		items.push_back (new QStandardItem (QString (visitor.account.to_account ().c_str ())));
-		auto balanceItem = new QStandardItem (QString (wallet.format_balance (visitor.amount).c_str ()));
+		auto amountItem = new QStandardItem (QString (wallet.format_balance (visitor.amount).c_str ()));
+		amountItem->setData (Qt::AlignRight, Qt::TextAlignmentRole);
+		items.push_back (amountItem);
+		auto balanceItem = new QStandardItem (QString (wallet.format_balance (visitor.balance).c_str ()));
 		balanceItem->setData (Qt::AlignRight, Qt::TextAlignmentRole);
 		items.push_back (balanceItem);
+		items.push_back (new QStandardItem (QString (visitor.account.to_account ().c_str ())));
 		items.push_back (new QStandardItem (QString (hash.to_string ().c_str ())));
 		hash = block->previous ();
 		model->appendRow (items);
@@ -748,7 +763,7 @@ wallet (wallet_a)
 			this->history.refresh ();
 			auto balance (this->wallet.node.balance_pending (account));
 			auto final_text (std::string ("Balance (XRB): ") + wallet.format_balance (balance.first));
-			if (!balance.second.is_zero ())
+			if (balance.second != 0)
 			{
 				final_text += "\nPending: " + wallet.format_balance (balance.second);
 			}
@@ -1087,7 +1102,7 @@ void rai_qt::wallet::start ()
 			rai::amount amount;
 			if (!amount.decode_dec (this_l->send_count->text ().toStdString ()))
 			{
-				rai::uint128_t actual (amount.number () * this_l->rendering_ratio);
+				rai::amount_t actual (amount.number () * this_l->rendering_ratio);
 				if (actual / this_l->rendering_ratio == amount.number ())
 				{
 					QString account_text (this_l->send_account->text ());
@@ -1242,7 +1257,7 @@ void rai_qt::wallet::start ()
 			this_l->push_main_stack (this_l->send_blocks_window);
 		}
 	});
-	node.observers.blocks.add ([this_w](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::uint128_t const & amount_a, bool) {
+	node.observers.blocks.add ([this_w](std::shared_ptr<rai::block> block_a, rai::account const & account_a, rai::amount_t const & amount_a, bool) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->application.postEvent (&this_l->processor, new eventloop_event ([this_w, block_a, account_a]() {
@@ -1397,7 +1412,7 @@ void rai_qt::wallet::empty_password ()
 	});
 }
 
-void rai_qt::wallet::change_rendering_ratio (rai::uint128_t const & rendering_ratio_a)
+void rai_qt::wallet::change_rendering_ratio (rai::amount_t const & rendering_ratio_a)
 {
 	application.postEvent (&processor, new eventloop_event ([this, rendering_ratio_a]() {
 		this->rendering_ratio = rendering_ratio_a;
@@ -1405,15 +1420,18 @@ void rai_qt::wallet::change_rendering_ratio (rai::uint128_t const & rendering_ra
 	}));
 }
 
-std::string rai_qt::wallet::format_balance (rai::uint128_t const & balance) const
+std::string rai_qt::wallet::format_balance (rai::amount_t const & balance) const
 {
-	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 0, false);
-	auto unit = std::string ("XRB");
+	auto balance_str = rai::amount (balance).format_balance (rendering_ratio, 2, false);
+	auto unit = std::string ("MIK");
+	/*
 	if (rendering_ratio == rai::kxrb_ratio)
 	{
 		unit = std::string ("kxrb");
 	}
-	else if (rendering_ratio == rai::xrb_ratio)
+	else 
+	*/
+	if (rendering_ratio == rai::xrb_ratio)
 	{
 		unit = std::string ("xrb");
 	}
@@ -1783,7 +1801,7 @@ wallet (wallet_a)
 	QObject::connect (krai, &QRadioButton::toggled, [this]() {
 		if (krai->isChecked ())
 		{
-			this->wallet.change_rendering_ratio (rai::kxrb_ratio);
+			//this->wallet.change_rendering_ratio (rai::kxrb_ratio);
 		}
 	});
 	QObject::connect (rai, &QRadioButton::toggled, [this]() {

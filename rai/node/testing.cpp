@@ -242,20 +242,20 @@ rai::account rai::system::get_random_account (std::vector<rai::account> & accoun
 	return result;
 }
 
-rai::uint128_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node & node_a, rai::account const & account_a)
+rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node & node_a, rai::account const & account_a)
 {
-	rai::uint128_t balance (node_a.ledger.account_balance (transaction_a, account_a));
-	std::string balance_text (balance.convert_to<std::string> ());
-	rai::uint128_union random_amount;
-	random_pool.GenerateBlock (random_amount.bytes.data (), sizeof (random_amount.bytes));
-	auto result (((rai::uint256_t{ random_amount.number () } * balance) / rai::uint256_t{ std::numeric_limits<rai::uint128_t>::max () }).convert_to<rai::uint128_t> ());
-	std::string text (result.convert_to<std::string> ());
+	rai::amount_t balance (node_a.ledger.account_balance (transaction_a, account_a));
+	std::string balance_text (std::to_string (balance));
+	rai::uint64_struct random_amount;
+	random_pool.GenerateBlock ((uint8_t *)&random_amount.data, sizeof (random_amount.data));
+	auto result (((rai::uint256_t{ random_amount.number () } * balance) / rai::uint256_t{ std::numeric_limits<rai::amount_t>::max () }).convert_to<rai::amount_t> ());
+	std::string text (std::to_string (result));
 	return result;
 }
 
 void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::account> & accounts_a)
 {
-	rai::uint128_t amount;
+	rai::amount_t amount;
 	rai::account destination;
 	rai::account source;
 	{
@@ -272,7 +272,7 @@ void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::a
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if (!amount.is_zero ())
+	if (amount != 0)
 	{
 		auto hash (wallet (0)->send_sync (source, destination, amount));
 		assert (!hash.is_zero ());
@@ -305,14 +305,14 @@ void rai::system::generate_change_unknown (rai::node & node_a, std::vector<rai::
 void rai::system::generate_send_new (rai::node & node_a, std::vector<rai::account> & accounts_a)
 {
 	assert (node_a.wallets.items.size () == 1);
-	rai::uint128_t amount;
+	rai::amount_t amount;
 	rai::account source;
 	{
 		rai::transaction transaction (node_a.store.environment, nullptr, false);
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if (!amount.is_zero ())
+	if (amount != 0)
 	{
 		auto pub (node_a.wallets.items.begin ()->second->deterministic_insert ());
 		accounts_a.push_back (pub);
@@ -446,45 +446,46 @@ void rai::landing::write_store ()
 	}
 }
 
-rai::uint128_t rai::landing::distribution_amount (uint64_t interval)
+rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 {
+	// TODO: adjust for smaller amount representation (64 bit)
 	// Halving period ~= Exponent of 2 in seconds approximately 1 year = 2^25 = 33554432
 	// Interval = Exponent of 2 in seconds approximately 1 minute = 2^10 = 64
 	uint64_t intervals_per_period (1 << (25 - interval_exponent));
-	rai::uint128_t result;
+	rai::amount_t result;
 	if (interval < intervals_per_period * 1)
 	{
 		// Total supply / 2^halving period / intervals per period
 		// 2^128 / 2^1 / (2^25 / 2^10)
-		result = rai::uint128_t (1) << (127 - (25 - interval_exponent)); // 50%
+		result = rai::amount_t (1) << (127 - (25 - interval_exponent)); // 50%
 	}
 	else if (interval < intervals_per_period * 2)
 	{
-		result = rai::uint128_t (1) << (126 - (25 - interval_exponent)); // 25%
+		result = rai::amount_t (1) << (126 - (25 - interval_exponent)); // 25%
 	}
 	else if (interval < intervals_per_period * 3)
 	{
-		result = rai::uint128_t (1) << (125 - (25 - interval_exponent)); // 13%
+		result = rai::amount_t (1) << (125 - (25 - interval_exponent)); // 13%
 	}
 	else if (interval < intervals_per_period * 4)
 	{
-		result = rai::uint128_t (1) << (124 - (25 - interval_exponent)); // 6.3%
+		result = rai::amount_t (1) << (124 - (25 - interval_exponent)); // 6.3%
 	}
 	else if (interval < intervals_per_period * 5)
 	{
-		result = rai::uint128_t (1) << (123 - (25 - interval_exponent)); // 3.1%
+		result = rai::amount_t (1) << (123 - (25 - interval_exponent)); // 3.1%
 	}
 	else if (interval < intervals_per_period * 6)
 	{
-		result = rai::uint128_t (1) << (122 - (25 - interval_exponent)); // 1.6%
+		result = rai::amount_t (1) << (122 - (25 - interval_exponent)); // 1.6%
 	}
 	else if (interval < intervals_per_period * 7)
 	{
-		result = rai::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8%
+		result = rai::amount_t (1) << (121 - (25 - interval_exponent)); // 0.8%
 	}
 	else if (interval < intervals_per_period * 8)
 	{
-		result = rai::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8*
+		result = rai::amount_t (1) << (121 - (25 - interval_exponent)); // 0.8*
 	}
 	else
 	{

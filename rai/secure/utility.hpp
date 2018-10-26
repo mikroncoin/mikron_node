@@ -134,7 +134,8 @@ public:
 	mdb_val ();
 	mdb_val (MDB_val const &);
 	mdb_val (size_t, void *);
-	mdb_val (rai::uint128_union const &);
+	mdb_val (rai::uint64_struct const &);
+	mdb_val (rai::uint128_struct const &);
 	mdb_val (rai::uint256_union const &);
 	void * data () const;
 	size_t size () const;

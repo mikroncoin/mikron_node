@@ -56,7 +56,9 @@ public:
 	bool operator== (rai::short_timestamp const &) const;
 	rai::timestamp_t number () const;
 	void set_time_now ();
-	static rai::short_timestamp now ();
+	static rai::timestamp_t now ();
+	static rai::timestamp_t convert_from_posix_time (uint64_t);
+	static uint64_t convert_to_posix_time (rai::timestamp_t);
 	void set_from_posix_time (uint64_t);
 	bool decode_dec (std::string const &);
 	uint64_t to_posix_time () const;
@@ -64,7 +66,7 @@ public:
 	std::string to_date_string_local () const;
 	bool is_zero () const;
 	void clear ();
-	uint32_union data;
+	uint32_struct data;
 };
 
 class block
@@ -330,7 +332,8 @@ public:
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
 	bool valid_predecessor (rai::block const &) const override;
-	rai::state_block_subtype get_subtype (rai::uint128_t) const;
+	// Determining whether it is a send or receive block requires the previous balance too.  A more convenient version is through ledger, use that if possible.
+	rai::state_block_subtype get_subtype (rai::amount_t, rai::timestamp_t) const;
 	bool is_valid_open_subtype () const;
 	bool is_valid_send_or_receive_subtype () const;
 	bool is_valid_change_subtype () const;
@@ -340,7 +343,7 @@ public:
 	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
 	rai::signature signature;
-	uint64_t work;
+	rai::work work;
 };
 
 class block_visitor

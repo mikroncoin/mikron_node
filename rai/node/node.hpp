@@ -83,7 +83,7 @@ public:
 	rai::election_status status;
 	std::atomic<bool> confirmed;
 	bool aborted;
-	std::unordered_map<rai::block_hash, rai::uint128_t> last_tally;
+	std::unordered_map<rai::block_hash, rai::amount_t> last_tally;
 };
 class conflict_info
 {
@@ -175,7 +175,7 @@ public:
 	gap_cache (rai::node &);
 	void add (MDB_txn *, std::shared_ptr<rai::block>);
 	void vote (std::shared_ptr<rai::vote>);
-	rai::uint128_t bootstrap_threshold (MDB_txn *);
+	rai::amount_t bootstrap_threshold (MDB_txn *);
 	void purge_old ();
 	boost::multi_index_container<
 	rai::gap_information,
@@ -261,8 +261,8 @@ public:
 	bool validate_syn_cookie (rai::endpoint const &, rai::account, rai::signature);
 	size_t size ();
 	size_t size_sqrt ();
-	rai::uint128_t total_weight ();
-	rai::uint128_t online_weight_minimum;
+	rai::amount_t total_weight ();
+	rai::amount_t online_weight_minimum;
 	bool empty ();
 	std::mutex mutex;
 	rai::endpoint self;
@@ -380,7 +380,7 @@ public:
 	online_reps (rai::node &);
 	void vote (std::shared_ptr<rai::vote> const &);
 	void recalculate_stake ();
-	rai::uint128_t online_stake ();
+	rai::amount_t online_stake ();
 	std::deque<rai::account> list ();
 	boost::multi_index_container<
 	rai::rep_last_heard_info,
@@ -390,7 +390,7 @@ public:
 	reps;
 
 private:
-	rai::uint128_t online_stake_total;
+	rai::amount_t online_stake_total;
 	std::mutex mutex;
 	rai::node & node;
 };
@@ -516,7 +516,7 @@ public:
 class node_observers
 {
 public:
-	rai::observer_set<std::shared_ptr<rai::block>, rai::account const &, rai::uint128_t const &, bool> blocks;
+	rai::observer_set<std::shared_ptr<rai::block>, rai::account const &, rai::amount_t const &, bool> blocks;
 	rai::observer_set<bool> wallet;
 	rai::observer_set<std::shared_ptr<rai::vote>, rai::endpoint const &> vote;
 	rai::observer_set<rai::account const &, bool> account_balance;
@@ -608,10 +608,11 @@ public:
 	rai::process_return process (rai::block const &);
 	void keepalive_preconfigured (std::vector<std::string> const &);
 	rai::block_hash latest (rai::account const &);
-	rai::uint128_t balance (rai::account const &);
+	rai::amount_t balance (rai::account const &);
 	std::unique_ptr<rai::block> block (rai::block_hash const &);
-	std::pair<rai::uint128_t, rai::uint128_t> balance_pending (rai::account const &);
-	rai::uint128_t weight (rai::account const &);
+	std::pair<rai::amount_t, rai::amount_t> balance_pending (rai::account const &);
+	std::tuple<rai::amount_t, rai::amount_t, rai::amount_t> balance_pending_manna (rai::account const &);
+	rai::amount_t weight (rai::account const &);
 	rai::account representative (rai::account const &);
 	void ongoing_keepalive ();
 	void ongoing_syn_cookie_cleanup ();
@@ -620,14 +621,14 @@ public:
 	void ongoing_store_flush ();
 	void port_mapping_start_delayed ();
 	void backup_wallet ();
-	int price (rai::uint128_t const &, int);
+	int price (rai::amount_t const &, int);
 	void work_generate_blocking (rai::block &);
 	uint64_t work_generate_blocking (rai::uint256_union const &);
 	void work_generate (rai::uint256_union const &, std::function<void(uint64_t)>);
 	void add_initial_peers ();
 	void block_confirm (std::shared_ptr<rai::block>);
 	void process_fork (MDB_txn *, std::shared_ptr<rai::block>);
-	rai::uint128_t delta ();
+	rai::amount_t delta ();
 	boost::asio::io_service & service;
 	rai::node_config config;
 	rai::alarm & alarm;

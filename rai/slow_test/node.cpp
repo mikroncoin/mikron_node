@@ -57,7 +57,7 @@ TEST (system, receive_while_synchronizing)
 			std::string block_text;
 			block->serialize_json (block_text);
 		}));
-		while (node1->balance (key.pub).is_zero ())
+		while (node1->balance (key.pub) == 0)
 		{
 			system.poll ();
 		}

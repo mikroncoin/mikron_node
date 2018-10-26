@@ -85,13 +85,13 @@ int main (int argc, char * const * argv)
 						          << "Public: " << rep.pub.to_string () << std::endl
 						          << "Account: " << rep.pub.to_account () << std::endl;
 					}
-					rai::uint128_t balance (rai::genesis_amount);
+					rai::amount_t balance (rai::genesis_amount);
 					rai::state_block genesis_block (genesis.pub, rai::block_hash (0), 42, genesis.pub, balance, 0, genesis.prv, genesis.pub, work.generate (genesis.pub));
 					std::cout << genesis_block.to_json ();
 					rai::block_hash previous (genesis_block.hash ());
 					for (auto i (0); i != 8; ++i)
 					{
-						rai::uint128_t yearly_distribution (rai::uint128_t (1) << (127 - (i == 7 ? 6 : i)));
+						rai::amount_t yearly_distribution (rai::amount_t (1) << (127 - (i == 7 ? 6 : i)));
 						auto weekly_distribution (yearly_distribution / 52);
 						for (auto j (0); j != 52; ++j)
 						{
@@ -120,15 +120,15 @@ int main (int argc, char * const * argv)
 		{
 			rai::inactive_node node (data_path);
 			rai::transaction transaction (node.node->store.environment, nullptr, false);
-			rai::uint128_t total;
+			rai::amount_t total;
 			for (auto i (node.node->store.representation_begin (transaction)), n (node.node->store.representation_end ()); i != n; ++i)
 			{
 				rai::account account (i->first.uint256 ());
 				auto amount (node.node->store.representation_get (transaction, account));
 				total += amount;
-				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % account.to_account () % amount.convert_to<std::string> () % total.convert_to<std::string> ());
+				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % account.to_account () % std::to_string (amount) % std::to_string (total));
 			}
-			std::map<rai::account, rai::uint128_t> calculated;
+			std::map<rai::account, rai::amount_t> calculated;
 			for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
 			{
 				rai::account_info info (i->second);
@@ -140,7 +140,7 @@ int main (int argc, char * const * argv)
 			for (auto i (calculated.begin ()), n (calculated.end ()); i != n; ++i)
 			{
 				total += i->second;
-				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % i->first.to_account () % i->second.convert_to<std::string> () % total.convert_to<std::string> ());
+				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % i->first.to_account () % std::to_string (i->second) % std::to_string (total));
 			}
 		}
 		else if (vm.count ("debug_account_count"))

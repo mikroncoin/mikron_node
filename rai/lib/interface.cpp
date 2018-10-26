@@ -15,10 +15,10 @@
 #include <cstring>
 
 extern "C" {
-void xrb_uint128_to_dec (xrb_uint128 source, char * destination)
+void xrb_uint64_to_dec (xrb_uint64 source, char * destination)
 {
-	auto const & number (*reinterpret_cast<rai::uint128_union *> (source));
-	strncpy (destination, number.to_string_dec ().c_str (), 32);
+	auto const & number (*reinterpret_cast<rai::uint64_struct *> (source));
+	strncpy (destination, number.to_string_dec ().c_str (), 16);
 }
 
 void xrb_uint256_to_string (xrb_uint256 source, char * destination)
@@ -39,9 +39,9 @@ void xrb_uint512_to_string (xrb_uint512 source, char * destination)
 	strncpy (destination, number.to_string ().c_str (), 128);
 }
 
-int xrb_uint128_from_dec (const char * source, xrb_uint128 destination)
+int xrb_uint64_from_dec (const char * source, xrb_uint64 destination)
 {
-	auto & number (*reinterpret_cast<rai::uint128_union *> (destination));
+	auto & number (*reinterpret_cast<rai::uint64_struct *> (destination));
 	auto error (number.decode_dec (source));
 	return error ? 1 : 0;
 }

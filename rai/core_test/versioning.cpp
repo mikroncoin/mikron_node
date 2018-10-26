@@ -1,9 +1,10 @@
+/*
 #include <gtest/gtest.h>
 
 #include <rai/secure/blockstore.hpp>
 #include <rai/secure/versioning.hpp>
 
-/*  Legacy
+ *  Legacy
 TEST (versioning, account_info_v1)
 {
 	auto file (rai::unique_path ());
