@@ -120,14 +120,12 @@ public:
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
 	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
-	//void serialize (rai::stream &) const;
-	//bool deserialize (rai::stream &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
 	rai::amount balance_with_manna (rai::account const &, rai::timestamp_t) const;
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
-	size_t db_size () const;
+	size_t size_in_db () const;
 	rai::timestamp_t last_block_time () const { return static_cast<rai::timestamp_t> (last_block_time_intern); }
 	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
 	// members, they must be all value types
@@ -148,13 +146,14 @@ public:
 	pending_info ();
 	pending_info (rai::mdb_val const &);
 	pending_info (rai::account const &, rai::amount const &);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
 	bool operator== (rai::pending_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
+	size_t size_in_db () const;
 	rai::account source;
 	rai::amount amount;
 };
+
 class pending_key
 {
 public:
@@ -167,16 +166,17 @@ public:
 	rai::account account;
 	rai::block_hash hash;
 };
+
 class block_info
 {
 public:
 	block_info ();
-	block_info (MDB_val const &);
+	block_info (rai::mdb_val const &);
 	block_info (rai::account const &, rai::amount const &);
-	void serialize (rai::stream &) const;
-	bool deserialize (rai::stream &);
 	bool operator== (rai::block_info const &) const;
-	rai::mdb_val val () const;
+	rai::mdb_val serialize_to_db () const;
+	void deserialize_from_db (rai::mdb_val const &);
+	size_t size_in_db () const;
 	rai::account account;
 	rai::amount balance;
 };

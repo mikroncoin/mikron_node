@@ -988,7 +988,7 @@ void rai::block_store::account_put (MDB_txn * transaction_a, rai::account const 
 
 void rai::block_store::pending_put (MDB_txn * transaction_a, rai::pending_key const & key_a, rai::pending_info const & pending_a)
 {
-	auto status (mdb_put (transaction_a, pending, key_a.val (), pending_a.val (), 0));
+	auto status (mdb_put (transaction_a, pending, key_a.val (), pending_a.serialize_to_db (), 0));
 	assert (status == 0);
 }
 
@@ -1020,8 +1020,7 @@ bool rai::block_store::pending_get (MDB_txn * transaction_a, rai::pending_key co
 	{
 		return true;
 	}
-	rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
-	pending_a.deserialize (stream);
+	pending_a.deserialize_from_db (value);
 	return false;
 }
 
@@ -1045,7 +1044,7 @@ rai::store_iterator rai::block_store::pending_end ()
 
 void rai::block_store::block_info_put (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::block_info const & block_info_a)
 {
-	auto status (mdb_put (transaction_a, blocks_info, rai::mdb_val (hash_a), block_info_a.val (), 0));
+	auto status (mdb_put (transaction_a, blocks_info, rai::mdb_val (hash_a), block_info_a.serialize_to_db (), 0));
 	assert (status == 0);
 }
 

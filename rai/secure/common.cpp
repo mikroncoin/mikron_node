@@ -7,7 +7,6 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/endian/conversion.hpp>
 
 #include <queue>
 
@@ -237,44 +236,6 @@ block_count (block_count_a)
 {
 }
 
-/*
-void rai::account_info::serialize (rai::stream & stream_a) const
-{
-	write (stream_a, head.bytes);
-	write (stream_a, rep_block.bytes);
-	write (stream_a, open_block.bytes);
-	write (stream_a, balance.bytes);
-	write (stream_a, last_block_time_intern);
-	write (stream_a, block_count);
-}
-
-bool rai::account_info::deserialize (rai::stream & stream_a)
-{
-	auto error (read (stream_a, head.bytes));
-	if (!error)
-	{
-		error = read (stream_a, rep_block.bytes);
-		if (!error)
-		{
-			error = read (stream_a, open_block.bytes);
-			if (!error)
-			{
-				error = read (stream_a, balance.bytes);
-				if (!error)
-				{
-					error = read (stream_a, modified);
-					if (!error)
-					{
-						error = read (stream_a, block_count);
-					}
-				}
-			}
-		}
-	}
-	return error;
-}
-*/
-
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
 	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance &&
@@ -302,7 +263,7 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 	return balance2;
 }
 
-size_t rai::account_info::db_size () const
+size_t rai::account_info::size_in_db () const
 {
 	// make sure class is well packed
 	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
@@ -311,14 +272,14 @@ size_t rai::account_info::db_size () const
 
 rai::mdb_val rai::account_info::serialize_to_db () const
 {
-	auto size (db_size ());
+	auto size (size_in_db ());
 	assert (size == sizeof (*this));
 	return rai::mdb_val (size, const_cast<rai::account_info *> (this));
 }
 
 void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)
 {
-	auto size (db_size());
+	auto size (size_in_db ());
 	assert (val_a.value.mv_size == size);
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
 }
@@ -345,11 +306,7 @@ amount (0)
 
 rai::pending_info::pending_info (rai::mdb_val const & val_a)
 {
-	auto db_size (sizeof (source) + sizeof (amount));
-	assert (val_a.value.mv_size == db_size);
-	assert (reinterpret_cast<const uint8_t *> (this) == reinterpret_cast<const uint8_t *> (&source));
-	assert (reinterpret_cast<const uint8_t *> (&source) + sizeof (source) == reinterpret_cast<const uint8_t *> (&amount));
-	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + db_size, reinterpret_cast<uint8_t *> (this));
+	deserialize_from_db (val_a);
 }
 
 rai::pending_info::pending_info (rai::account const & source_a, rai::amount const & amount_a) :
@@ -358,34 +315,30 @@ amount (amount_a)
 {
 }
 
-void rai::pending_info::serialize (rai::stream & stream_a) const
+size_t rai::pending_info::size_in_db () const
 {
-	rai::write (stream_a, source.bytes);
-	//rai::write (stream_a, boost::endian::native_to_big (amount.data));
-	rai::write (stream_a, amount.data);
+	// make sure class is well packed
+	assert (sizeof (rai::pending_info) == sizeof (source) + sizeof (amount));
+	return sizeof (rai::pending_info);
 }
 
-bool rai::pending_info::deserialize (rai::stream & stream_a)
+rai::mdb_val rai::pending_info::serialize_to_db () const
 {
-	auto result (rai::read (stream_a, source.bytes));
-	if (!result)
-	{
-		result = rai::read (stream_a, amount.data);
-		//boost::endian::big_to_native_inplace (amount.data);
-	}
-	return result;
+	auto size (size_in_db ());
+	assert (size == sizeof (*this));
+	return rai::mdb_val (size, const_cast<rai::pending_info *> (this));
+}
+
+void rai::pending_info::deserialize_from_db (rai::mdb_val const & val_a)
+{
+	auto size (size_in_db ());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
 }
 
 bool rai::pending_info::operator== (rai::pending_info const & other_a) const
 {
 	return source == other_a.source && amount == other_a.amount;
-}
-
-rai::mdb_val rai::pending_info::val () const
-{
-	assert (reinterpret_cast<const uint8_t *> (this) == reinterpret_cast<const uint8_t *> (&source));
-	assert (reinterpret_cast<const uint8_t *> (this) + sizeof (source) == reinterpret_cast<const uint8_t *> (&amount));
-	return rai::mdb_val (sizeof (source) + sizeof (amount), const_cast<rai::pending_info *> (this));
 }
 
 rai::pending_key::pending_key (rai::account const & account_a, rai::block_hash const & hash_a) :
@@ -433,11 +386,9 @@ balance (0)
 {
 }
 
-rai::block_info::block_info (MDB_val const & val_a)
+rai::block_info::block_info (rai::mdb_val const & val_a)
 {
-	assert (val_a.mv_size == sizeof (*this));
-	static_assert (sizeof (account) + sizeof (balance) == sizeof (*this), "Packed class");
-	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
+	deserialize_from_db (val_a);
 }
 
 rai::block_info::block_info (rai::account const & account_a, rai::amount const & balance_a) :
@@ -446,31 +397,30 @@ balance (balance_a)
 {
 }
 
-void rai::block_info::serialize (rai::stream & stream_a) const
+size_t rai::block_info::size_in_db () const
 {
-	rai::write (stream_a, account.bytes);
-	rai::write (stream_a, boost::endian::native_to_big (balance.data));  // TODO check if needed
+	// make sure class is well packed
+	assert (sizeof (rai::block_info) == sizeof (account) + sizeof (balance));
+	return sizeof (rai::block_info);
 }
 
-bool rai::block_info::deserialize (rai::stream & stream_a)
+rai::mdb_val rai::block_info::serialize_to_db () const
 {
-	auto error (rai::read (stream_a, account.bytes));
-	if (!error)
-	{
-		error = rai::read (stream_a, balance.data);
-		boost::endian::big_to_native_inplace (balance.data);  // TODO check if needed
-	}
-	return error;
+	auto size (size_in_db ());
+	assert (size == sizeof (*this));
+	return rai::mdb_val (size, const_cast<rai::block_info *> (this));
+}
+
+void rai::block_info::deserialize_from_db (rai::mdb_val const & val_a)
+{
+	auto size (size_in_db ());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
 }
 
 bool rai::block_info::operator== (rai::block_info const & other_a) const
 {
 	return account == other_a.account && balance == other_a.balance;
-}
-
-rai::mdb_val rai::block_info::val () const
-{
-	return rai::mdb_val (sizeof (*this), const_cast<rai::block_info *> (this));
 }
 
 bool rai::vote::operator== (rai::vote const & other_a) const
