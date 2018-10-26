@@ -39,7 +39,7 @@ const rai::amount_t live_manna_increment = (rai::amount_t)82000 * (rai::amount_t
 char const * test_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
-	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
+	"creation_time": "2592000",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk",
 	"balance": "18446744073709551615",
@@ -60,7 +60,7 @@ char const * test_genesis_legacy_data = R"%%%({
 char const * beta_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
-	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
+	"creation_time": "2592000",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
 	"balance": "3000000000000000000",
@@ -73,7 +73,7 @@ char const * beta_genesis_data = R"%%%({
 char const * live_genesis_data = R"%%%({
 	"type": "state",
 	"account": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
-	"creation_time": "{CREATION_TIME_PLACEHOLDER}",
+	"creation_time": "2592000",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
 	"representative": "mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6",
 	"balance": "3000000000000000000",
@@ -959,8 +959,7 @@ rai::genesis::genesis ()
 {
 	boost::property_tree::ptree tree;
 	std::string block_json (rai::genesis_block);
-	std::string block_json2 = boost::replace_all_copy (block_json, "{CREATION_TIME_PLACEHOLDER}", std::to_string (rai::genesis_time));
-	std::stringstream istream (block_json2);
+	std::stringstream istream (block_json);
 	boost::property_tree::read_json (istream, tree);
 	auto block (rai::deserialize_block_json (tree));
 	assert (dynamic_cast<rai::state_block *> (block.get ()) != nullptr);
