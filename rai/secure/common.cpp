@@ -17,7 +17,7 @@ namespace
 {
 const char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
 const char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
-const char const * beta_genesis_public_key_data = "F9D81CD1BBD9439B609E8F2C5D33893E02BE274FAAE899B57A87034DC9542F8C"; // mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9
+const char const * beta_genesis_public_key_data = "7F6FA3E3C6D40583B02057D9AE1B5DA04D1647FE7F3F1BC11252BEA684729E64"; // mik_1zuhnhjwfo17igr41oysorfoua4f4s5zwzsz5h1j6noynt4979m6z5nnt5q4
 const char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
 const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max ();  // 2^64-1 18446744073709551615
 const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
@@ -59,10 +59,10 @@ char const * test_genesis_legacy_data = R"%%%({
 
 char const * beta_genesis_data = R"%%%({
 	"type": "state",
-	"account": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
+	"account": "mik_1zuhnhjwfo17igr41oysorfoua4f4s5zwzsz5h1j6noynt4979m6z5nnt5q4",
 	"creation_time": "2592000",
 	"previous": "0000000000000000000000000000000000000000000000000000000000000000",
-	"representative": "mik_3ygr5mauqpc5mfibx5sednsrkhi4qrmnzcqam8tqo3r5bq6oadwe9prikbt9",
+	"representative": "mik_1zuhnhjwfo17igr41oysorfoua4f4s5zwzsz5h1j6noynt4979m6z5nnt5q4",
 	"balance": "3000000000000000000",
 	"link": "0000000000000000000000000000000000000000000000000000000000000000",
 	"work": "8374208633b49332",
