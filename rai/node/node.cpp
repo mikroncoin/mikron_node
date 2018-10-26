@@ -513,7 +513,7 @@ void rai::network::receive_action (boost::system::error_code const & error, size
 				{
 					if (node.config.logging.insufficient_work_logging ())
 					{
-						BOOST_LOG (node.log) << "Insufficient work in message";
+						BOOST_LOG (node.log) << "Insufficient work in message";  // << (int)buffer.data()[5];
 					}
 
 					// We've already increment error count, update detail only
