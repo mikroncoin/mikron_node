@@ -72,7 +72,7 @@ Git is a great source control system, very flexible with regards to repository m
     git pull https://github.com/nanocurrency/raiblocks.git master
 
 #### What is the relationship to MicroCoin?
-Mikron and [MicroCoin](https://mikrocoin.hu) are different, independent project, technically completely different.  Both are forked from another project, both are based in Hungary, and there are some persons who contributed to both project, but they are separate projects.  Despite the name similarity, they should not be confused with each other.
+Mikron and [MicroCoin](https://mikrocoin.hu) are different, independent projects, based on completely different technology.  Both are based in Hungary, and there are some persons who contributed to both, but they are separate projects.  Despite the name similarity, they should not be confused with each other.
 
 ### Links & Resources -- Nano
 
