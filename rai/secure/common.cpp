@@ -15,20 +15,20 @@
 // Genesis keys for network variants
 namespace
 {
-const char const * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
-const char const * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
-const char const * beta_genesis_public_key_data = "7F6FA3E3C6D40583B02057D9AE1B5DA04D1647FE7F3F1BC11252BEA684729E64"; // mik_1zuhnhjwfo17igr41oysorfoua4f4s5zwzsz5h1j6noynt4979m6z5nnt5q4
-const char const * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
+const char * test_genesis_private_key_data = "6EBA231F6BDCDA9B67F26CAE66CEF4EE6922F42B37EEDD76D485B5F5A3BC8AA9";
+const char * test_genesis_public_key_data = "96F167643B3DEB3B614003E432F33CCFB0C3E64866DA99ACB484F2B13E3E1980"; // mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
+const char * beta_genesis_public_key_data = "7F6FA3E3C6D40583B02057D9AE1B5DA04D1647FE7F3F1BC11252BEA684729E64"; // mik_1zuhnhjwfo17igr41oysorfoua4f4s5zwzsz5h1j6noynt4979m6z5nnt5q4
+const char * live_genesis_public_key_data = "829DD4F441C7CC5EF6572F11CE00A3F5264EFF25AA6D080507A4D1A8B47E2353"; // Non-final mik_31nxtmt65jyeduu7gdrjsr1c9xb8buzkdcmf314ihb8jo4t9watm86g1fke6
 const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max ();  // 2^64-1 18446744073709551615
 const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
 const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
 const uint32_t test_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t beta_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
 const uint32_t live_genesis_time = 2592000;  // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
-const char const * test_manna_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
-const char const * test_manna_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
-const char const * beta_manna_public_key_data = beta_genesis_public_key_data;
-const char const * live_manna_public_key_data = live_genesis_public_key_data;
+const char * test_manna_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
+const char * test_manna_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
+const char * beta_manna_public_key_data = beta_genesis_public_key_data;
+const char * live_manna_public_key_data = live_genesis_public_key_data;
 const uint32_t test_manna_freq = 4;
 const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400;  // 1 day
