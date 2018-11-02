@@ -25,21 +25,32 @@ version_max (rai::protocol_version)
 {
 }
 
-bool rai::protocol_information::is_full_node () const
+bool rai::protocol_information::full_node_get () const
 {
 	return extensions.test (full_node_position);
 }
 
-void rai::protocol_information::set_full_node (bool value_a)
+void rai::protocol_information::full_node_set (bool value_a)
 {
 	extensions.set (full_node_position, value_a);
+}
+
+bool rai::protocol_information::validating_node_get () const
+{
+	return extensions.test (validating_node_position);
+}
+
+void rai::protocol_information::validating_node_set (bool value_a)
+{
+	extensions.set (validating_node_position, value_a);
 }
 
 rai::message_header::message_header (rai::message_type message_type_a) :
 protocol_info (rai::protocol_version, rai::protocol_version_min, rai::protocol_version, std::bitset<16> ()),
 message_type (message_type_a)
 {
-	protocol_info.set_full_node (true);
+	protocol_info.full_node_set (true);
+	protocol_info.validating_node_set (true);
 }
 
 rai::message_header::message_header (bool & error_a, rai::stream & stream_a)

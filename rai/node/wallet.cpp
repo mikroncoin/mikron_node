@@ -994,6 +994,8 @@ std::shared_ptr<rai::block> rai::wallet::change_action (rai::account const & sou
 			auto existing (store.find (transaction, source_a));
 			if (existing != store.end () && !node.ledger.latest (transaction, source_a).is_zero ())
 			{
+				rai::timestamp_t now = rai::short_timestamp::now ();
+				auto balance (node.ledger.account_balance_with_manna (transaction, source_a, now));
 				rai::account_info info;
 				auto error1 (node.ledger.store.account_get (transaction, source_a, info));
 				assert (!error1);
@@ -1002,7 +1004,7 @@ std::shared_ptr<rai::block> rai::wallet::change_action (rai::account const & sou
 				assert (!error2);
 				uint64_t cached_work (0);
 				store.work_get (transaction, source_a, cached_work);
-				block.reset (new rai::state_block (source_a, info.head, 0, representative_a, info.balance, 0, prv, source_a, cached_work));
+				block.reset (new rai::state_block (source_a, info.head, now, representative_a, balance, 0, prv, source_a, cached_work));
 			}
 		}
 	}

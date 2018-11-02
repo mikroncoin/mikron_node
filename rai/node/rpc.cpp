@@ -1999,7 +1999,8 @@ void rai::rpc_handler::peers ()
 		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_min", boost::property_tree::ptree (std::to_string (i->protocol_info.version_min))));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_max", boost::property_tree::ptree (std::to_string (i->protocol_info.version_max))));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("proto_extensions", boost::property_tree::ptree (std::to_string (i->protocol_info.extensions.to_ulong ()))));
-		peer_l.push_back (boost::property_tree::ptree::value_type ("is_full_node", boost::property_tree::ptree (i->protocol_info.is_full_node () ? "true" : "false")));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("is_full_node", boost::property_tree::ptree (i->protocol_info.full_node_get () ? "true" : "false")));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("is_validating_node", boost::property_tree::ptree (i->protocol_info.validating_node_get () ? "true" : "false")));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("rep_weight", boost::property_tree::ptree (i->rep_weight.to_string ())));
 		peers_l.push_back (std::make_pair ("", peer_l));
 	}

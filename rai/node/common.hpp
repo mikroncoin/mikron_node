@@ -159,8 +159,10 @@ class protocol_information
 public:
 	protocol_information (unsigned, unsigned, unsigned, std::bitset<16>);
 	protocol_information ();
-	bool is_full_node () const;
-	void set_full_node (bool value_a);
+	bool full_node_get () const;
+	void full_node_set (bool value_a);
+	bool validating_node_get () const;
+	void validating_node_set (bool value_a);
 	uint8_t version;
 	uint8_t version_min;
 	uint8_t version_max;
