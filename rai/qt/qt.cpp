@@ -1761,7 +1761,9 @@ wallet (wallet_a)
 	ledger_window->setLayout (ledger_layout);
 
 	peers_model->setHorizontalHeaderItem (0, new QStandardItem ("IPv6 address:port"));
-	peers_model->setHorizontalHeaderItem (1, new QStandardItem ("Net version"));
+	peers_model->setHorizontalHeaderItem (1, new QStandardItem ("Protocol version"));
+	peers_model->setHorizontalHeaderItem (2, new QStandardItem ("Protocol info"));
+	peers_model->setHorizontalHeaderItem (3, new QStandardItem ("Node ID"));
 	peers_view->setEditTriggers (QAbstractItemView::NoEditTriggers);
 	peers_view->verticalHeader ()->hide ();
 	peers_view->setModel (peers_model);
@@ -1893,7 +1895,22 @@ void rai_qt::advanced_actions::refresh_peers ()
 		QString qendpoint (endpoint.str ().c_str ());
 		QList<QStandardItem *> items;
 		items.push_back (new QStandardItem (qendpoint));
-		items.push_back (new QStandardItem (QString (std::to_string (i->second.protocol_info.version).c_str ())));
+		items.push_back (new QStandardItem (QString (boost::str (boost::format ("%1% (%2% - %3%)") %
+			(int)i->second.protocol_info.version %
+			(int)i->second.protocol_info.version_min %
+			(int)i->second.protocol_info.version_max
+		).c_str ())));
+		items.push_back (new QStandardItem (QString (boost::str (boost::format ("%1% (%2% %3%)") %
+			(unsigned long)i->second.protocol_info.extensions.to_ulong () %
+			(int)i->second.protocol_info.full_node_get () %
+			(int)i->second.protocol_info.validating_node_get ()
+		).c_str())));
+		QString node_id ("--");
+		if (i->second.node_id)
+		{
+			node_id = QString (i->second.node_id.get ().to_account ().c_str ());
+		}
+		items.push_back (new QStandardItem (node_id));
 		peers_model->appendRow (items);
 	}
 }
