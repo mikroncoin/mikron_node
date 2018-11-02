@@ -239,7 +239,7 @@ public:
 	std::vector<peer_information> representatives (size_t);
 	// List of all peers
 	std::deque<rai::endpoint> list ();
-	std::map<rai::endpoint, unsigned> list_version ();
+	std::map<rai::endpoint, peer_information> map_by_endpoint ();
 	std::vector<peer_information> list_vector ();
 	// A list of random peers sized for the configured rebroadcast fanout
 	std::deque<rai::endpoint> list_fanout ();

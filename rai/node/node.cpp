@@ -468,7 +468,8 @@ public:
 			if (!node.peers.validate_syn_cookie (endpoint_l, message_a.response->first, message_a.response->second))
 			{
 				validated_response = true;
-				if (message_a.response->first != node.node_id.pub)
+				rai::account node_id = message_a.response->first;
+				if (node_id != node.node_id.pub)
 				{
 					node.peers.insert (endpoint_l, message_a.header.protocol_info);
 					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
@@ -2149,13 +2150,13 @@ std::deque<rai::endpoint> rai::peer_container::list ()
 	return result;
 }
 
-std::map<rai::endpoint, unsigned> rai::peer_container::list_version ()
+std::map<rai::endpoint, rai::peer_information> rai::peer_container::map_by_endpoint ()
 {
-	std::map<rai::endpoint, unsigned> result;
+	std::map<rai::endpoint, rai::peer_information> result;
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto i (peers.begin ()), j (peers.end ()); i != j; ++i)
 	{
-		result.insert (std::pair<rai::endpoint, unsigned> (i->endpoint, i->protocol_info.version));
+		result.insert (std::pair<rai::endpoint, rai::peer_information> (i->endpoint, *i));
 	}
 	return result;
 }

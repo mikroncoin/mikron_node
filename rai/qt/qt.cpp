@@ -1883,8 +1883,8 @@ wallet (wallet_a)
 void rai_qt::advanced_actions::refresh_peers ()
 {
 	peers_model->removeRows (0, peers_model->rowCount ());
-	auto list (wallet.node.peers.list_version ());
-	for (auto i (list.begin ()), n (list.end ()); i != n; ++i)
+	auto map (wallet.node.peers.map_by_endpoint ());
+	for (auto i (map.begin ()), n (map.end ()); i != n; ++i)
 	{
 		std::stringstream endpoint;
 		endpoint << i->first.address ().to_string ();
@@ -1893,7 +1893,7 @@ void rai_qt::advanced_actions::refresh_peers ()
 		QString qendpoint (endpoint.str ().c_str ());
 		QList<QStandardItem *> items;
 		items.push_back (new QStandardItem (qendpoint));
-		items.push_back (new QStandardItem (QString (std::to_string (i->second).c_str ())));
+		items.push_back (new QStandardItem (QString (std::to_string (i->second.protocol_info.version).c_str ())));
 		peers_model->appendRow (items);
 	}
 }
