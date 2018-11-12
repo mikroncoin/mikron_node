@@ -232,7 +232,7 @@ public:
 	// Returns true if peer was already known
 	bool known_peer (rai::endpoint const &);
 	// Notify of peer we received from
-	bool insert (rai::endpoint const &, rai::protocol_information);
+	bool insert (rai::endpoint const &, rai::protocol_information, rai::account const &);
 	std::unordered_set<rai::endpoint> random_set (size_t);
 	void random_fill (std::array<rai::endpoint, 8> &);
 	// Request a list of the top known representatives

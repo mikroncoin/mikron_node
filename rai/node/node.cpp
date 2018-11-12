@@ -471,7 +471,7 @@ public:
 				rai::account node_id = message_a.response->first;
 				if (node_id != node.node_id.pub)
 				{
-					node.peers.insert (endpoint_l, message_a.header.protocol_info);
+					node.peers.insert (endpoint_l, message_a.header.protocol_info, node_id);
 					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
 					{
 						BOOST_LOG (node.log) << boost::str (boost::format ("Peer inserted after handshake, %1%, count %2%") % endpoint_l % node.peers.size ());
@@ -3326,7 +3326,7 @@ bool rai::peer_container::reachout (rai::endpoint const & endpoint_a)
 	return error;
 }
 
-bool rai::peer_container::insert (rai::endpoint const & endpoint_a, rai::protocol_information protocol_info_a)
+bool rai::peer_container::insert (rai::endpoint const & endpoint_a, rai::protocol_information protocol_info_a, rai::account const & node_id_a)
 {
 	assert (endpoint_a.address ().is_v6 ());
 	auto unknown (false);
@@ -3384,7 +3384,9 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, rai::protoco
 				}
 				if (!result)
 				{
-					peers.insert (rai::peer_information (endpoint_a, protocol_info_a));
+					rai::peer_information peer (endpoint_a, protocol_info_a);
+					peer.node_id = node_id_a;
+					peers.insert (peer);
 				}
 			}
 		}
@@ -3551,7 +3553,7 @@ bool rai::peer_container::contacted (rai::endpoint const & endpoint_a, rai::prot
 	auto should_handshake (false);
 	if (protocol_info_a.version < rai::protocol_version_legacy_min)
 	{
-		insert (endpoint_l, protocol_info_a);
+		insert (endpoint_l, protocol_info_a, rai::account ());
 	}
 	else if (!known_peer (endpoint_l) && peers.get<rai::peer_by_ip_addr> ().count (endpoint_l.address ()) < max_peers_per_ip)
 	{

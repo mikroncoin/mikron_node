@@ -1152,7 +1152,7 @@ void rai::bootstrap_initiator::bootstrap (rai::endpoint const & endpoint_a, bool
 {
 	if (add_to_peers)
 	{
-		node.peers.insert (rai::map_endpoint_to_v6 (endpoint_a), rai::protocol_information ());
+		node.peers.insert (rai::map_endpoint_to_v6 (endpoint_a), rai::protocol_information (), rai::account ());
 	}
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped)
