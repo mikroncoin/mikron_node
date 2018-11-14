@@ -13,8 +13,8 @@ Mikron is based on the great **Nano** (by Colin LeMahieu; formerly known as RaiB
 
 ### TODO Update Readme
 
-[![Build Status](https://travis-ci.org/nanocurrency/raiblocks.svg?branch=master)](https://travis-ci.org/nanocurrency/raiblocks)
-[![Build status](https://ci.appveyor.com/api/projects/status/uwdcxi87h2y6jx94/branch/master?svg=true)](https://ci.appveyor.com/project/argakiig/raiblocks/branch/master)
+[![Build Status](https://travis-ci.org/mikroncoin/mikron_node.svg?branch=master)](https://travis-ci.org/mikroncoin/mikron_node)
+[![Build status](https://ci.appveyor.com/api/projects/status/uwdcxi87h2y6jx94/branch/master?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node/branch/master)
 
 ### Key Features
 
