@@ -1,7 +1,7 @@
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set (PLATFORM_SECURE_SOURCE plat/osx/working.mm)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set (PLATFORM_SECURE_SOURCE plat/windows/working.cpp)
+	set (PLATFORM_SECURE_SOURCE plat/windows/working.cpp plat/windows/stdio.cpp)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set (PLATFORM_SECURE_SOURCE plat/posix/working.cpp)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
@@ -39,7 +39,8 @@ target_link_libraries(secure
 	lmdb
 	Boost::boost
 	Boost::system
-	Boost::filesystem)
+	Boost::filesystem
+	${OPENSSL_LIBRARIES})
 
 target_compile_definitions(secure PUBLIC
 	-DQT_NO_KEYWORDS
