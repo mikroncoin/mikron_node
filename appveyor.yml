@@ -49,15 +49,15 @@ before_build:
 build_script:
 - cmake --build "%APPVEYOR_BUILD_FOLDER%" --config "%CONFIGURATION%" --target mikron_node -- /maxcpucount /verbosity:minimal
 after_build:
-- ps: |
-    $path = Join-Path -Path "$env:TMP" -ChildPath csc.p12
-    [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:CSC_LINK))
-    Set-AppveyorBuildVariable -Name 'CSC_LINK' -Value $path
-- cmd: |
-    "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin\signtool.exe" sign /a /ph /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "%CSC_LINK%" /p "%CSC_KEY_PASSWORD%" "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
-- ps: Remove-Item env:CSC_KEY_PASSWORD
-- ps: Remove-Item -Path $env:CSC_LINK
-- cmd: REM cpack -NSIS --verbose
+#- ps: |
+#    $path = Join-Path -Path "$env:TMP" -ChildPath csc.p12
+#    [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:CSC_LINK))
+#    Set-AppveyorBuildVariable -Name 'CSC_LINK' -Value $path
+#- cmd: |
+#    "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin\signtool.exe" sign /a /ph /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "%CSC_LINK%" /p "%CSC_KEY_PASSWORD%" "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
+#- ps: Remove-Item env:CSC_KEY_PASSWORD
+#- ps: Remove-Item -Path $env:CSC_LINK
+#- cmd: REM cpack -NSIS --verbose
 - cmd: 7z a -tzip -mx=9 node-win32.zip "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
 artifacts:
 - path: node-win32.zip
