@@ -5,14 +5,14 @@ skip_branch_with_pr: true
 max_jobs: 2
 image: Visual Studio 2017
 configuration: Release
-platform: x64
+platform: x86
 environment:
   matrix:
     - network: rai_live_network
   openssl_version: 1_1_0i
   openssl_sha256sum: 10a797bccaa9c749e77b9cc03bf6ce25a9cf7f03d2fb46d9d3098d1d30bd7051
 cache:
-- '%TEMP%\Win64OpenSSL-%openssl_version%.exe'
+- '%TEMP%\Win32OpenSSL-%openssl_version%.exe'
 clone_folder: C:\projects\myproject
 install:
 - ps: |
@@ -20,9 +20,9 @@ install:
     Remove-Item C:\OpenSSL-Win64 -Force -Recurse
 
     $version = $env:openssl_version -replace '\.', '_'
-    $file = "$env:TEMP\Win64OpenSSL-$version.exe"
+    $file = "$env:TEMP\Win32OpenSSL-$version.exe"
     if (-not (Test-Path -Path $file -PathType Leaf)) {
-      Start-FileDownload "https://slproweb.com/download/Win64OpenSSL-$version.exe" $file
+      Start-FileDownload "https://slproweb.com/download/Win32OpenSSL-$version.exe" $file
     }
 
     $hash = $env:openssl_sha256sum
@@ -33,7 +33,7 @@ install:
     Start-Process -FilePath $file -ArgumentList '/SP-','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -NoNewWindow -Wait
 before_build:
 - cmd: git submodule update --init --recursive
-- cmd: cmake -DACTIVE_NETWORK=%NETWORK% -DRAIBLOCKS_SECURE_RPC=ON -DBoost_COMPILER="-vc141" -DBOOST_ROOT="C:/Libraries/boost_1_67_0" -DBOOST_LIBRARYDIR="C:/Libraries/boost_1_67_0/lib64-msvc-14.1" -G "Visual Studio 15 2017 Win64" -DIPHLPAPI_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/iphlpapi.lib" -DWINSOCK2_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/WS2_32.lib"
+- cmd: cmake -DACTIVE_NETWORK=%NETWORK% -DRAIBLOCKS_SECURE_RPC=ON -DBoost_COMPILER="-vc141" -DBOOST_ROOT="C:/Libraries/boost_1_67_0" -DBOOST_LIBRARYDIR="C:/Libraries/boost_1_67_0/lib32-msvc-14.1" -G "Visual Studio 15 2017" -DIPHLPAPI_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x86/iphlpapi.lib" -DWINSOCK2_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x86/WS2_32.lib"
 - ps: >-
     $size_t=select-string -path ".\bootstrap_weights.cpp" -Pattern "rai_bootstrap_weights_size"| foreach {$_.Line}
     
@@ -51,14 +51,14 @@ build_script:
 after_build:
 #- ps: |
 #    $path = Join-Path -Path "$env:TMP" -ChildPath csc.p12
-#    [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:CSC_LINK))
+#    [IO.File]::WriteAllBytes($path, [Convert]::FromBase32String($env:CSC_LINK))
 #    Set-AppveyorBuildVariable -Name 'CSC_LINK' -Value $path
 #- cmd: |
 #    "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin\signtool.exe" sign /a /ph /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "%CSC_LINK%" /p "%CSC_KEY_PASSWORD%" "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
 #- ps: Remove-Item env:CSC_KEY_PASSWORD
 #- ps: Remove-Item -Path $env:CSC_LINK
 #- cmd: REM cpack -NSIS --verbose
-- cmd: 7z a -tzip -mx=9 node-win64.zip "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
+- cmd: 7z a -tzip -mx=9 node-win32.zip "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
 artifacts:
-- path: node-win64.zip
-  name: node-win64
+- path: node-win32.zip
+  name: node-win32
