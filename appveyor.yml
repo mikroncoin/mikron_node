@@ -58,7 +58,7 @@ after_build:
 #- ps: Remove-Item env:CSC_KEY_PASSWORD
 #- ps: Remove-Item -Path $env:CSC_LINK
 #- cmd: REM cpack -NSIS --verbose
-- cmd: 7z a -tzip -mx=9 node-win32.zip "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
+- cmd: 7z a -tzip -mx=9 node-win64.zip "%APPVEYOR_BUILD_FOLDER%/Release/mikron_node.exe"
 artifacts:
-- path: node-win32.zip
-  name: node-win32
+- path: node-win64.zip
+  name: node-win64
