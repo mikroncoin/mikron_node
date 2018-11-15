@@ -1,6 +1,6 @@
 option(DISABLE_NATIVE_ARCH "Disable the addition of -march=native" ON)
 
-set (RAIBLOCKS_SECURE_RPC TRUE)
+#set (RAIBLOCKS_SECURE_RPC TRUE)  # set in cmake command
 
 include(CheckCXXCompilerFlag)
 

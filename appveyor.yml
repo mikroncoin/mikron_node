@@ -33,7 +33,7 @@ install:
     Start-Process -FilePath $file -ArgumentList '/SP-','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -NoNewWindow -Wait
 before_build:
 - cmd: git submodule update --init --recursive
-- cmd: cmake -DACTIVE_NETWORK=%NETWORK% -DBoost_COMPILER="-vc141" -DBOOST_ROOT="C:/Libraries/boost_1_67_0" -DBOOST_LIBRARYDIR="C:/Libraries/boost_1_67_0/lib64-msvc-14.1" -G "Visual Studio 15 2017 Win64" -DIPHLPAPI_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/iphlpapi.lib" -DWINSOCK2_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/WS2_32.lib"
+- cmd: cmake -DACTIVE_NETWORK=%NETWORK% -DRAIBLOCKS_SECURE_RPC=ON -DBoost_COMPILER="-vc141" -DBOOST_ROOT="C:/Libraries/boost_1_67_0" -DBOOST_LIBRARYDIR="C:/Libraries/boost_1_67_0/lib64-msvc-14.1" -G "Visual Studio 15 2017 Win64" -DIPHLPAPI_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/iphlpapi.lib" -DWINSOCK2_LIBRARY="C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x64/WS2_32.lib"
 - ps: >-
     $size_t=select-string -path ".\bootstrap_weights.cpp" -Pattern "rai_bootstrap_weights_size"| foreach {$_.Line}
     
