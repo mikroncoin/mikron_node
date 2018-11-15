@@ -42,10 +42,10 @@ TEST (message, publish_serialization)
 {
 	rai::publish publish (std::unique_ptr<rai::block> (new rai::send_block (0, 1, 2, rai::keypair ().prv, 4, 5)));
 	ASSERT_EQ (rai::block_type::send, publish.block->type ());
-	publish.header.protocol_info.set_full_node (false);
-	ASSERT_FALSE (publish.header.protocol_info.is_full_node ());
-	publish.header.protocol_info.set_full_node (true);
-	ASSERT_TRUE (publish.header.protocol_info.is_full_node ());
+	publish.header.protocol_info.full_node_set (false);
+	ASSERT_FALSE (publish.header.protocol_info.full_node_get ());
+	publish.header.protocol_info.full_node_set (true);
+	ASSERT_TRUE (publish.header.protocol_info.full_node_get ());
 	std::vector<uint8_t> bytes;
 	{
 		rai::vectorstream stream (bytes);
@@ -58,7 +58,7 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::protocol_version, bytes[3]);
 	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::publish), bytes[5]);
-	ASSERT_EQ (0x04, bytes[6]);
+	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
 	rai::bufferstream stream (bytes.data (), bytes.size ());
@@ -92,7 +92,7 @@ TEST (message, confirm_req_serialization)
 	ASSERT_EQ (rai::protocol_version, bytes[3]);
 	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_req), bytes[5]);
-	ASSERT_EQ (0x04, bytes[6]);
+	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::state), bytes[8]);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
@@ -123,7 +123,7 @@ TEST (message, confirm_ack_serialization)
 	ASSERT_EQ (rai::protocol_version, bytes[3]);
 	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_ack), bytes[5]);
-	ASSERT_EQ (0x04, bytes[6]);
+	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
