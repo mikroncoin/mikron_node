@@ -232,14 +232,14 @@ public:
 	// Returns true if peer was already known
 	bool known_peer (rai::endpoint const &);
 	// Notify of peer we received from
-	bool insert (rai::endpoint const &, rai::protocol_information);
+	bool insert (rai::endpoint const &, rai::protocol_information, rai::account const &);
 	std::unordered_set<rai::endpoint> random_set (size_t);
 	void random_fill (std::array<rai::endpoint, 8> &);
 	// Request a list of the top known representatives
 	std::vector<peer_information> representatives (size_t);
 	// List of all peers
 	std::deque<rai::endpoint> list ();
-	std::map<rai::endpoint, unsigned> list_version ();
+	std::map<rai::endpoint, peer_information> map_by_endpoint ();
 	std::vector<peer_information> list_vector ();
 	// A list of random peers sized for the configured rebroadcast fanout
 	std::deque<rai::endpoint> list_fanout ();
