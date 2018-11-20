@@ -75,6 +75,11 @@ rai::mdb_env::mdb_env (bool & error_a, boost::filesystem::path const & path_a, i
 			// This can happen if something like 256 io_threads are specified in the node config
 			auto status4 (mdb_env_open (environment, path_a.string ().c_str (), MDB_NOSUBDIR | MDB_NOTLS, 00600));
 			error_a = status4 != 0;
+			if (error_a)
+			{
+				environment = nullptr;
+				std::cerr << "Error opening DB, path " << path_a.string().c_str() << std::endl;
+			}
 		}
 		else
 		{
@@ -165,9 +170,13 @@ rai::mdb_val::operator MDB_val const & () const
 rai::transaction::transaction (rai::mdb_env & environment_a, MDB_txn * parent_a, bool write) :
 environment (environment_a)
 {
-	auto status (mdb_txn_begin (environment_a, parent_a, write ? 0 : MDB_RDONLY, &handle));
-	assert (status == 0);
-	open_for_write = write;
+	assert (environment_a.environment != NULL);
+	if (environment_a.environment != NULL)
+	{
+		auto status(mdb_txn_begin(environment_a, parent_a, write ? 0 : MDB_RDONLY, &handle));
+		assert (status == 0);
+		open_for_write = write;
+	}
 }
 
 rai::transaction::~transaction ()

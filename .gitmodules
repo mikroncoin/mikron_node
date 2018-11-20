@@ -7,7 +7,7 @@
 [submodule "lmdb"]
 	path = lmdb
 	url = https://github.com/mikroncoin/lmdb.git
-	branch = lmdb_0_9_21
+	branch = lmdb_0_9_21_mikron
 [submodule "phc-winner-argon2"]
 	path = phc-winner-argon2
 	url = https://github.com/mikroncoin/argon2-hash.git
