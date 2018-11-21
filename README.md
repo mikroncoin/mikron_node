@@ -2,6 +2,12 @@
 <div align="center">
     <img src="images/mikron_logo_white.svg" alt="Logo" width='250px' height='auto' bgcolor="black"/>
 </div>
+
+<hr />
+
+[![Build Status](https://travis-ci.org/mikroncoin/mikron_node.svg?branch=master)](https://travis-ci.org/mikroncoin/mikron_node)
+[![Build status](https://ci.appveyor.com/api/projects/status/i7rk7dh6lvjxpwb8?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node)
+
 <hr />
 
 ### What is Mikron?
@@ -12,9 +18,6 @@ focusing on community building.  See the Mikron website at https://mikron.io .
 Mikron is based on the great **Nano** (by Colin LeMahieu; formerly known as RaiBlocks; http://nano.org).
 
 ### TODO Update Readme
-
-[![Build Status](https://travis-ci.org/mikroncoin/mikron_node.svg?branch=master)](https://travis-ci.org/mikroncoin/mikron_node)
-[![Build status](https://ci.appveyor.com/api/projects/status/uwdcxi87h2y6jx94/branch/master?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node/branch/master)
 
 ### Key Features
 
