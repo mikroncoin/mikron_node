@@ -248,6 +248,13 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 						auto prev_balance_with_manna (info.balance_with_manna (block_a.hashables.account, now).number ());
 						result.amount = (rai::state_block_subtype::send == subtype) ? (prev_balance_with_manna - result.amount.number ()) : (result.amount.number () - prev_balance_with_manna);
 						result.code = (block_a.hashables.previous == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
+						if (result.code == rai::process_result::progress)
+						{
+							if (rai::state_block_subtype::send == subtype)
+							{
+								result.code = (block_a.hashables.link == block_a.hashables.account) ? rai::process_result::send_same_account : rai::process_result::progress;  // send to self not allowed
+							}
+						}
 					}
 				}
 			}

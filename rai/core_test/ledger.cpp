@@ -2463,7 +2463,7 @@ TEST (ledger_manna, change_rep)
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time4) - 100, ledger.account_balance_with_manna (transaction, rai::manna_account, time4));
 }
 
-TEST (ledger, send_self_valid)
+TEST (ledger, send_self_invalid)
 {
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
@@ -2475,5 +2475,5 @@ TEST (ledger, send_self_valid)
 	genesis.initialize (transaction, store);
 	rai::state_block send_self (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, send_self));
-	ASSERT_EQ (rai::process_result::progress, return1.code);
+	ASSERT_EQ (rai::process_result::send_same_account, return1.code);
 }
