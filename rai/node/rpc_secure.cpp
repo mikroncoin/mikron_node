@@ -1,5 +1,6 @@
 #include <rai/node/node.hpp>
 #include <rai/node/rpc_secure.hpp>
+#include <rai/lib/utility.hpp>
 
 bool rai::rpc_secure::on_verify_certificate (bool preverified, boost::asio::ssl::verify_context & ctx)
 {
@@ -80,8 +81,23 @@ void rai::rpc_secure::load_certs (boost::asio::ssl::context & context_a)
 	// Verify client certificates?
 	if (config.secure.client_certs_path.size () > 0)
 	{
+		std::string client_certs_path2 = rai::find_existing_path_with_encodings (config.secure.client_certs_path);
+		if (client_certs_path2.length () == 0)
+		{
+			BOOST_LOG (this->node.log) << boost::str (boost::format ("ERROR: Cert directory not found, (%1%)") % config.secure.client_certs_path);
+			// try it nonetheless
+			client_certs_path2 = config.secure.client_certs_path;
+		}
+		else
+		{
+			if (client_certs_path2 != config.secure.client_certs_path)
+			{
+				// there was adjustment
+				BOOST_LOG (this->node.log) << boost::str (boost::format ("Warning: Cert directory found, adjusted, (%1% %2%)") % client_certs_path2 % config.secure.client_certs_path);
+			}
+		}
 		context_a.set_verify_mode (boost::asio::ssl::verify_fail_if_no_peer_cert | boost::asio::ssl::verify_peer);
-		context_a.add_verify_path (config.secure.client_certs_path);
+		context_a.add_verify_path (client_certs_path2);
 		context_a.set_verify_callback (boost::bind (&rai::rpc_secure::on_verify_certificate, this, _1, _2));
 	}
 }
