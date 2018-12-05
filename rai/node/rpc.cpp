@@ -2002,6 +2002,7 @@ void rai::rpc_handler::peers ()
 		peer_l.push_back (boost::property_tree::ptree::value_type ("is_full_node", boost::property_tree::ptree (i->second.protocol_info.full_node_get () ? "true" : "false")));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("is_validating_node", boost::property_tree::ptree (i->second.protocol_info.validating_node_get () ? "true" : "false")));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("rep_weight", boost::property_tree::ptree (i->second.rep_weight.to_string ())));
+		peer_l.push_back (boost::property_tree::ptree::value_type ("node_id", boost::property_tree::ptree (!i->second.node_id ? "" : i->second.node_id.get ().to_account ())));
 		peers_l.push_back (std::make_pair ("", peer_l));
 	}
 	response_l.add_child ("peers", peers_l);
