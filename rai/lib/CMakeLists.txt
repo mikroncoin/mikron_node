@@ -27,16 +27,6 @@ add_library (rai_lib
 	work.hpp
 	work.cpp)
 
-target_link_libraries (rai_lib
-	xxhash
-	blake2
-	${CRYPTOPP_LIBRARY}
-	Boost::boost)
-
-if(NEED_ADDITIONAL_ACTION) # Some condition
-    set(ADDITIONAL_ACTION COMMAND ./run_something arg1)
-endif()
-
 # for std::experimental::filesystem on Linux
 if (NOT WIN32)
 	set (ADDITIONAL_LIB stdc++fs)
