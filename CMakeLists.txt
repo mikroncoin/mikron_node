@@ -1,6 +1,112 @@
 cmake_minimum_required (VERSION 3.4)
 project (rai)
 
+
+# ucm_print_flags
+# Prints all compiler flags for all configurations
+macro(ucm_print_flags)
+    ucm_gather_flags(1 flags_configs)
+    message("")
+    foreach(flags ${flags_configs})
+        message("${flags}: ${${flags}}")
+    endforeach()
+    message("")
+endmacro()
+
+# ucm_gather_flags
+# Gathers all lists of flags for printing or manipulation
+macro(ucm_gather_flags with_linker result)
+    set(${result} "")
+    # add the main flags without a config
+    list(APPEND ${result} CMAKE_C_FLAGS)
+    list(APPEND ${result} CMAKE_CXX_FLAGS)
+    if(${with_linker})
+        list(APPEND ${result} CMAKE_EXE_LINKER_FLAGS)
+        list(APPEND ${result} CMAKE_MODULE_LINKER_FLAGS)
+        list(APPEND ${result} CMAKE_SHARED_LINKER_FLAGS)
+        list(APPEND ${result} CMAKE_STATIC_LINKER_FLAGS)
+    endif()
+    
+    if("${CMAKE_CONFIGURATION_TYPES}" STREQUAL "" AND NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
+        # handle single config generators - like makefiles/ninja - when CMAKE_BUILD_TYPE is set
+        string(TOUPPER ${CMAKE_BUILD_TYPE} config)
+        list(APPEND ${result} CMAKE_C_FLAGS_${config})
+        list(APPEND ${result} CMAKE_CXX_FLAGS_${config})
+        if(${with_linker})
+            list(APPEND ${result} CMAKE_EXE_LINKER_FLAGS_${config})
+            list(APPEND ${result} CMAKE_MODULE_LINKER_FLAGS_${config})
+            list(APPEND ${result} CMAKE_SHARED_LINKER_FLAGS_${config})
+            list(APPEND ${result} CMAKE_STATIC_LINKER_FLAGS_${config})
+        endif()
+    else()
+        # handle multi config generators (like msvc, xcode)
+        foreach(config ${CMAKE_CONFIGURATION_TYPES})
+            string(TOUPPER ${config} config)
+            list(APPEND ${result} CMAKE_C_FLAGS_${config})
+            list(APPEND ${result} CMAKE_CXX_FLAGS_${config})
+            if(${with_linker})
+                list(APPEND ${result} CMAKE_EXE_LINKER_FLAGS_${config})
+                list(APPEND ${result} CMAKE_MODULE_LINKER_FLAGS_${config})
+                list(APPEND ${result} CMAKE_SHARED_LINKER_FLAGS_${config})
+                list(APPEND ${result} CMAKE_STATIC_LINKER_FLAGS_${config})
+            endif()
+        endforeach()
+    endif()
+endmacro()
+
+# ucm_set_runtime
+# Sets the runtime (static/dynamic) for msvc/gcc
+macro(ucm_set_runtime)
+    cmake_parse_arguments(ARG "STATIC;DYNAMIC" "" "" ${ARGN})
+
+    if(ARG_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "unrecognized arguments: ${ARG_UNPARSED_ARGUMENTS}")
+    endif()
+    
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" STREQUAL "")
+        message(AUTHOR_WARNING "ucm_set_runtime() does not support clang yet!")
+    endif()
+    
+    ucm_gather_flags(0 flags_configs)
+    
+    # add/replace the flags
+    # note that if the user has messed with the flags directly this function might fail
+    # - for example if with MSVC and the user has removed the flags - here we just switch/replace them
+    if("${ARG_STATIC}")
+        foreach(flags ${flags_configs})
+            if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+                if(NOT ${flags} MATCHES "-static-libstdc\\+\\+")
+                    set(${flags} "${${flags}} -static-libstdc++")
+                endif()
+                if(NOT ${flags} MATCHES "-static-libgcc")
+                    set(${flags} "${${flags}} -static-libgcc")
+                endif()
+            elseif(MSVC)
+                if(${flags} MATCHES "/MD")
+                    string(REGEX REPLACE "/MD" "/MT" ${flags} "${${flags}}")
+                endif()
+            endif()
+        endforeach()
+    elseif("${ARG_DYNAMIC}")
+        foreach(flags ${flags_configs})
+            if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+                if(${flags} MATCHES "-static-libstdc\\+\\+")
+                    string(REGEX REPLACE "-static-libstdc\\+\\+" "" ${flags} "${${flags}}")
+                endif()
+                if(${flags} MATCHES "-static-libgcc")
+                    string(REGEX REPLACE "-static-libgcc" "" ${flags} "${${flags}}")
+                endif()
+            elseif(MSVC)
+                if(${flags} MATCHES "/MT")
+                    string(REGEX REPLACE "/MT" "/MD" ${flags} "${${flags}}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+endmacro()
+
+
+
 set (CPACK_PACKAGE_VERSION_MAJOR "1")
 set (CPACK_PACKAGE_VERSION_MINOR "0")
 set (CPACK_PACKAGE_VERSION_PATCH "4")
@@ -12,6 +118,10 @@ set (CPACK_PACKAGE_VENDOR "Mikron Currency")
 set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
 # Create all libraries and executables in the root binary dir
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+ucm_print_flags ()
+ucm_set_runtime (STATIC)
+ucm_print_flags ()
 
 set (RAIBLOCKS_GUI OFF CACHE BOOL "")
 set (RAIBLOCKS_TEST OFF CACHE BOOL "")
