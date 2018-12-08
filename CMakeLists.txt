@@ -34,7 +34,14 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #find_package(Threads REQUIRED)
 #set (PLATFORM_LIBS ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 
+include (Custom.cmake OPTIONAL NO_POLICY_SCOPE)
+
 if (WIN32)
+	# Static linking with MSVC runtime
+	#ucm_print_flags ()
+	ucm_set_runtime (STATIC)
+	#ucm_print_flags ()
+
 	add_definitions(-D_WIN32_WINNT=0x0600
 					-D_CRT_SECURE_NO_WARNINGS
 					-DWINVER=0x0600
@@ -99,8 +106,6 @@ else ()
 endif ()
 
 SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PLATFORM_LINK_FLAGS}" )
-
-include (Custom.cmake OPTIONAL NO_POLICY_SCOPE)
 
 if (RAIBLOCKS_SECURE_RPC)
 	set (OPENSSL_USE_STATIC_LIBS TRUE)
@@ -385,3 +390,5 @@ endif ()
 set (CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
 
 include (CPack NO_POLICY_SCOPE)
+
+ucm_print_flags ()
