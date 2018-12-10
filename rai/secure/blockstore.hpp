@@ -144,8 +144,10 @@ public:
 	*/
 	int upgrade_v11_to_v12 (MDB_txn *);
 
-	// Requires a write transaction
 	rai::raw_key get_node_id (MDB_txn *);
+	// Requires a write transaction
+	rai::raw_key get_or_create_node_id (MDB_txn *);
+	int set_node_id (MDB_txn *, rai::raw_key);
 
 	/** Deletes the node ID from the store */
 	void delete_node_id (MDB_txn *);

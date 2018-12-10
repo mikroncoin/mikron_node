@@ -1907,7 +1907,7 @@ stats (config.stat_config)
 			genesis.initialize (transaction, store);
 			BOOST_LOG (log) << "Inserted genesis block";
 		}
-		node_id = rai::keypair (store.get_node_id (transaction));
+		node_id = rai::keypair (store.get_or_create_node_id (transaction));
 		BOOST_LOG (log) << "Node ID: " << node_id.pub.to_account ();
 	}
 	peers.online_weight_minimum = config.online_weight_minimum.number ();
