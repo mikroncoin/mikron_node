@@ -126,7 +126,7 @@ void rai::network::send_node_id_handshake (rai::endpoint const & endpoint_a, boo
 	boost::optional<std::pair<rai::account, rai::signature>> response (boost::none);
 	if (respond_to)
 	{
-		response = std::make_pair (node.node_id.pub, rai::sign_message (node.node_id.prv, node.node_id.pub, *respond_to));
+		response = std::make_pair (node.node_id_pub_get (), node.sign_message_with_node_id (*respond_to));
 		assert (!rai::validate_message (response->first, *respond_to, response->second));
 	}
 	rai::node_id_handshake message (query, response);
@@ -137,7 +137,7 @@ void rai::network::send_node_id_handshake (rai::endpoint const & endpoint_a, boo
 	}
 	if (node.config.logging.network_node_id_handshake_logging ())
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Node ID handshake sent with node ID %1% to %2%: query %3%, respond_to %4% (signature %5%)") % node.node_id.pub.to_account () % endpoint_a % (query ? query->to_string () : std::string ("[none]")) % (respond_to ? respond_to->to_string () : std::string ("[none]")) % (response ? response->second.to_string () : std::string ("[none]")));
+		BOOST_LOG (node.log) << boost::str (boost::format ("Node ID handshake sent with node ID %1% to %2%: query %3%, respond_to %4% (signature %5%)") % node.node_id_pub_get ().to_account () % endpoint_a % (query ? query->to_string () : std::string ("[none]")) % (respond_to ? respond_to->to_string () : std::string ("[none]")) % (response ? response->second.to_string () : std::string ("[none]")));
 	}
 	node.stats.inc (rai::stat::type::message, rai::stat::detail::node_id_handshake, rai::stat::dir::out);
 	std::weak_ptr<rai::node> node_w (node.shared ());
@@ -469,7 +469,7 @@ public:
 			{
 				validated_response = true;
 				rai::account node_id = message_a.response->first;
-				if (node_id != node.node_id.pub)
+				if (node_id != node.node_id_pub_get ())
 				{
 					node.peers.insert (endpoint_l, message_a.header.protocol_info, node_id);
 					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
@@ -1907,8 +1907,8 @@ stats (config.stat_config)
 			genesis.initialize (transaction, store);
 			BOOST_LOG (log) << "Inserted genesis block";
 		}
-		node_id = rai::keypair (store.get_or_create_node_id (transaction));
-		BOOST_LOG (log) << "Node ID: " << node_id.pub.to_account ();
+		node_id = rai::keypair (store.node_id_get_or_create (transaction));
+		BOOST_LOG (log) << "Node ID: " << node_id_pub_get ().to_account ();
 	}
 	peers.online_weight_minimum = config.online_weight_minimum.number ();
 	if (rai::rai_network == rai::rai_networks::rai_live_network)
@@ -2553,6 +2553,16 @@ int rai::node::price (rai::amount_t const & balance_a, int amount_a)
 		result += std::min (std::max (0.0, unit_price), price_max);
 	}
 	return static_cast<int> (result * 100.0);
+}
+
+rai::public_key rai::node::node_id_pub_get ()
+{
+	return node_id.pub;
+}
+
+rai::uint512_union rai::node::sign_message_with_node_id (rai::uint256_union const & message)
+{
+	return rai::sign_message (node_id.prv, node_id.pub, message);
 }
 
 namespace
