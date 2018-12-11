@@ -514,7 +514,7 @@ void rai::network::receive_action (boost::system::error_code const & error, size
 				{
 					if (node.config.logging.insufficient_work_logging ())
 					{
-						BOOST_LOG (node.log) << "Insufficient work in message";  // << (int)buffer.data()[5];
+						BOOST_LOG (node.log) << "Insufficient work in message"; // << (int)buffer.data()[5];
 					}
 
 					// We've already increment error count, update detail only
@@ -932,22 +932,22 @@ lmdb_max_dbs (128)
 	switch (rai::rai_network)
 	{
 		case rai::rai_networks::rai_test_network:
-			preconfigured_representatives.push_back (rai::genesis_account);  // Genesis mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
+			preconfigured_representatives.push_back (rai::genesis_account); // Genesis mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 			break;
 
 		case rai::rai_networks::rai_beta_network:
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04"));  // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
-			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65"));  // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
+			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04")); // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
+			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65")); // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
 			break;
 
 		case rai::rai_networks::rai_live_network:
 			preconfigured_peers.push_back ("node.mikron.io");
 			preconfigured_peers.push_back ("node2.mikron.io");
 			preconfigured_peers.push_back ("node3.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("80B4D482DC848426B7FC2F3D28C78C6DFC38468B7AFB450E3DA806B546380323"));  // Rep1 mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb
-			preconfigured_representatives.push_back (rai::account ("9F93A4D16CE87CDC7D141FCB9493364317F93DA575C145627C40C9D6BA29F61F"));  // Rep2 mik_39wmnmapst5wujyja9ydkkbmeirqz6ytcxg3aoj9ri8bttx4mxiz3pn8rqfc
+			preconfigured_representatives.push_back (rai::account ("80B4D482DC848426B7FC2F3D28C78C6DFC38468B7AFB450E3DA806B546380323")); // Rep1 mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb
+			preconfigured_representatives.push_back (rai::account ("9F93A4D16CE87CDC7D141FCB9493364317F93DA575C145627C40C9D6BA29F61F")); // Rep2 mik_39wmnmapst5wujyja9ydkkbmeirqz6ytcxg3aoj9ri8bttx4mxiz3pn8rqfc
 			// 2018-09-01 UTC 00:00 in unix time
 			// Technically, time_t is never defined to be unix time, but compilers implement it as such
 			generate_hash_votes_at = std::chrono::system_clock::from_time_t (1535760000);
@@ -2590,7 +2590,7 @@ int rai::node::set_node_id_from_wallet (const rai::uint256_union & wallet_id, co
 	//std::cerr << account_first.to_string () << std::endl;
 	rai::raw_key key_first;
 	//wallet->store.wallet_key (key, transaction);
-	wallet->store.deterministic_key (key_first, transaction, 0);  // index 0
+	wallet->store.deterministic_key (key_first, transaction, 0); // index 0
 	// set as node_id
 	store.node_id_set (transaction, key_first);
 	node_id_set (std::move (key_first));

@@ -667,7 +667,7 @@ public:
 	static std::chrono::seconds constexpr syn_cookie_cutoff = std::chrono::seconds (5);
 	static std::chrono::minutes constexpr backup_interval = std::chrono::minutes (5);
 private:
-	rai::keypair node_id;  // private to avoid accidental node_id.prv leaking
+	rai::keypair node_id; // private to avoid accidental node_id.prv leaking
 };
 class thread_runner
 {

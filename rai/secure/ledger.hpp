@@ -45,8 +45,8 @@ public:
 	rai::checksum checksum (MDB_txn *, rai::account const &, rai::account const &);
 	void dump_account_chain (rai::account const &);
 	bool could_fit (MDB_txn *, rai::block const &);
-	static const rai::timestamp_t time_tolearance_short = 66;  // seconds
-	static const rai::timestamp_t time_tolearance_long = 33360;  // seconds
+	static const rai::timestamp_t time_tolearance_short = 66; // seconds
+	static const rai::timestamp_t time_tolearance_long = 33360; // seconds
 	static rai::amount_t const unit;
 	rai::block_store & store;
 	rai::stat & stats;

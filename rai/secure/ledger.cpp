@@ -338,7 +338,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 
 bool ledger_processor::check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance)
 {
-	rai::timestamp_t prev_with_tolerance = (prev_time >= tolerance) ? prev_time - tolerance : 0;  // avoid underflow
+	rai::timestamp_t prev_with_tolerance = (prev_time >= tolerance) ? prev_time - tolerance : 0; // avoid underflow
 	return new_time >= prev_with_tolerance;
 }
 
@@ -745,12 +745,12 @@ rai::state_block_subtype rai::ledger::state_subtype (MDB_txn * transaction_a, ra
 	rai::block_hash previous_hash (block_a.hashables.previous);
 	if (previous_hash.is_zero ())
 	{
-		return block_a.get_subtype (0, 0);  // no previous block -- in this case time does not matter
+		return block_a.get_subtype (0, 0); // no previous block -- in this case time does not matter
 	}
 	auto previous_block (store.block_get (transaction_a, previous_hash));
 	assert (previous_block != nullptr);
 	if (previous_block == nullptr) return rai::state_block_subtype::undefined;
-	auto previous_balance = balance (transaction_a, previous_hash);  // could be retrieved directly from the block
+	auto previous_balance = balance (transaction_a, previous_hash); // could be retrieved directly from the block
 	return block_a.get_subtype (previous_balance, previous_block->creation_time ().number ());
 }
 

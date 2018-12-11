@@ -269,15 +269,15 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 				{
 					switch (error)
 					{
-					case 1:
-						std::cerr << "Wallet doesn't exist" << std::endl;
-						break;
-					case 2:
-						std::cerr << "Invalid password" << std::endl;
-						break;
-					default:
-						std::cerr << "Error setting node ID, " << error << std::endl;
-						break;
+						case 1:
+							std::cerr << "Wallet doesn't exist" << std::endl;
+							break;
+						case 2:
+							std::cerr << "Invalid password" << std::endl;
+							break;
+						default:
+							std::cerr << "Error setting node ID, " << error << std::endl;
+							break;
 					}
 					ec = rai::error_cli::invalid_arguments;
 				}
