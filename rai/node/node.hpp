@@ -629,8 +629,10 @@ public:
 	void block_confirm (std::shared_ptr<rai::block>);
 	void process_fork (MDB_txn *, std::shared_ptr<rai::block>);
 	rai::amount_t delta ();
-	rai::public_key node_id_pub_get ();
+	void node_id_set (rai::raw_key &&);
+	rai::public_key & node_id_pub_get ();
 	rai::uint512_union sign_message_with_node_id (rai::uint256_union const &);
+	int set_node_id_from_wallet (const rai::uint256_union &, const std::string &);
 
 public:
 	boost::asio::io_service & service;

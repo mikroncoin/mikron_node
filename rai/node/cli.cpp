@@ -33,6 +33,7 @@ void rai::add_node_options (boost::program_options::options_description & descri
 	("unchecked_clear", "Clear unchecked blocks")
 	("data_path", boost::program_options::value<std::string> (), "Use the supplied path as the data directory")
 	("delete_node_id", "Delete the node ID in the database")
+	("set_node_id", "Sets the node ID, to the first account within the specified <wallet> (with <password>).  Privacy warning: the Node ID is publicly visible by all peers!")
 	("diagnostics", "Run internal diagnostics")
 	("key_create", "Generates a adhoc random keypair and prints it to stdout")
 	("key_expand", "Derive public key and account number from <key>")
@@ -238,6 +239,54 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 		rai::transaction transaction (node.node->store.environment, nullptr, true);
 		node.node->store.delete_node_id (transaction);
 		std::cerr << "Deleted Node ID" << std::endl;
+	}
+	else if (vm.count ("set_node_id"))
+	{
+		if (vm.count ("wallet") != 1)
+		{
+			std::cerr << "set_node_id command requires one <wallet> option" << std::endl;
+			ec = rai::error_cli::invalid_arguments;
+		}
+		else
+		{
+			rai::uint256_union wallet_id;
+			if (wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
+			{
+				std::cerr << "Invalid wallet id" << std::endl;
+				ec = rai::error_cli::invalid_arguments;
+			}
+			else
+			{
+				std::string password;
+				if (vm.count ("password") > 0)
+				{
+					password = vm["password"].as<std::string> ();
+				}
+
+				inactive_node node (data_path);
+				int error = node.node->set_node_id_from_wallet (wallet_id, password);
+				if (error)
+				{
+					switch (error)
+					{
+					case 1:
+						std::cerr << "Wallet doesn't exist" << std::endl;
+						break;
+					case 2:
+						std::cerr << "Invalid password" << std::endl;
+						break;
+					default:
+						std::cerr << "Error setting node ID, " << error << std::endl;
+						break;
+					}
+					ec = rai::error_cli::invalid_arguments;
+				}
+				else
+				{
+					std::cout << "Node ID set: " << node.node->node_id_pub_get ().to_account () << std::endl;
+				}
+			}
+		}
 	}
 	else if (vm.count ("diagnostics"))
 	{

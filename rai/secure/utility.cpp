@@ -86,7 +86,7 @@ rai::mdb_env::mdb_env (bool & error_a, boost::filesystem::path const & path_a, i
 			if (error_a)
 			{
 				environment = nullptr;
-				std::cerr << "Error opening DB, status " << std::hex << status4 << ", path " << path_a.string().c_str() << std::endl;
+				std::cerr << "Error opening DB, status " << std::hex << status4 << ", path " << path_a.string ().c_str () << std::endl;
 			}
 		}
 		else
