@@ -686,7 +686,7 @@ bool rai::uint64_struct::decode_dec (std::string const & text)
 	}
 	std::stringstream stream (text);
 	stream << std::dec << std::noshowbase;
-	boost::multiprecision::checked_uint128_t number_l;  // checked and larger
+	boost::multiprecision::checked_uint128_t number_l; // checked and larger
 	try
 	{
 		stream >> number_l;
@@ -772,7 +772,7 @@ void format_frac (std::ostringstream & stream, rai::uint64_t value, rai::uint64_
 
 void format_dec (std::ostringstream & stream, rai::uint64_t value, char group_sep, const std::string & groupings)
 {
-	auto largestPow10 = rai::uint128_t (1);  // larger range
+	auto largestPow10 = rai::uint128_t (1); // larger range
 	int dec_count = 1;
 	while (1)
 	{

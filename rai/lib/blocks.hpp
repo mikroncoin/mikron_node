@@ -48,7 +48,7 @@ class short_timestamp
 {
 public:
 	// The time origin for creation times, in Posix time, Sept 1 2018.
-	static const rai::timestamp_t short_timestamp_epoch = 1535760000;  // Sept 1 2018
+	static const rai::timestamp_t short_timestamp_epoch = 1535760000; // Sept 1 2018
 	// default constructor, 0
 	short_timestamp ();
 	short_timestamp (rai::timestamp_t);

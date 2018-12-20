@@ -37,7 +37,7 @@ public:
 	rai::observer_set<bool> work_observers;
 	// Local work threshold for rate-limiting publishing blocks (difficulty). ~5 seconds of work.
 	static uint64_t const publish_test_threshold = 0xFFFFFFFFFFFFFFFF - 0x0100000000000000 + 0x01;
-	static uint64_t const publish_full_threshold = 0xFFFFFFFFFFFFFFFF - 0x0000008000000000 + 0x01;  // 0x0000004000000000
+	static uint64_t const publish_full_threshold = 0xFFFFFFFFFFFFFFFF - 0x0000008000000000 + 0x01; // 0x0000004000000000
 	static uint64_t const publish_threshold = rai::rai_network == rai::rai_networks::rai_test_network ? publish_test_threshold : publish_full_threshold;
 };
 }

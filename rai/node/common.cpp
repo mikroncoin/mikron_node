@@ -447,7 +447,7 @@ vote (std::make_shared<rai::vote> (error_a, stream_a, block_type_a))
 
 rai::confirm_ack::confirm_ack (std::shared_ptr<rai::vote> vote_a) :
 message_with_block (rai::message_type::confirm_ack),
-block_type (rai::block_type::invalid),  // set later
+block_type (rai::block_type::invalid), // set later
 vote (vote_a)
 {
 	auto & first_vote_block (vote_a->blocks[0]);

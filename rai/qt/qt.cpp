@@ -574,7 +574,7 @@ public:
 			case rai::state_block_subtype::open_genesis:
 				type = "Open";
 				amount = balance;
-				account = block_a.hashables.account;  // self
+				account = block_a.hashables.account; // self
 				break;
 			case rai::state_block_subtype::change:
 				type = "Change";

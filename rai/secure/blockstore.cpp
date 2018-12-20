@@ -298,24 +298,42 @@ int rai::block_store::version_get (MDB_txn * transaction_a)
 	return result;
 }
 
-rai::raw_key rai::block_store::get_node_id (MDB_txn * transaction_a)
+rai::raw_key rai::block_store::node_id_get (MDB_txn * transaction_a)
 {
 	rai::uint256_union node_id_mdb_key (3);
 	rai::raw_key node_id;
 	rai::mdb_val value;
 	auto error (mdb_get (transaction_a, meta, rai::mdb_val (node_id_mdb_key), value));
-	if (!error)
-	{
-		rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
-		error = rai::read (stream, node_id.data);
-		assert (!error);
-	}
 	if (error)
 	{
-		rai::random_pool.GenerateBlock (node_id.data.bytes.data (), node_id.data.bytes.size ());
-		error = mdb_put (transaction_a, meta, rai::mdb_val (node_id_mdb_key), rai::mdb_val (node_id.data), 0);
+		node_id = rai::raw_key ();
+		assert (node_id.data.is_zero());
+		return node_id;
 	}
+	rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
+	error = rai::read (stream, node_id.data);
 	assert (!error);
+	return node_id;
+}
+
+int rai::block_store::node_id_set (MDB_txn * transaction_a, rai::raw_key node_id_a)
+{
+	rai::uint256_union node_id_mdb_key (3);
+	auto error (mdb_put (transaction_a, meta, rai::mdb_val (node_id_mdb_key), rai::mdb_val (node_id_a.data), 0));
+	assert (!error);
+	return error;
+}
+
+rai::raw_key rai::block_store::node_id_get_or_create (MDB_txn * transaction_a)
+{
+	rai::raw_key node_id = node_id_get (transaction_a);
+	if (node_id.data.is_zero ())
+	{
+		rai::random_pool.GenerateBlock (node_id.data.bytes.data (), node_id.data.bytes.size ());
+		assert (!node_id.data.is_zero ());
+		auto error (node_id_set (transaction_a, node_id));
+		assert (!error);
+	}
 	return node_id;
 }
 

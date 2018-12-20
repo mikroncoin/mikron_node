@@ -27,7 +27,7 @@ namespace rai
 {
 const uint8_t protocol_version = 3;
 const uint8_t protocol_version_min = 3;
-const uint8_t protocol_version_legacy_min = 1;  // Not used as of version 1
+const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
 /**
@@ -130,10 +130,10 @@ public:
 	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
 	// members, they must be all value types
 	rai::block_hash head;
-	rai::block_hash rep_block;  // to deprecate, all blocks have the representative
+	rai::block_hash rep_block; // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
 	rai::amount balance;
-	::uint64_t last_block_time_intern;  // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
+	::uint64_t last_block_time_intern; // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
 	::uint64_t block_count;
 };
 

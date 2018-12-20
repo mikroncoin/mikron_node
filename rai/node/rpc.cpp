@@ -1041,7 +1041,7 @@ void rai::rpc_handler::block_create ()
 		{
 			if (creation_time.decode_dec (creation_time_text.get ()))
 			{
-				creation_time = 0;  // missing, default 0 = now
+				creation_time = 0; // missing, default 0 = now
 			}
 		}
 		rai::uint256_union representative (0);
@@ -1613,7 +1613,7 @@ public:
 				tree.put ("type", "receive");
 			}
 			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", block_a.hashables.account.to_account ());  // self
+			tree.put ("account", block_a.hashables.account.to_account ()); // self
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
 			break;
 
@@ -1940,6 +1940,66 @@ void rai::rpc_handler::mrai_to_raw (rai::amount_t ratio)
 	response_errors ();
 }
 
+void rai::rpc_handler::node_id_get ()
+{
+	rai::public_key node_id = node.node_id_pub_get ();
+	response_l.put ("node_id", node_id.to_account ());
+	response_errors ();
+}
+
+void rai::rpc_handler::node_id_reset ()
+{
+	node.node_id_reset ();
+	rai::public_key node_id = node.node_id_pub_get ();
+	response_l.put ("node_id", node_id.to_account ());
+	response_errors();
+}
+
+void rai::rpc_handler::node_id_set ()
+{
+	rpc_control_impl();
+	auto wallet (wallet_impl ());
+	if (!ec)
+	{
+		bool wallet_unlocked = false;
+		{
+			rai::transaction transaction (node.store.environment, nullptr, true);
+			wallet_unlocked = wallet->store.valid_password (transaction);
+		}
+		if (!wallet_unlocked)
+		{
+			ec = nano::error_common::wallet_locked;
+		}
+		else
+		{
+			std::string index_text (request.get<std::string> ("index"));
+			int account_index = 0;
+			try
+			{
+				account_index = std::stoi (index_text);
+			}
+			catch (...)
+			{
+				ec = nano::error_common::bad_account_index_number;
+			}
+			if (!ec)
+			{
+				auto error (node.set_node_id_from_wallet (wallet, account_index));
+				if (error != 0)
+				{
+					ec = nano::error_common::wallet_not_found;
+				}
+				else
+				{
+					rai::public_key node_id = node.node_id_pub_get ();
+					response_l.put ("node_id", node_id.to_account ());
+				}
+			}
+		}
+	}
+	response_errors ();
+}
+
 void rai::rpc_handler::password_change ()
 {
 	rpc_control_impl ();
@@ -1993,7 +2053,7 @@ void rai::rpc_handler::peers ()
 	{
 		boost::property_tree::ptree peer_l;
 		std::stringstream endpoint;
-		endpoint << i->second.endpoint;  //i->first;
+		endpoint << i->second.endpoint; //i->first;
 		peer_l.push_back (boost::property_tree::ptree::value_type ("endpoint", boost::property_tree::ptree (endpoint.str ())));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version", boost::property_tree::ptree (std::to_string (i->second.protocol_info.version))));
 		peer_l.push_back (boost::property_tree::ptree::value_type ("net_version_min", boost::property_tree::ptree (std::to_string (i->second.protocol_info.version_min))));
@@ -3819,6 +3879,18 @@ void rai::rpc_handler::process_request ()
 			else if (action == "mrai_to_raw")
 			{
 				mrai_to_raw ();
+			}
+			else if (action == "node_id_get")
+			{
+				node_id_get ();
+			}
+			else if (action == "node_id_reset")
+			{
+				node_id_reset ();
+			}
+			else if (action == "node_id_set")
+			{
+				node_id_set ();
 			}
 			else if (action == "password_change")
 			{
