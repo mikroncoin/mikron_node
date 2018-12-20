@@ -20,7 +20,7 @@ rai::state_block rpc_create_send_state_block_helper (rai::block_hash const & pre
 
 rai::state_block rpc_create_open_state_block_helper (rai::state_block const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a)
 {
-	return rai::state_block (account_a, 0, 0, representative_a, balance_a, source_a.hash(), prv_a, pub_a, work_a);
+	return rai::state_block (account_a, 0, 0, representative_a, balance_a, source_a.hash (), prv_a, pub_a, work_a);
 }
 
 class test_response
@@ -3306,7 +3306,7 @@ TEST (rpc, block_create)
 	auto change_block (rai::deserialize_block_json (block_l));
 	ASSERT_EQ (change.hash (), change_block->hash ());
 	ASSERT_EQ (rai::process_result::progress, node1.process (change).code);
-	rai::state_block send2 (rai::genesis_account, send.hash (), creation_time, rai::genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (send.hash()));
+	rai::state_block send2 (rai::genesis_account, send.hash (), creation_time, rai::genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (send.hash ()));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (send2).code);
 	boost::property_tree::ptree request2;
 	request2.put ("action", "block_create");
