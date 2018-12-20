@@ -1952,12 +1952,12 @@ void rai::rpc_handler::node_id_reset ()
 	node.node_id_reset ();
 	rai::public_key node_id = node.node_id_pub_get ();
 	response_l.put ("node_id", node_id.to_account ());
-	response_errors();
+	response_errors ();
 }
 
 void rai::rpc_handler::node_id_set ()
 {
-	rpc_control_impl();
+	rpc_control_impl ();
 	auto wallet (wallet_impl ());
 	if (!ec)
 	{

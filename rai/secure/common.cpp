@@ -1059,7 +1059,10 @@ rai::amount_t rai::manna_control::compute_manna_increment (rai::timestamp_t from
 {
 	assert (from <= to);
 	if (from >= to) return 0;
-	if (from < manna_start) from = manna_start; // no change before manna_start
+	if (from < manna_start)
+	{
+		from = manna_start; // no change before manna_start
+	}
 	uint32_t t1 = (uint32_t) (from / manna_freq);
 	uint32_t t2 = (uint32_t) (to / manna_freq);
 	return (rai::amount_t) (t2 - t1) * (rai::amount_t) manna_increment;

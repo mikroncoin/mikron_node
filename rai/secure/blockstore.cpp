@@ -307,7 +307,7 @@ rai::raw_key rai::block_store::node_id_get (MDB_txn * transaction_a)
 	if (error)
 	{
 		node_id = rai::raw_key ();
-		assert (node_id.data.is_zero());
+		assert (node_id.data.is_zero ());
 		return node_id;
 	}
 	rai::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
@@ -366,7 +366,7 @@ int rai::block_store::do_upgrades (MDB_txn * transaction_a)
 		case 12:
 			break;
 		default:
-			assert(false);
+			assert (false);
 			return 1;
 	}
 	return 0;

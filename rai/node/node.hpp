@@ -632,7 +632,7 @@ public:
 	void node_id_set (rai::raw_key &&);
 	rai::public_key & node_id_pub_get ();
 	void node_id_delete ();
-	void node_id_reset();
+	void node_id_reset ();
 	rai::uint512_union sign_message_with_node_id (rai::uint256_union const &);
 	int set_node_id_from_wallet (std::shared_ptr<rai::wallet>, int);
 
