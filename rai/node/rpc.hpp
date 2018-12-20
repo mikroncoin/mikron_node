@@ -158,6 +158,9 @@ public:
 	void ledger ();
 	void mrai_to_raw (rai::amount_t = rai::Mxrb_ratio);
 	void mrai_from_raw (rai::amount_t = rai::Mxrb_ratio);
+	void node_id_get();
+	void node_id_reset ();
+	void node_id_set ();
 	void password_change ();
 	void password_enter ();
 	void password_valid (bool = false);

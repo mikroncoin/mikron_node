@@ -2565,32 +2565,33 @@ rai::public_key & rai::node::node_id_pub_get ()
 	return node_id.pub;
 }
 
+void rai::node::node_id_delete ()
+{
+	rai::transaction transaction (store.environment, nullptr, true);
+	store.delete_node_id (transaction);
+}
+
+void rai::node::node_id_reset ()
+{
+	rai::transaction transaction (store.environment, nullptr, true);
+	store.delete_node_id (transaction);
+	node_id_set (store.node_id_get_or_create (transaction));
+}
+
 rai::uint512_union rai::node::sign_message_with_node_id (rai::uint256_union const & message)
 {
 	return rai::sign_message (node_id.prv, node_id.pub, message);
 }
 
-int rai::node::set_node_id_from_wallet (const rai::uint256_union & wallet_id, const std::string & password)
+int rai::node::set_node_id_from_wallet (std::shared_ptr<rai::wallet> wallet, int account_index)
 {
-	auto wallet (wallets.open (wallet_id));
-	if (wallet == nullptr)
-	{
-		BOOST_LOG (log) << "Wallet doesn't exist";
-		return 1;
-	}
-	if (wallet->enter_password (password))
-	{
-		BOOST_LOG (log) << "Invalid password";
-		return 2;
-	}
-
 	rai::transaction transaction (store.environment, nullptr, true);
 	//node.node->store.delete_node_id (transaction);
 	rai::account account_first = rai::uint256_union (wallet->store.begin (transaction)->first.uint256 ()).to_account ();
 	//std::cerr << account_first.to_string () << std::endl;
 	rai::raw_key key_first;
 	//wallet->store.wallet_key (key, transaction);
-	wallet->store.deterministic_key (key_first, transaction, 0); // index 0
+	wallet->store.deterministic_key (key_first, transaction, account_index);
 	// set as node_id
 	store.node_id_set (transaction, key_first);
 	node_id_set (std::move (key_first));

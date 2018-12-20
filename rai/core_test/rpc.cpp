@@ -3746,3 +3746,200 @@ TEST (rpc, block_confirm_absent)
 	ASSERT_EQ (200, response.status);
 	ASSERT_EQ ("Block not found", response.json.get<std::string> ("error"));
 }
+
+TEST (rpc, node_id)
+{
+	/*
+	- node_id_get
+	- node_id_reset
+	- node_id_get
+	- account_create
+	- account_list
+	- node_id_set
+	- node_id_get
+	- node_id_reset
+	- node_id_set
+	*/
+	rai::system system (24000, 1);
+	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
+	rpc.start ();
+
+	rai::account node_id2;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_get");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id2 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id2.decode_account (node_id_text));
+	}
+
+	rai::account node_id3;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_reset");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id3 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id3.decode_account (node_id_text));
+		// should be different after reset
+		ASSERT_NE (node_id2, node_id3);
+	}
+
+	rai::account node_id4;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_get");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id4 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id4.decode_account (node_id_text));
+		// should be same as after reset
+		ASSERT_EQ (node_id3, node_id4);
+	}
+
+	std::string wallet_id;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet_id);
+	//std::cout << "wallet_id " << wallet_id << std::endl;
+
+	rai::uint256_union account;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "account_create");
+		request.put ("wallet", wallet_id);
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+
+		ASSERT_EQ (200, response.status);
+		auto account_text (response.json.get<std::string> ("account"));
+		//std::cout << "account " << account_text << std::endl;
+		ASSERT_FALSE (account.decode_account (account_text));
+		ASSERT_TRUE (system.wallet (0)->exists (account));
+	}
+
+	{
+		boost::property_tree::ptree request;
+		std::string wallet;
+		system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+		request.put ("action", "account_list");
+		request.put ("wallet", wallet);
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		auto & accounts_node (response.json.get_child ("accounts"));
+		std::vector<rai::uint256_union> accounts;
+		for (auto i (accounts_node.begin ()), j (accounts_node.end ()); i != j; ++i)
+		{
+			auto account (i->second.get<std::string> (""));
+			rai::uint256_union number;
+			ASSERT_FALSE (number.decode_account (account));
+			accounts.push_back (number);
+		}
+		ASSERT_EQ (1, accounts.size ());
+		for (auto i (accounts.begin ()), j (accounts.end ()); i != j; ++i)
+		{
+			ASSERT_TRUE (system.wallet (0)->exists (*i));
+		}
+		rai::uint256_union account_first (*(accounts.begin()));
+		ASSERT_EQ (account, account_first);
+	}
+
+	rai::account node_id6;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_set");
+		request.put ("wallet", wallet_id);
+		request.put ("index", "0");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id6 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id6.decode_account (node_id_text));
+		// should be different after set
+		ASSERT_NE (node_id4, node_id6);
+		// should be the same as the account
+		ASSERT_EQ (account, node_id6);
+	}
+
+	rai::account node_id7;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_get");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id7 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id7.decode_account (node_id_text));
+		// should be the same as set
+		ASSERT_EQ (node_id6, node_id7);
+		// should be the same as the account
+		ASSERT_EQ (account, node_id7);
+	}
+
+	rai::account node_id8;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_reset");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text(response.json.get<std::string>("node_id"));
+		//std::cout << "node_id8 " << node_id_text << std::endl;
+		ASSERT_FALSE(node_id8.decode_account(node_id_text));
+		// should be different after reset
+		ASSERT_NE(node_id6, node_id8);
+	}
+
+	rai::account node_id10;
+	{
+		boost::property_tree::ptree request;
+		request.put ("action", "node_id_set");
+		request.put ("wallet", wallet_id);
+		request.put ("index", "0");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		std::string node_id_text (response.json.get<std::string> ("node_id"));
+		//std::cout << "node_id10 " << node_id_text << std::endl;
+		ASSERT_FALSE (node_id10.decode_account (node_id_text));
+		// should be different after set
+		ASSERT_NE (node_id8, node_id10);
+		// should be the same as the account
+		ASSERT_EQ (account, node_id10);
+	}
+}
