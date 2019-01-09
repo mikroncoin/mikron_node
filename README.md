@@ -7,7 +7,7 @@
 
 [![Build Status](https://travis-ci.org/mikroncoin/mikron_node.svg?branch=master)](https://travis-ci.org/mikroncoin/mikron_node)
 [![Build status](https://ci.appveyor.com/api/projects/status/i7rk7dh6lvjxpwb8?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node)
-[![pipeline status](https://gitlab.com/mikroncoin/mikron_node/badges/master/pipeline.svg)](https://gitlab.com/mikroncoin/mikron_node/commits/master)
+[![pipeline status](https://gitlab.com/mikroncoin/mikron_node/badges/master/pipeline.svg)](https://gitlab.com/mikroncoin/mikron_node/pipelines)
 
 ### What is Mikron?
 
