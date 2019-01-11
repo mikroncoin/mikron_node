@@ -27,7 +27,8 @@ variables:
     - ./ci/build-gitlab.sh
 
 
-Arch Linux:
+# Disabled
+.Arch Linux:
   <<: *linux_cfg
   stage: build
   image: pritunl/archlinux:latest
