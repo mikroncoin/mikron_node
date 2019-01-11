@@ -12,7 +12,7 @@ matrix:
         apt:
           packages:
             - doxygen
-    - os: osx
+    #- os: osx
 
 compiler:
   - clang
