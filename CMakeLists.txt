@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.4)
-project (mikron-node)
+project (mikron_node)
 
 set (CPACK_PACKAGE_VERSION_MAJOR "1")
 set (CPACK_PACKAGE_VERSION_MINOR "0")
