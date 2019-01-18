@@ -1,7 +1,8 @@
 #pragma once
 
-#include <boost/program_options.hpp>
 #include <rai/lib/errors.hpp>
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 namespace rai
 {
@@ -15,6 +16,7 @@ enum class error_cli
 };
 
 void add_node_options (boost::program_options::options_description &);
+boost::filesystem::path data_path_from_options (boost::program_options::variables_map);
 std::error_code handle_node_options (boost::program_options::variables_map &);
 }
 
