@@ -1,7 +1,7 @@
 #include <rai/mikron_storetool/blockstore_tool.hpp>
 #include <rai/node/node.hpp>
 
-void rai::blockstore_tool::debug_pending(boost::filesystem::path data_path)
+void rai::blockstore_tool::debug_pending (boost::filesystem::path data_path)
 {
 	std::cout << "debug_pending " << data_path << std::endl;
 	rai::inactive_node node (data_path);
