@@ -56,7 +56,7 @@ void rai::add_node_options (boost::program_options::options_description & descri
 	// clang-format on
 }
 
-boost::filesystem::path rai::data_path_from_options(boost::program_options::variables_map vm)
+boost::filesystem::path rai::data_path_from_options (boost::program_options::variables_map vm)
 {
 	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
 	return data_path;

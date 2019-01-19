@@ -1,8 +1,8 @@
 #pragma once
 
-#include <rai/lib/errors.hpp>
-#include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include <rai/lib/errors.hpp>
 
 namespace rai
 {
