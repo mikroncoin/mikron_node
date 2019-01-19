@@ -46,12 +46,20 @@ int main (int argc, char * const * argv)
 	}
 	boost::program_options::notify (vm);
 	int result (0);
-	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
+	boost::filesystem::path data_path = rai::data_path_from_options (vm);
 	auto ec = rai::handle_node_options (vm);
 
 	if (ec == rai::error_cli::unknown_command)
 	{
-		if (vm.count ("daemon") > 0)
+		if (vm.count ("help"))
+		{
+			std::cout << description << std::endl;
+		}
+		else if (vm.count ("version"))
+		{
+			std::cout << "Version " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH << std::endl;
+		}
+		else if (vm.count ("daemon") > 0)
 		{
 			rai_daemon::daemon daemon;
 			daemon.run (data_path);
@@ -322,10 +330,6 @@ int main (int argc, char * const * argv)
 				auto end1 (std::chrono::high_resolution_clock::now ());
 				std::cerr << boost::str (boost::format ("%|1$ 12d|\n") % std::chrono::duration_cast<std::chrono::microseconds> (end1 - begin1).count ());
 			}
-		}
-		else if (vm.count ("version"))
-		{
-			std::cout << "Version " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << std::endl;
 		}
 		else
 		{

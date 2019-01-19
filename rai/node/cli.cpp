@@ -56,11 +56,17 @@ void rai::add_node_options (boost::program_options::options_description & descri
 	// clang-format on
 }
 
+boost::filesystem::path rai::data_path_from_options (boost::program_options::variables_map vm)
+{
+	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
+	return data_path;
+}
+
 std::error_code rai::handle_node_options (boost::program_options::variables_map & vm)
 {
 	std::error_code ec;
 
-	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
+	boost::filesystem::path data_path = data_path_from_options (vm);
 	if (vm.count ("account_create"))
 	{
 		if (vm.count ("wallet") == 1)
@@ -186,8 +192,6 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 	{
 		try
 		{
-			boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
-
 			auto source_path = data_path / "data.ldb";
 			auto snapshot_path = data_path / "snapshot.ldb";
 
@@ -224,7 +228,6 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 	}
 	else if (vm.count ("unchecked_clear"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
 		inactive_node node (data_path);
 		rai::transaction transaction (node.node->store.environment, nullptr, true);
 		node.node->store.unchecked_clear (transaction);
@@ -232,7 +235,6 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 	}
 	else if (vm.count ("delete_node_id"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : rai::working_path ();
 		inactive_node node (data_path);
 		node.node->node_id_delete ();
 		std::cerr << "Deleted Node ID" << std::endl;
