@@ -18,13 +18,15 @@ int main (int argc, char * const * argv)
 	const char* option_version = "version";
 	const char* option_debug_pending = "debug_pending";
 	const char* option_debug_send_to_self = "debug_send_to_self";
+	const char* option_debug_receive_times = "debug_receive_times";
 
 	// clang-format off
 	description.add_options ()
 		(option_help, "Print out options")
 		(option_version, "Prints out version")
 		(option_debug_pending, "List pending transactions")
-	    (option_debug_send_to_self, "Search for sends to self");
+		(option_debug_send_to_self, "Search for sends to self")
+		(option_debug_receive_times, "Analyze send-to-receive time differences");
 	// clang-format on
 
 	boost::program_options::variables_map vm;
@@ -59,6 +61,10 @@ int main (int argc, char * const * argv)
 		else if (vm.count (option_debug_send_to_self))
 		{
 			rai::blockstore_tool::debug_send_to_self (data_path);
+		}
+		else if (vm.count (option_debug_receive_times))
+		{
+			rai::blockstore_tool::debug_receive_times (data_path);
 		}
 		else
 		{
