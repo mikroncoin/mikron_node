@@ -2681,15 +2681,27 @@ void rai::rpc_handler::send ()
 	auto amount (amount_impl ());
 	if (!ec)
 	{
-		if (wallet->valid_password ())
+		if (!wallet->valid_password ())
+		{
+			ec = nano::error_common::wallet_locked;
+		}
+		else
 		{
 			std::string source_text (request.get<std::string> ("source"));
 			rai::account source;
-			if (!source.decode_account (source_text))
+			if (source.decode_account (source_text))
+			{
+				ec = nano::error_rpc::bad_source;
+			}
+			else
 			{
 				std::string destination_text (request.get<std::string> ("destination"));
 				rai::account destination;
-				if (!destination.decode_account (destination_text))
+				if (destination.decode_account (destination_text))
+				{
+					ec = nano::error_rpc::bad_destination;
+				}
+				else
 				{
 					auto work (work_optional_impl ());
 					rai::amount_t balance (0);
@@ -2720,7 +2732,11 @@ void rai::rpc_handler::send ()
 					if (!ec)
 					{
 						boost::optional<std::string> send_id (request.get_optional<std::string> ("id"));
-						if (balance >= amount.number ())
+						if (balance < amount.number ())
+						{
+							ec = nano::error_common::insufficient_balance;
+						}
+						else
 						{
 							auto rpc_l (shared_from_this ());
 							auto response_a (response);
@@ -2739,25 +2755,9 @@ void rai::rpc_handler::send ()
 							},
 							work == 0, send_id);
 						}
-						else
-						{
-							ec = nano::error_common::insufficient_balance;
-						}
 					}
 				}
-				else
-				{
-					ec = nano::error_rpc::bad_destination;
-				}
 			}
-			else
-			{
-				ec = nano::error_rpc::bad_source;
-			}
-		}
-		else
-		{
-			ec = nano::error_common::wallet_locked;
 		}
 	}
 	// Because of send_async
