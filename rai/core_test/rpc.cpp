@@ -315,9 +315,9 @@ TEST (rpc, send_to_self_invalid)
 	}
 	done = true;
 	ASSERT_EQ (200, response.status);
-	boost::optional <std::string> error_text (response.json.get_optional <std::string> ("error"));
+	boost::optional<std::string> error_text (response.json.get_optional<std::string> ("error"));
 	ASSERT_FALSE (!error_text);
-	boost::optional <std::string> block_text (response.json.get_optional <std::string> ("block"));
+	boost::optional<std::string> block_text (response.json.get_optional<std::string> ("block"));
 	ASSERT_TRUE (!block_text);
 	ASSERT_EQ (error_text.get (), "Sending to self is invalid");
 	thread2.join ();
