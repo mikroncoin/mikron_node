@@ -262,7 +262,8 @@ TEST (rpc, send)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	std::thread thread2 ([&system]() {
 		system.deadline_set (10s);
@@ -285,6 +286,43 @@ TEST (rpc, send)
 	thread2.join ();
 }
 
+TEST (rpc, send_to_self_invalid)
+{
+	rai::system system (24000, 1);
+	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	boost::property_tree::ptree request;
+	std::string wallet;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("wallet", wallet);
+	request.put ("action", "send");
+	request.put ("source", rai::test_genesis_key.pub.to_account ());
+	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	request.put ("amount", "100");
+	std::atomic<bool> done (false);
+	std::thread thread2 ([&system, &done]() {
+		system.deadline_set (10s);
+		while (!done)
+		{
+			ASSERT_NO_ERROR (system.poll ());
+		}
+	});
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	done = true;
+	ASSERT_EQ (200, response.status);
+	boost::optional <std::string> error_text (response.json.get_optional <std::string> ("error"));
+	ASSERT_FALSE (!error_text);
+	boost::optional <std::string> block_text (response.json.get_optional <std::string> ("block"));
+	ASSERT_TRUE (!block_text);
+	ASSERT_EQ (error_text.get (), "Sending to self is invalid");
+	thread2.join ();
+}
+
 TEST (rpc, send_fail)
 {
 	rai::system system (24000, 1);
@@ -296,7 +334,8 @@ TEST (rpc, send_fail)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	std::atomic<bool> done (false);
 	std::thread thread2 ([&system, &done]() {
@@ -329,7 +368,8 @@ TEST (rpc, send_work)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	request.put ("work", "1");
 	test_response response (request, rpc, system.service);
@@ -367,7 +407,8 @@ TEST (rpc, send_idempotent)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	request.put ("id", "123abc");
 	test_response response (request, rpc, system.service);
