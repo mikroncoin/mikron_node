@@ -292,7 +292,7 @@ TEST (broadcast, world_broadcast_simulate)
 		}
 	}
 	auto count (heard_count (nodes));
-	printf ("");
+	std::cout << std::endl;
 }
 
 TEST (broadcast, sqrt_broadcast_simulate)
@@ -345,7 +345,7 @@ TEST (broadcast, sqrt_broadcast_simulate)
 		}
 	}
 	auto count (heard_count (nodes));
-	printf ("");
+	std::cout << std::endl;
 }
 
 TEST (peer_container, random_set)
