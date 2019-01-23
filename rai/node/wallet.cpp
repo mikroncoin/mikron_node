@@ -448,7 +448,10 @@ void rai::wallet_store::insert_watch (MDB_txn * transaction_a, rai::public_key c
 void rai::wallet_store::erase (MDB_txn * transaction_a, rai::public_key const & pub)
 {
 	assert (handle != 0);
-	if (handle == 0) return;
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_del (transaction_a, handle, rai::mdb_val (pub), nullptr));
 	assert (status == 0);
 }
@@ -477,7 +480,10 @@ rai::wallet_value rai::wallet_store::entry_get_raw (MDB_txn * transaction_a, rai
 void rai::wallet_store::entry_put_raw (MDB_txn * transaction_a, rai::public_key const & pub_a, rai::wallet_value const & entry_a)
 {
 	assert (handle != 0);
-	if (handle == 0) return;
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_put (transaction_a, handle, rai::mdb_val (pub_a), entry_a.val (), 0));
 	assert (status == 0);
 }
@@ -917,7 +923,10 @@ void rai::wallet::serialize (std::string & json_a)
 void rai::wallet_store::destroy (MDB_txn * transaction_a)
 {
 	assert (handle != 0);
-	if (handle == 0) return;
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_drop (transaction_a, handle, 1));
 	assert (status == 0);
 	handle = 0;
