@@ -3344,8 +3344,8 @@ TEST (rpc, block_create)
 	auto change_text (response4.json.get<std::string> ("block"));
 	std::stringstream block_stream4 (change_text);
 	boost::property_tree::read_json (block_stream4, block_l);
-	auto change_block (rai::deserialize_block_json (block_l));
-	ASSERT_EQ (change.hash (), change_block->hash ());
+	auto state_block_change (rai::deserialize_block_json (block_l));
+	ASSERT_EQ (change.hash (), state_block_change->hash ());
 	ASSERT_EQ (rai::process_result::progress, node1.process (change).code);
 	rai::state_block send2 (rai::genesis_account, send.hash (), creation_time, rai::genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (send.hash ()));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (send2).code);

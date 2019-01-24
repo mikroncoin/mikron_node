@@ -454,13 +454,13 @@ TEST (block_store, roots)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::send_block send_block (0, 1, 2, rai::keypair ().prv, 4, 5);
+	rai::state_block send_block (0, 0, 0, rai::genesis_account, rai::genesis_amount - 2, 1, rai::keypair ().prv, 4, 5);
 	ASSERT_EQ (send_block.hashables.previous, send_block.root ());
-	rai::change_block change_block (0, 1, rai::keypair ().prv, 3, 4);
-	ASSERT_EQ (change_block.hashables.previous, change_block.root ());
-	rai::receive_block receive_block (0, 1, rai::keypair ().prv, 3, 4);
+	rai::state_block state_block (0, 0, 0, 1, rai::genesis_amount, 0, rai::keypair ().prv, 3, 4);
+	ASSERT_EQ (state_block.hashables.previous, state_block.root ());
+	rai::state_block receive_block (0, 0, 0, rai::genesis_account, 0, 1, rai::keypair ().prv, 3, 4);
 	ASSERT_EQ (receive_block.hashables.previous, receive_block.root ());
-	rai::open_block open_block (0, 1, 2, rai::keypair ().prv, 4, 5);
+	rai::state_block open_block (2, 0, 0, 1, 0, 0, rai::keypair ().prv, 4, 5);
 	ASSERT_EQ (open_block.hashables.account, open_block.root ());
 }
 

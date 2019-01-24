@@ -470,16 +470,16 @@ TEST (history, short_text)
 		rai::transaction transaction (store.environment, nullptr, true);
 		genesis.initialize (transaction, store);
 		rai::keypair key;
-		rai::send_block send (ledger.latest (transaction, rai::test_genesis_key.pub), rai::test_genesis_key.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::genesis_account, ledger.latest (transaction, rai::test_genesis_key.pub), 0, rai::genesis_account, rai::genesis_amount - 100, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
-		rai::receive_block receive (send.hash (), send.hash (), rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block receive (key.pub, 0, 0, rai::genesis_account, 100, send.hash (), key.prv, key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
-		rai::change_block change (receive.hash (), key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block change (rai::genesis_account, send.hash (), 0, key.pub, rai::genesis_amount - 100, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, change).code);
 	}
 	rai_qt::history history (ledger, rai::test_genesis_key.pub, *wallet);
 	history.refresh ();
-	ASSERT_EQ (4, history.model->rowCount ());
+	ASSERT_EQ (3, history.model->rowCount ());
 }
 
 TEST (wallet, startup_work)
