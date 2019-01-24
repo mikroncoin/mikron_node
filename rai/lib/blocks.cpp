@@ -383,7 +383,7 @@ bool rai::send_block::valid_predecessor (rai::block const & block_a) const
 		case rai::block_type::send:
 		case rai::block_type::receive:
 		case rai::block_type::open:
-		//case rai::block_type::change:
+			//case rai::block_type::change:
 			result = true;
 			break;
 		default:
@@ -1576,7 +1576,7 @@ bool rai::receive_block::valid_predecessor (rai::block const & block_a) const
 		case rai::block_type::send:
 		case rai::block_type::receive:
 		case rai::block_type::open:
-		//case rai::block_type::change:
+			//case rai::block_type::change:
 			result = true;
 			break;
 		default:
