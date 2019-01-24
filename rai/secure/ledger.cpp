@@ -113,7 +113,7 @@ public:
 			ledger.store.pending_del (transaction, key);
 			ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::send);
 		}
-		else if (!block_a.hashables.link.is_zero ())
+		else if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
 		{
 			//auto source_version (ledger.store.block_version (transaction, block_a.hashables.link));
 			rai::pending_info pending_info (ledger.account (transaction, block_a.hashables.link), block_a.hashables.balance.number () - previous_balance);
