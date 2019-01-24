@@ -1005,7 +1005,6 @@ void rai::rpc_handler::block_count_type ()
 	response_l.put ("send", std::to_string (count.send));
 	response_l.put ("receive", std::to_string (count.receive));
 	response_l.put ("open", std::to_string (count.open));
-	response_l.put ("change", std::to_string (count.change));
 	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
 }
@@ -1241,25 +1240,6 @@ void rai::rpc_handler::block_create ()
 				else
 				{
 					ec = nano::error_rpc::block_create_requirements_receive;
-				}
-			}
-			else if (type == "change")
-			{
-				if (representative != 0 && previous != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (previous);
-					}
-					rai::change_block change (previous, representative, prv, pub, work);
-					response_l.put ("hash", change.hash ().to_string ());
-					std::string contents;
-					change.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_change;
 				}
 			}
 			else if (type == "send")
@@ -1565,15 +1545,6 @@ public:
 			tree.put ("amount", std::to_string (rai::genesis_amount));
 		}
 	}
-	void change_block (rai::change_block const & block_a)
-	{
-		if (raw)
-		{
-			tree.put ("type", "change");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
-		}
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		if (raw)
@@ -1643,15 +1614,6 @@ public:
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
-
-		case rai::state_block_subtype::change:
-			// change occurs only in raw
-			if (raw)
-			{
-				tree.put ("subtype", "change");
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			}
 			break;
 
 		// epoch and undefined not handled

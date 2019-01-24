@@ -153,7 +153,6 @@ ledger_constants globals;
 size_t constexpr rai::send_block::size;
 size_t constexpr rai::receive_block::size;
 size_t constexpr rai::open_block::size;
-size_t constexpr rai::change_block::size;
 size_t constexpr rai::state_block::size;
 
 rai::keypair const & rai::zero_key (globals.zero_key);
@@ -288,14 +287,13 @@ rai::block_counts::block_counts () :
 send (0),
 receive (0),
 open (0),
-change (0),
 state (0)
 {
 }
 
 size_t rai::block_counts::sum ()
 {
-	return send + receive + open + change + state;
+	return send + receive + open + state;
 }
 
 rai::pending_info::pending_info () :
@@ -529,12 +527,6 @@ void rai::amount_visitor::state_block (rai::state_block const & block_a)
 	current_amount = 0;
 }
 
-void rai::amount_visitor::change_block (rai::change_block const & block_a)
-{
-	amount = 0;
-	current_amount = 0;
-}
-
 void rai::amount_visitor::compute (rai::block_hash const & block_hash)
 {
 	current_amount = block_hash;
@@ -621,20 +613,6 @@ void rai::balance_visitor::open_block (rai::open_block const & block_a)
 	current_balance = 0;
 }
 
-void rai::balance_visitor::change_block (rai::change_block const & block_a)
-{
-	rai::block_info block_info;
-	if (!store.block_info_get (transaction, block_a.hash (), block_info))
-	{
-		balance += block_info.balance.number ();
-		current_balance = 0;
-	}
-	else
-	{
-		current_balance = block_a.hashables.previous;
-	}
-}
-
 void rai::balance_visitor::state_block (rai::state_block const & block_a)
 {
 	balance = block_a.hashables.balance.number ();
@@ -696,11 +674,6 @@ void rai::representative_visitor::receive_block (rai::receive_block const & bloc
 }
 
 void rai::representative_visitor::open_block (rai::open_block const & block_a)
-{
-	result = block_a.hash ();
-}
-
-void rai::representative_visitor::change_block (rai::change_block const & block_a)
 {
 	result = block_a.hash ();
 }

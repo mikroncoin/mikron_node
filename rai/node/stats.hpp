@@ -200,7 +200,7 @@ public:
 		send,
 		receive,
 		open,
-		change,
+		//change,
 		state_block,
 		//epoch_block,
 

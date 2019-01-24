@@ -537,12 +537,6 @@ public:
 			amount = rai::genesis_amount;
 		}
 	}
-	void change_block (rai::change_block const & block_a)
-	{
-		type = "Change";
-		amount = 0;
-		account = block_a.hashables.representative;
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		block_time = block_a.creation_time ().number ();

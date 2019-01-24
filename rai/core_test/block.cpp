@@ -115,21 +115,6 @@ TEST (block, open_serialize_json)
 	ASSERT_EQ (block1, block2);
 }
 
-TEST (block, change_serialize_json)
-{
-	rai::change_block block1 (0, 1, rai::keypair ().prv, 3, 4);
-	std::string string1;
-	block1.serialize_json (string1);
-	ASSERT_NE (0, string1.size ());
-	boost::property_tree::ptree tree1;
-	std::stringstream istream (string1);
-	boost::property_tree::read_json (istream, tree1);
-	bool error (false);
-	rai::change_block block2 (error, tree1);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
 TEST (uint512_union, parse_zero)
 {
 	rai::uint512_union input (rai::uint512_t (0));
@@ -246,27 +231,6 @@ TEST (open_block, deserialize)
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	bool error (false);
 	rai::open_block block2 (error, stream);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
-TEST (change_block, deserialize)
-{
-	rai::change_block block1 (1, 2, rai::keypair ().prv, 4, 5);
-	ASSERT_EQ (block1.hash (), block1.hash ());
-	std::vector<uint8_t> bytes;
-	{
-		rai::vectorstream stream1 (bytes);
-		block1.serialize (stream1);
-	}
-	ASSERT_EQ (rai::change_block::size, bytes.size ());
-	auto data (bytes.data ());
-	auto size (bytes.size ());
-	ASSERT_NE (nullptr, data);
-	ASSERT_NE (0, size);
-	rai::bufferstream stream2 (data, size);
-	bool error (false);
-	rai::change_block block2 (error, stream2);
 	ASSERT_FALSE (error);
 	ASSERT_EQ (block1, block2);
 }

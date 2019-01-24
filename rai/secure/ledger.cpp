@@ -82,30 +82,6 @@ public:
 		ledger.store.frontier_del (transaction, hash);
 		ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::open);
 	}
-	void change_block (rai::change_block const & block_a) override
-	{
-		auto hash (block_a.hash ());
-		auto representative (ledger.representative (transaction, block_a.hashables.previous));
-		auto account (ledger.account (transaction, block_a.hashables.previous));
-		rai::account_info info;
-		auto error (ledger.store.account_get (transaction, account, info));
-		assert (!error);
-		auto balance (ledger.balance (transaction, block_a.hashables.previous));
-		ledger.store.representation_add (transaction, representative, balance);
-		ledger.store.representation_add (transaction, hash, 0 - balance);
-		ledger.store.block_del (transaction, hash);
-		auto previous_block (ledger.store.block_get (transaction, block_a.hashables.previous));
-		ledger.change_latest (transaction, account, block_a.hashables.previous, representative, info.balance, 
-			previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1);
-		ledger.store.frontier_del (transaction, hash);
-		ledger.store.frontier_put (transaction, block_a.hashables.previous, account);
-		ledger.store.block_successor_clear (transaction, block_a.hashables.previous);
-		if (!(info.block_count % ledger.store.block_info_max))
-		{
-			ledger.store.block_info_del (transaction, hash);
-		}
-		ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::change);
-	}
 	void state_block (rai::state_block const & block_a) override
 	{
 		auto hash (block_a.hash ());
@@ -178,7 +154,6 @@ public:
 	void send_block (rai::send_block const &) override;
 	void receive_block (rai::receive_block const &) override;
 	void open_block (rai::open_block const &) override;
-	void change_block (rai::change_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
 	//void epoch_block_impl (rai::state_block const &);
@@ -411,7 +386,6 @@ void ledger_processor::epoch_block_impl (rai::state_block const & block_a)
 		}
 	}
 }
-*/
 
 void ledger_processor::change_block (rai::change_block const & block_a)
 {
@@ -454,6 +428,7 @@ void ledger_processor::change_block (rai::change_block const & block_a)
 		}
 	}
 }
+*/
 
 void ledger_processor::send_block (rai::send_block const & block_a)
 {
@@ -936,10 +911,6 @@ public:
 	void open_block (rai::open_block const & block_a) override
 	{
 		result = ledger.store.block_exists (transaction, block_a.source ());
-	}
-	void change_block (rai::change_block const & block_a) override
-	{
-		result = ledger.store.block_exists (transaction, block_a.previous ());
 	}
 	void state_block (rai::state_block const & block_a) override
 	{

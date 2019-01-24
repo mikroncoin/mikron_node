@@ -2965,9 +2965,6 @@ public:
 	void open_block (rai::open_block const &) override
 	{
 	}
-	void change_block (rai::change_block const &) override
-	{
-	}
 	MDB_txn * transaction;
 	rai::node & node;
 	std::shared_ptr<rai::block> block;

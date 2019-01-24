@@ -189,8 +189,8 @@ public:
 	/**
 	 * Maps block hash to change block.
 	 * rai::block_hash -> rai::change_block
-	 */
 	MDB_dbi change_blocks;
+	 */
 
 	/**
 	 * Maps block hash to state block.

@@ -383,7 +383,7 @@ bool rai::send_block::valid_predecessor (rai::block const & block_a) const
 		case rai::block_type::send:
 		case rai::block_type::receive:
 		case rai::block_type::open:
-		case rai::block_type::change:
+		//case rai::block_type::change:
 			result = true;
 			break;
 		default:
@@ -688,6 +688,7 @@ void rai::open_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
+/*
 rai::change_hashables::change_hashables (rai::block_hash const & previous_a, rai::account const & representative_a) :
 previous (previous_a),
 representative (representative_a)
@@ -923,6 +924,7 @@ void rai::change_block::signature_set (rai::uint512_union const & signature_a)
 {
 	signature = signature_a;
 }
+*/
 
 // if time is 0, current time is taken
 rai::state_hashables::state_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a) :
@@ -1336,15 +1338,6 @@ std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::p
 				result = std::move (obj);
 			}
 		}
-		else if (type == "change")
-		{
-			bool error (false);
-			std::unique_ptr<rai::change_block> obj (new rai::change_block (error, tree_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-		}
 		else if (type == "state")
 		{
 			bool error (false);
@@ -1402,16 +1395,6 @@ std::unique_ptr<rai::block> rai::deserialize_block (rai::stream & stream_a, rai:
 		{
 			bool error (false);
 			std::unique_ptr<rai::open_block> obj (new rai::open_block (error, stream_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-			break;
-		}
-		case rai::block_type::change:
-		{
-			bool error (false);
-			std::unique_ptr<rai::change_block> obj (new rai::change_block (error, stream_a));
 			if (!error)
 			{
 				result = std::move (obj);
@@ -1593,7 +1576,7 @@ bool rai::receive_block::valid_predecessor (rai::block const & block_a) const
 		case rai::block_type::send:
 		case rai::block_type::receive:
 		case rai::block_type::open:
-		case rai::block_type::change:
+		//case rai::block_type::change:
 			result = true;
 			break;
 		default:
