@@ -15,12 +15,12 @@ int main (int argc, char * const * argv)
 	boost::program_options::options_description description ("Command line options");
 	rai::add_node_options (description);
 	
-	const char* option_help = "help";
-	const char* option_version = "version";
-	const char* option_debug_pending = "debug_pending";
-	const char* option_debug_block_span = "debug_block_span";
-	const char* option_debug_send_to_self = "debug_send_to_self";
-	const char* option_debug_receive_times = "debug_receive_times";
+	const char * option_help = "help";
+	const char * option_version = "version";
+	const char * option_debug_pending = "debug_pending";
+	const char * option_debug_block_span = "debug_block_span";
+	const char * option_debug_send_to_self = "debug_send_to_self";
+	const char * option_debug_receive_times = "debug_receive_times";
 
 	// clang-format off
 	description.add_options ()
