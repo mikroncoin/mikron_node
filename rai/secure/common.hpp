@@ -39,7 +39,6 @@ public:
 	balance_visitor (MDB_txn *, rai::block_store &);
 	virtual ~balance_visitor () = default;
 	void compute (rai::block_hash const &);
-	void send_block (rai::send_block const &) override;
 	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	MDB_txn * transaction;
@@ -59,7 +58,6 @@ public:
 	amount_visitor (MDB_txn *, rai::block_store &);
 	virtual ~amount_visitor () = default;
 	void compute (rai::block_hash const &);
-	void send_block (rai::send_block const &) override;
 	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void from_send (rai::block_hash const &);
@@ -79,7 +77,6 @@ public:
 	representative_visitor (MDB_txn * transaction_a, rai::block_store & store_a);
 	virtual ~representative_visitor () = default;
 	void compute (rai::block_hash const & hash_a);
-	void send_block (rai::send_block const & block_a) override;
 	void open_block (rai::open_block const & block_a) override;
 	void state_block (rai::state_block const & block_a) override;
 	MDB_txn * transaction;
@@ -179,7 +176,6 @@ class block_counts
 public:
 	block_counts ();
 	size_t sum ();
-	size_t send;
 	size_t open;
 	size_t state;
 };

@@ -171,7 +171,7 @@ TEST (bootstrap, simple)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (0, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 0, 0, 5, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -189,7 +189,7 @@ TEST (unchecked, multiple)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (4, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 4, 0, 4, 3, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -206,7 +206,7 @@ TEST (unchecked, double_put)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (4, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 4, 0, 4, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -272,7 +272,7 @@ TEST (block_store, one_bootstrap)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (0, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 0, 0, 4, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.unchecked_put (transaction, block1->hash (), block1);
 	store.flush (transaction);
@@ -293,8 +293,8 @@ TEST (block_store, unchecked_begin_search)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::keypair key0;
-	rai::send_block block1 (0, 1, 2, key0.prv, key0.pub, 3);
-	rai::send_block block2 (5, 6, 7, key0.prv, key0.pub, 8);
+	rai::state_block block1 (key0.pub, 0, 0, key0.pub, 2, 1, key0.prv, key0.pub, 3);
+	rai::state_block block2 (key0.pub, 5, 0, key0.pub, 7, 6, key0.prv, key0.pub, 8);
 }
 
 TEST (block_store, frontier_retrieval)
@@ -515,8 +515,8 @@ TEST (block_store, block_replace)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::send_block send1 (0, 0, 0, rai::keypair ().prv, 0, 1);
-	rai::send_block send2 (0, 0, 0, rai::keypair ().prv, 0, 2);
+	rai::state_block send1 (0, 0, 0, 0, 0, 0, rai::keypair ().prv, 0, 1);
+	rai::state_block send2 (0, 0, 0, 0, 0, 0, rai::keypair ().prv, 0, 2);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.block_put (transaction, 0, send1);
 	store.block_put (transaction, 0, send2);
@@ -791,7 +791,6 @@ TEST (block_store, upgrade_v6_v7)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (store.unchecked_end (), store.unchecked_begin (transaction));
 }
-*/
 
 // Databases need to be dropped in order to convert to dupsort compatible
 TEST (block_store, change_dupsort)
@@ -838,7 +837,6 @@ TEST (block_store, change_dupsort)
 	}
 }
 
-/*
 TEST (block_store, upgrade_v7_v8)
 {
 	auto path (rai::unique_path ());
@@ -877,7 +875,7 @@ TEST (block_store, sequence_flush)
 	ASSERT_FALSE (init);
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::keypair key1;
-	auto send1 (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	auto vote1 (store.vote_generate (transaction, key1.pub, key1.prv, send1));
 	auto seq2 (store.vote_get (transaction, vote1->account));
 	ASSERT_EQ (nullptr, seq2);

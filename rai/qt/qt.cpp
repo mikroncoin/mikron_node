@@ -511,12 +511,6 @@ public:
 	ledger (ledger_a)
 	{
 	}
-	void send_block (rai::send_block const & block_a)
-	{
-		type = "Send";
-		account = block_a.hashables.destination;
-		amount = ledger.amount (transaction, block_a.hash ());
-	}
 	void open_block (rai::open_block const & block_a)
 	{
 		type = "Receive";

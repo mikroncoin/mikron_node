@@ -84,7 +84,7 @@ TEST (ledger, deep_account_compute)
 	rai::keypair key;
 	auto balance (rai::genesis_amount - 1);
 	auto balance2 (1);
-	rai::send_block send (genesis.hash (), key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block send (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 	rai::open_block open (send.hash (), rai::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, open).code);
@@ -175,7 +175,7 @@ TEST (node, fork_storm)
 	{
 		balance -= 1;
 		rai::keypair key;
-		rai::send_block send (previous, key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::test_genesis_key.pub, previous, 0, rai::test_genesis_key.pub, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		previous = send.hash ();
 		for (auto i (0); i != system.nodes.size (); ++i)
 		{
@@ -377,7 +377,7 @@ TEST (store, unchecked_load)
 {
 	rai::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto block (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
 		rai::transaction transaction (node.store.environment, nullptr, true);
@@ -391,7 +391,7 @@ TEST (store, vote_load)
 {
 	rai::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto block (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
 		auto vote (std::make_shared<rai::vote> (rai::test_genesis_key.pub, rai::test_genesis_key.prv, i, block));

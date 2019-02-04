@@ -34,7 +34,7 @@ enum class block_type : uint8_t
 {
 	invalid = 0,
 	not_a_block = 1,
-	send = 2,
+	//send = 2,
 	//receive = 3,
 	open = 4,
 	//change = 5,
@@ -98,6 +98,7 @@ public:
 	virtual bool valid_predecessor (rai::block const &) const = 0;
 };
 
+/*
 class send_hashables
 {
 public:
@@ -142,7 +143,6 @@ public:
 	uint64_t work;
 };
 
-/*
 class receive_hashables
 {
 public:
@@ -355,7 +355,6 @@ public:
 class block_visitor
 {
 public:
-	virtual void send_block (rai::send_block const &) = 0;
 	virtual void open_block (rai::open_block const &) = 0;
 	virtual void state_block (rai::state_block const &) = 0;
 	virtual ~block_visitor () = default;

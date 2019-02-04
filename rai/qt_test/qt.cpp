@@ -318,7 +318,7 @@ TEST (wallet, process_block)
 	QTest::mouseClick (wallet->show_advanced, Qt::LeftButton);
 	QTest::mouseClick (wallet->advanced.enter_block, Qt::LeftButton);
 	ASSERT_EQ (wallet->block_entry.window, wallet->main_stack->currentWidget ());
-	rai::send_block send (latest, key1.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest));
+	rai::state_block send (rai::test_genesis_key.pub, latest, 0, rai::test_genesis_key.pub, 0, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest));
 	std::string previous;
 	send.hashables.previous.encode_hex (previous);
 	std::string balance;
@@ -582,7 +582,7 @@ TEST (wallet, republish)
 	rai::block_hash hash;
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, true);
-		rai::send_block block (system.nodes[0]->ledger.latest (transaction, rai::test_genesis_key.pub), key.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block block (rai::test_genesis_key.pub, system.nodes[0]->ledger.latest (transaction, rai::test_genesis_key.pub), 0, rai::test_genesis_key.pub, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		hash = block.hash ();
 		ASSERT_EQ (rai::process_result::progress, system.nodes[0]->ledger.process (transaction, block).code);
 	}
@@ -763,7 +763,7 @@ TEST (wallet, DISABLED_synchronizing)
 	{
 		rai::transaction transaction (system1.nodes[0]->store.environment, nullptr, true);
 		auto latest (system1.nodes[0]->ledger.latest (transaction, rai::genesis_account));
-		rai::send_block send (latest, key1, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system1.work.generate (latest));
+		rai::state_block send (rai::test_genesis_key.pub, latest, 0, rai::test_genesis_key.pub, 0, key1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system1.work.generate (latest));
 		system1.nodes[0]->ledger.process (transaction, send);
 	}
 	ASSERT_EQ (0, wallet->active_status.active.count (rai_qt::status_types::synchronizing));

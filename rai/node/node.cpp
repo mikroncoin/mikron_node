@@ -2955,10 +2955,6 @@ public:
 	{
 		scan_receivable (block_a.hashables.link);
 	}
-	void send_block (rai::send_block const & block_a) override
-	{
-		scan_receivable (block_a.hashables.destination);
-	}
 	void open_block (rai::open_block const &) override
 	{
 	}
@@ -2993,10 +2989,6 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		{
 			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
 			pending_account = state->hashables.link;
-		}
-		if (auto send = dynamic_cast<rai::send_block *> (block_a.get ()))
-		{
-			pending_account = send->hashables.destination;
 		}
 		observers.blocks.notify (block_a, account, amount, is_state_send);
 		if (amount > 0)

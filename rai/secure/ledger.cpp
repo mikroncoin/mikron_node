@@ -17,33 +17,6 @@ public:
 	{
 	}
 	virtual ~rollback_visitor () = default;
-	void send_block (rai::send_block const & block_a) override
-	{
-		auto hash (block_a.hash ());
-		rai::pending_info pending;
-		rai::pending_key key (block_a.hashables.destination, hash);
-		while (ledger.store.pending_get (transaction, key, pending))
-		{
-			ledger.rollback (transaction, ledger.latest (transaction, block_a.hashables.destination));
-		}
-		rai::account_info info;
-		auto error (ledger.store.account_get (transaction, pending.source, info));
-		assert (!error);
-		ledger.store.pending_del (transaction, key);
-		ledger.store.representation_add (transaction, ledger.representative (transaction, hash), pending.amount.number ());
-		auto previous_block (ledger.store.block_get (transaction, block_a.hashables.previous));
-		ledger.change_latest (transaction, pending.source, block_a.hashables.previous, info.rep_block, ledger.balance (transaction, block_a.hashables.previous), 
-			previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1);
-		ledger.store.block_del (transaction, hash);
-		ledger.store.frontier_del (transaction, hash);
-		ledger.store.frontier_put (transaction, block_a.hashables.previous, pending.source);
-		ledger.store.block_successor_clear (transaction, block_a.hashables.previous);
-		if (!(info.block_count % ledger.store.block_info_max))
-		{
-			ledger.store.block_info_del (transaction, hash);
-		}
-		ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::send);
-	}
 	void open_block (rai::open_block const & block_a) override
 	{
 		auto hash (block_a.hash ());
@@ -126,7 +99,6 @@ class ledger_processor : public rai::block_visitor
 public:
 	ledger_processor (rai::ledger &, MDB_txn *);
 	virtual ~ledger_processor () = default;
-	void send_block (rai::send_block const &) override;
 	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
@@ -269,10 +241,12 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 			rai::pending_key key (block_a.hashables.link, hash);
 			rai::pending_info info (block_a.hashables.account, result.amount.number ());
 			ledger.store.pending_put (transaction, key, info);
+			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::send);
 		}
-		else if (!block_a.hashables.link.is_zero ())
+		else if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
 		{
 			ledger.store.pending_del (transaction, rai::pending_key (block_a.hashables.account, block_a.hashables.link));
+			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::receive);
 		}
 
 		ledger.change_latest (transaction, block_a.hashables.account, hash, hash, block_a.hashables.balance, block_a.creation_time ().number (), info.block_count + 1, true);
@@ -402,7 +376,6 @@ void ledger_processor::change_block (rai::change_block const & block_a)
 		}
 	}
 }
-*/
 
 void ledger_processor::send_block (rai::send_block const & block_a)
 {
@@ -451,7 +424,6 @@ void ledger_processor::send_block (rai::send_block const & block_a)
 	}
 }
 
-/*
 void ledger_processor::receive_block (rai::receive_block const & block_a)
 {
 	auto hash (block_a.hash ());
@@ -708,13 +680,8 @@ rai::state_block_subtype rai::ledger::state_subtype (MDB_txn * transaction_a, ra
 rai::block_hash rai::ledger::block_destination (MDB_txn * transaction_a, rai::block const & block_a)
 {
 	rai::block_hash result (0);
-	rai::send_block const * send_block (dynamic_cast<rai::send_block const *> (&block_a));
 	rai::state_block const * state_block (dynamic_cast<rai::state_block const *> (&block_a));
-	if (send_block != nullptr)
-	{
-		result = send_block->hashables.destination;
-	}
-	else if (state_block != nullptr && state_subtype (transaction_a, *state_block) == rai::state_block_subtype::send)
+	if (state_block != nullptr && state_subtype (transaction_a, *state_block) == rai::state_block_subtype::send)
 	{
 		result = state_block->hashables.link;
 	}
@@ -874,10 +841,6 @@ public:
 	transaction (transaction_a),
 	result (false)
 	{
-	}
-	void send_block (rai::send_block const & block_a) override
-	{
-		result = ledger.store.block_exists (transaction, block_a.previous ());
 	}
 	void open_block (rai::open_block const & block_a) override
 	{

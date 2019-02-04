@@ -171,10 +171,10 @@ public:
 	/**
 	 * Maps block hash to send block.
 	 * rai::block_hash -> rai::send_block
-	 */
+	 *
 	MDB_dbi send_blocks;
 
-	/**
+	 **
 	 * Maps block hash to receive block.
 	 * rai::block_hash -> rai::receive_block
 	 *
@@ -190,6 +190,7 @@ public:
 	/**
 	 * Maps block hash to change block.
 	 * rai::block_hash -> rai::change_block
+	 *
 	MDB_dbi change_blocks;
 	 */
 

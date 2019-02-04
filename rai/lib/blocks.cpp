@@ -166,6 +166,7 @@ rai::block_hash rai::block::hash () const
 	return result;
 }
 
+/*
 void rai::send_block::visit (rai::block_visitor & visitor_a) const
 {
 	visitor_a.send_block (*this);
@@ -381,9 +382,9 @@ bool rai::send_block::valid_predecessor (rai::block const & block_a) const
 	switch (block_a.type ())
 	{
 		case rai::block_type::send:
-			//case rai::block_type::receive:
+		case rai::block_type::receive:
 		case rai::block_type::open:
-			//case rai::block_type::change:
+		case rai::block_type::change:
 			result = true;
 			break;
 		case rai::block_type::state:
@@ -434,6 +435,7 @@ void rai::send_block::signature_set (rai::uint512_union const & signature_a)
 {
 	signature = signature_a;
 }
+*/
 
 rai::open_hashables::open_hashables (rai::block_hash const & source_a, rai::account const & representative_a, rai::account const & account_a) :
 source (source_a),
@@ -1312,27 +1314,7 @@ std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::p
 	try
 	{
 		auto type (tree_a.get<std::string> ("type"));
-		/*
-		if (type == "receive")
-		{
-			bool error (false);
-			std::unique_ptr<rai::receive_block> obj (new rai::receive_block (error, tree_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-		}
-		*/
-		if (type == "send")
-		{
-			bool error (false);
-			std::unique_ptr<rai::send_block> obj (new rai::send_block (error, tree_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-		}
-		else if (type == "open")
+		if (type == "open")
 		{
 			bool error (false);
 			std::unique_ptr<rai::open_block> obj (new rai::open_block (error, tree_a));
@@ -1374,28 +1356,6 @@ std::unique_ptr<rai::block> rai::deserialize_block (rai::stream & stream_a, rai:
 	std::unique_ptr<rai::block> result;
 	switch (type_a)
 	{
-		/*
-		case rai::block_type::receive:
-		{
-			bool error (false);
-			std::unique_ptr<rai::receive_block> obj (new rai::receive_block (error, stream_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-			break;
-		}
-		*/
-		case rai::block_type::send:
-		{
-			bool error (false);
-			std::unique_ptr<rai::send_block> obj (new rai::send_block (error, stream_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-			break;
-		}
 		case rai::block_type::open:
 		{
 			bool error (false);

@@ -40,8 +40,8 @@ TEST (message, keepalive_deserialize)
 
 TEST (message, publish_serialization)
 {
-	rai::publish publish (std::unique_ptr<rai::block> (new rai::send_block (0, 1, 2, rai::keypair ().prv, 4, 5)));
-	ASSERT_EQ (rai::block_type::send, publish.block->type ());
+	rai::publish publish (std::unique_ptr<rai::block> (new rai::state_block (4, 0, 0, 4, 2, 1, rai::keypair ().prv, 4, 5)));
+	ASSERT_EQ (rai::block_type::state, publish.block->type ());
 	publish.header.protocol_info.full_node_set (false);
 	ASSERT_FALSE (publish.header.protocol_info.full_node_get ());
 	publish.header.protocol_info.full_node_set (true);
@@ -60,7 +60,7 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::publish), bytes[5]);
 	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
-	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::state), bytes[8]);
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	auto error (false);
 	rai::message_header header (error, stream);
@@ -70,7 +70,7 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::protocol_version, header.protocol_info.version_max);
 	rai::publish publish2 (error, stream, header);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::block_type::send, publish2.block-> type ());
+	ASSERT_EQ (rai::block_type::state, publish2.block-> type ());
 }
 
 TEST (message, confirm_req_serialization)
@@ -109,7 +109,7 @@ TEST (message, confirm_req_serialization)
 TEST (message, confirm_ack_serialization)
 {
 	rai::keypair key1;
-	auto vote (std::make_shared<rai::vote> (key1.pub, key1.prv, 0, std::unique_ptr<rai::block> (new rai::send_block (0, 1, 2, key1.prv, 4, 5))));
+	auto vote (std::make_shared<rai::vote> (key1.pub, key1.prv, 0, std::unique_ptr<rai::block> (new rai::state_block (4, 0, 0, 4, 2, 1, key1.prv, 4, 5))));
 	rai::confirm_ack con1 (vote);
 	std::vector<uint8_t> bytes;
 	{
@@ -125,7 +125,7 @@ TEST (message, confirm_ack_serialization)
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_ack), bytes[5]);
 	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
-	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::send), bytes[8]);
+	ASSERT_EQ (static_cast<uint8_t> (rai::block_type::state), bytes[8]);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
 	bool error (false);
 	rai::message_header header (error, stream2);
