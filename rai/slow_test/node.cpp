@@ -83,6 +83,7 @@ TEST (ledger, deep_account_compute)
 	genesis.initialize (transaction, store);
 	rai::keypair key;
 	auto balance (rai::genesis_amount - 1);
+	auto balance2 (1);
 	rai::send_block send (genesis.hash (), key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 	rai::open_block open (send.hash (), rai::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
@@ -92,10 +93,11 @@ TEST (ledger, deep_account_compute)
 	for (auto i (0), n (100000); i != n; ++i)
 	{
 		balance -= 1;
-		rai::send_block send (sprevious, key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		balance += 1;
+		rai::state_block send (rai::genesis_account, sprevious, 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 		sprevious = send.hash ();
-		rai::receive_block receive (rprevious, send.hash (), key.prv, key.pub, 0);
+		rai::state_block receive (key.pub, rprevious, 0, key.pub, balance2, send.hash (), key.prv, key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
 		rprevious = receive.hash ();
 		if (i % 100 == 0)

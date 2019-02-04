@@ -40,7 +40,6 @@ public:
 	virtual ~balance_visitor () = default;
 	void compute (rai::block_hash const &);
 	void send_block (rai::send_block const &) override;
-	void receive_block (rai::receive_block const &) override;
 	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	MDB_txn * transaction;
@@ -61,7 +60,6 @@ public:
 	virtual ~amount_visitor () = default;
 	void compute (rai::block_hash const &);
 	void send_block (rai::send_block const &) override;
-	void receive_block (rai::receive_block const &) override;
 	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void from_send (rai::block_hash const &);
@@ -82,7 +80,6 @@ public:
 	virtual ~representative_visitor () = default;
 	void compute (rai::block_hash const & hash_a);
 	void send_block (rai::send_block const & block_a) override;
-	void receive_block (rai::receive_block const & block_a) override;
 	void open_block (rai::open_block const & block_a) override;
 	void state_block (rai::state_block const & block_a) override;
 	MDB_txn * transaction;
@@ -183,7 +180,6 @@ public:
 	block_counts ();
 	size_t sum ();
 	size_t send;
-	size_t receive;
 	size_t open;
 	size_t state;
 };
@@ -303,7 +299,7 @@ public:
 	void initialize(MDB_txn *, rai::block_store &) const;
 	rai::block_hash hash() const;
 	std::unique_ptr<rai::open_block> genesis_block;
-}; 
+};
 
 class manna_control
 {

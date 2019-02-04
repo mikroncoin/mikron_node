@@ -93,26 +93,6 @@ TEST (block_store, add_two_items)
 	ASSERT_FALSE (*latest3 == *latest4);
 }
 
-TEST (block_store, add_receive)
-{
-	bool init (false);
-	rai::block_store store (init, rai::unique_path ());
-	ASSERT_TRUE (!init);
-	rai::keypair key1;
-	rai::keypair key2;
-	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
-	rai::transaction transaction (store.environment, nullptr, true);
-	store.block_put (transaction, block1.hash (), block1);
-	rai::receive_block block (block1.hash (), 1, rai::keypair ().prv, 2, 3);
-	rai::block_hash hash1 (block.hash ());
-	auto latest1 (store.block_get (transaction, hash1));
-	ASSERT_EQ (nullptr, latest1);
-	store.block_put (transaction, hash1, block);
-	auto latest2 (store.block_get (transaction, hash1));
-	ASSERT_NE (nullptr, latest2);
-	ASSERT_EQ (block, *latest2);
-}
-
 TEST (block_store, add_pending)
 {
 	bool init (false);
@@ -458,8 +438,6 @@ TEST (block_store, roots)
 	ASSERT_EQ (send_block.hashables.previous, send_block.root ());
 	rai::state_block state_block (0, 0, 0, 1, rai::genesis_amount, 0, rai::keypair ().prv, 3, 4);
 	ASSERT_EQ (state_block.hashables.previous, state_block.root ());
-	rai::state_block receive_block (0, 0, 0, rai::genesis_account, 0, 1, rai::keypair ().prv, 3, 4);
-	ASSERT_EQ (receive_block.hashables.previous, receive_block.root ());
 	rai::state_block open_block (2, 0, 0, 1, 0, 0, rai::keypair ().prv, 4, 5);
 	ASSERT_EQ (open_block.hashables.account, open_block.root ());
 }

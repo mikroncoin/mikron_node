@@ -3136,8 +3136,6 @@ TEST (rpc, block_count_type)
 	ASSERT_EQ ("3", state_count);
 	std::string send_count (response.json.get<std::string> ("send"));
 	ASSERT_EQ ("0", send_count);
-	std::string receive_count (response.json.get<std::string> ("receive"));
-	ASSERT_EQ ("0", receive_count);
 	std::string open_count (response.json.get<std::string> ("open"));
 	ASSERT_EQ ("0", open_count);
 }
@@ -3570,7 +3568,7 @@ TEST (rpc, wallet_create_fail)
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	auto node = system.nodes[0];
 	// lmdb_max_dbs should be removed once the wallet store is refactored to support more wallets.
-	for (int i = 0; i < 113; i++)
+	for (int i = 0; i < 173; i++)
 	{
 		rai::keypair key;
 		node->wallets.create (key.pub);
@@ -3583,6 +3581,7 @@ TEST (rpc, wallet_create_fail)
 	{
 		system.poll ();
 	}
+	ASSERT_EQ (200, response.status);
 	ASSERT_EQ ("Failed to create wallet. Increase lmdb_max_dbs in node config", response.json.get<std::string> ("error"));
 }
 

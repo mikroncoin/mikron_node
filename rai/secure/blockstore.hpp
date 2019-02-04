@@ -177,8 +177,9 @@ public:
 	/**
 	 * Maps block hash to receive block.
 	 * rai::block_hash -> rai::receive_block
-	 */
+	 *
 	MDB_dbi receive_blocks;
+	 */
 
 	/**
 	 * Maps block hash to open block.

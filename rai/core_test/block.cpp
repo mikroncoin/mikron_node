@@ -69,37 +69,6 @@ TEST (block, send_serialize_json)
 	ASSERT_EQ (block1, block2);
 }
 
-TEST (block, receive_serialize)
-{
-	rai::receive_block block1 (0, 1, rai::keypair ().prv, 3, 4);
-	rai::keypair key1;
-	std::vector<uint8_t> bytes;
-	{
-		rai::vectorstream stream1 (bytes);
-		block1.serialize (stream1);
-	}
-	rai::bufferstream stream2 (bytes.data (), bytes.size ());
-	bool error (false);
-	rai::receive_block block2 (error, stream2);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
-TEST (block, receive_serialize_json)
-{
-	rai::receive_block block1 (0, 1, rai::keypair ().prv, 3, 4);
-	std::string string1;
-	block1.serialize_json (string1);
-	ASSERT_NE (0, string1.size ());
-	boost::property_tree::ptree tree1;
-	std::stringstream istream (string1);
-	boost::property_tree::read_json (istream, tree1);
-	bool error (false);
-	rai::receive_block block2 (error, tree1);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
 TEST (block, open_serialize_json)
 {
 	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
@@ -195,25 +164,6 @@ TEST (send_block, deserialize)
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
 	bool error (false);
 	rai::send_block block2 (error, stream2);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
-TEST (receive_block, deserialize)
-{
-	rai::receive_block block1 (0, 1, rai::keypair ().prv, 3, 4);
-	ASSERT_EQ (block1.hash (), block1.hash ());
-	block1.hashables.previous = 2;
-	block1.hashables.source = 4;
-	std::vector<uint8_t> bytes;
-	{
-		rai::vectorstream stream1 (bytes);
-		block1.serialize (stream1);
-	}
-	ASSERT_EQ (rai::receive_block::size, bytes.size ());
-	rai::bufferstream stream2 (bytes.data (), bytes.size ());
-	bool error (false);
-	rai::receive_block block2 (error, stream2);
 	ASSERT_FALSE (error);
 	ASSERT_EQ (block1, block2);
 }

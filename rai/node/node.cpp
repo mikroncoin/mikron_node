@@ -2959,9 +2959,6 @@ public:
 	{
 		scan_receivable (block_a.hashables.destination);
 	}
-	void receive_block (rai::receive_block const &) override
-	{
-	}
 	void open_block (rai::open_block const &) override
 	{
 	}

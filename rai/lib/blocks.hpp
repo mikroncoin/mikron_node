@@ -35,7 +35,7 @@ enum class block_type : uint8_t
 	invalid = 0,
 	not_a_block = 1,
 	send = 2,
-	receive = 3,
+	//receive = 3,
 	open = 4,
 	//change = 5,
 	state = 6
@@ -141,6 +141,8 @@ public:
 	rai::signature signature;
 	uint64_t work;
 };
+
+/*
 class receive_hashables
 {
 public:
@@ -183,6 +185,8 @@ public:
 	rai::signature signature;
 	uint64_t work;
 };
+*/
+
 class open_hashables
 {
 public:
@@ -352,7 +356,6 @@ class block_visitor
 {
 public:
 	virtual void send_block (rai::send_block const &) = 0;
-	virtual void receive_block (rai::receive_block const &) = 0;
 	virtual void open_block (rai::open_block const &) = 0;
 	virtual void state_block (rai::state_block const &) = 0;
 	virtual ~block_visitor () = default;

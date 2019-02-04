@@ -1003,7 +1003,6 @@ void rai::rpc_handler::block_count_type ()
 	rai::transaction transaction (node.store.environment, nullptr, false);
 	rai::block_counts count (node.store.block_count (transaction));
 	response_l.put ("send", std::to_string (count.send));
-	response_l.put ("receive", std::to_string (count.receive));
 	response_l.put ("open", std::to_string (count.open));
 	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
@@ -1221,25 +1220,6 @@ void rai::rpc_handler::block_create ()
 				else
 				{
 					ec = nano::error_rpc::block_create_requirements_open;
-				}
-			}
-			else if (type == "receive")
-			{
-				if (source != 0 && previous != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (previous);
-					}
-					rai::receive_block receive (previous, source, prv, pub, work);
-					response_l.put ("hash", receive.hash ().to_string ());
-					std::string contents;
-					receive.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_receive;
 				}
 			}
 			else if (type == "send")
@@ -1504,19 +1484,6 @@ public:
 		{
 			tree.put ("destination", account);
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
-		}
-	}
-	void receive_block (rai::receive_block const & block_a)
-	{
-		tree.put ("type", "receive");
-		auto account (handler.node.ledger.account (transaction, block_a.hashables.source).to_account ());
-		tree.put ("account", account);
-		auto amount (std::to_string (handler.node.ledger.amount (transaction, hash)));
-		tree.put ("amount", amount);
-		if (raw)
-		{
-			tree.put ("source", block_a.hashables.source.to_string ());
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
 	}
