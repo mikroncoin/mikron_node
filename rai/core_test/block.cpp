@@ -179,7 +179,7 @@ TEST (block, confirm_req_serialization)
 {
 	rai::keypair key1;
 	rai::keypair key2;
-	auto block (std::unique_ptr<rai::state_block> (new rai::state_block (2, 0, 0, rai::genesis_account, 200, key2.pub, rai::keypair ().prv, 2, 3))); 
+	auto block (std::unique_ptr<rai::state_block> (new rai::state_block (2, 0, 0, rai::genesis_account, 200, key2.pub, rai::keypair ().prv, 2, 3)));
 	rai::confirm_req req (std::move (block));
 	std::vector<uint8_t> bytes;
 	{

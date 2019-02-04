@@ -70,7 +70,7 @@ TEST (message, publish_serialization)
 	ASSERT_EQ (rai::protocol_version, header.protocol_info.version_max);
 	rai::publish publish2 (error, stream, header);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::block_type::state, publish2.block-> type ());
+	ASSERT_EQ (rai::block_type::state, publish2.block->type ());
 }
 
 TEST (message, confirm_req_serialization)
