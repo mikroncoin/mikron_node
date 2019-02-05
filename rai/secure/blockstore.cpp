@@ -638,20 +638,6 @@ MDB_dbi rai::block_store::block_database (rai::block_type type_a)
 	MDB_dbi result;
 	switch (type_a)
 	{
-		/*
-		case rai::block_type::send:
-			result = send_blocks;
-			break;
-		case rai::block_type::receive:
-			result = receive_blocks;
-			break;
-		case rai::block_type::open:
-			result = open_blocks;
-			break;
-		case rai::block_type::change:
-			result = change_blocks;
-			break;
-		*/
 		case rai::block_type::state:
 			result = state_blocks;
 			break;

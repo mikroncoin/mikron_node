@@ -169,32 +169,6 @@ public:
 	MDB_dbi accounts;
 
 	/**
-	 * Maps block hash to send block.
-	 * rai::block_hash -> rai::send_block
-	 *
-	MDB_dbi send_blocks;
-
-	 **
-	 * Maps block hash to receive block.
-	 * rai::block_hash -> rai::receive_block
-	 *
-	MDB_dbi receive_blocks;
-	 *
-
-	 **
-	 * Maps block hash to open block.
-	 * rai::block_hash -> rai::open_block
-	 *
-	MDB_dbi open_blocks;
-
-	**
-	 * Maps block hash to change block.
-	 * rai::block_hash -> rai::change_block
-	 *
-	MDB_dbi change_blocks;
-	 */
-
-	/**
 	 * Maps block hash to state block.
 	 * rai::block_hash -> rai::state_block
 	 */
