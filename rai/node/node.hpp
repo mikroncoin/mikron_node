@@ -506,8 +506,6 @@ public:
 	std::string callback_target;
 	int lmdb_max_dbs;
 	rai::stat_config stat_config;
-	//rai::uint256_union epoch_block_link;
-	//rai::account epoch_block_signer;
 	std::chrono::system_clock::time_point generate_hash_votes_at;
 	static std::chrono::seconds constexpr keepalive_period = std::chrono::seconds (60);
 	static std::chrono::seconds constexpr keepalive_cutoff = keepalive_period * 5;

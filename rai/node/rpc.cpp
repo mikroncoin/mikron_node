@@ -1002,10 +1002,6 @@ void rai::rpc_handler::block_count_type ()
 {
 	rai::transaction transaction (node.store.environment, nullptr, false);
 	rai::block_counts count (node.store.block_count (transaction));
-	response_l.put ("send", std::to_string (count.send));
-	response_l.put ("receive", std::to_string (count.receive));
-	response_l.put ("open", std::to_string (count.open));
-	response_l.put ("change", std::to_string (count.change));
 	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
 }
@@ -1203,89 +1199,6 @@ void rai::rpc_handler::block_create ()
 				else
 				{
 					ec = nano::error_rpc::block_create_requirements_state;
-				}
-			}
-			else if (type == "open")
-			{
-				if (representative != 0 && source != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (pub);
-					}
-					rai::open_block open (source, representative, pub, prv, pub, work);
-					response_l.put ("hash", open.hash ().to_string ());
-					std::string contents;
-					open.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_open;
-				}
-			}
-			else if (type == "receive")
-			{
-				if (source != 0 && previous != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (previous);
-					}
-					rai::receive_block receive (previous, source, prv, pub, work);
-					response_l.put ("hash", receive.hash ().to_string ());
-					std::string contents;
-					receive.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_receive;
-				}
-			}
-			else if (type == "change")
-			{
-				if (representative != 0 && previous != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (previous);
-					}
-					rai::change_block change (previous, representative, prv, pub, work);
-					response_l.put ("hash", change.hash ().to_string ());
-					std::string contents;
-					change.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_change;
-				}
-			}
-			else if (type == "send")
-			{
-				if (destination != 0 && previous != 0 && balance != 0 && amount != 0)
-				{
-					if (balance.number () >= amount.number ())
-					{
-						if (work == 0)
-						{
-							work = node.work_generate_blocking (previous);
-						}
-						rai::send_block send (previous, destination, balance.number () - amount.number (), prv, pub, work);
-						response_l.put ("hash", send.hash ().to_string ());
-						std::string contents;
-						send.serialize_json (contents);
-						response_l.put ("block", contents);
-					}
-					else
-					{
-						ec = nano::error_common::insufficient_balance;
-					}
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_send;
 				}
 			}
 			else
@@ -1513,67 +1426,6 @@ public:
 	{
 	}
 	virtual ~history_visitor () = default;
-	void send_block (rai::send_block const & block_a)
-	{
-		tree.put ("type", "send");
-		auto account (block_a.hashables.destination.to_account ());
-		tree.put ("account", account);
-		auto amount (std::to_string (handler.node.ledger.amount (transaction, hash)));
-		tree.put ("amount", amount);
-		if (raw)
-		{
-			tree.put ("destination", account);
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
-		}
-	}
-	void receive_block (rai::receive_block const & block_a)
-	{
-		tree.put ("type", "receive");
-		auto account (handler.node.ledger.account (transaction, block_a.hashables.source).to_account ());
-		tree.put ("account", account);
-		auto amount (std::to_string (handler.node.ledger.amount (transaction, hash)));
-		tree.put ("amount", amount);
-		if (raw)
-		{
-			tree.put ("source", block_a.hashables.source.to_string ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
-		}
-	}
-	void open_block (rai::open_block const & block_a)
-	{
-		if (raw)
-		{
-			tree.put ("type", "open");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("source", block_a.hashables.source.to_string ());
-			tree.put ("opened", block_a.hashables.account.to_account ());
-		}
-		else
-		{
-			// Report opens as a receive
-			tree.put ("type", "receive");
-		}
-		if (block_a.hashables.source != rai::genesis_account)
-		{
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.source).to_account ());
-			tree.put ("amount", std::to_string (handler.node.ledger.amount (transaction, hash)));
-		}
-		else
-		{
-			tree.put ("account", rai::genesis_account.to_account ());
-			tree.put ("amount", std::to_string (rai::genesis_amount));
-		}
-	}
-	void change_block (rai::change_block const & block_a)
-	{
-		if (raw)
-		{
-			tree.put ("type", "change");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
-		}
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		if (raw)
@@ -1643,15 +1495,6 @@ public:
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
-
-		case rai::state_block_subtype::change:
-			// change occurs only in raw
-			if (raw)
-			{
-				tree.put ("subtype", "change");
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			}
 			break;
 
 		// epoch and undefined not handled

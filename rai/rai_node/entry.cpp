@@ -105,7 +105,7 @@ int main (int argc, char * const * argv)
 						{
 							assert (balance > weekly_distribution);
 							balance = balance < (weekly_distribution * 2) ? 0 : balance - weekly_distribution;
-							rai::send_block send (previous, landing.pub, balance, genesis.prv, genesis.pub, work.generate (previous));
+							rai::state_block send (rai::genesis_account, previous, 0, rai::genesis_account, balance, landing.pub, genesis.prv, genesis.pub, work.generate (previous));
 							previous = send.hash ();
 							std::cout << send.to_json ();
 							std::cout.flush ();
@@ -179,7 +179,7 @@ int main (int argc, char * const * argv)
 		else if (vm.count ("debug_profile_generate"))
 		{
 			rai::work_pool work (std::numeric_limits<unsigned>::max (), nullptr);
-			rai::change_block block (0, 0, rai::keypair ().prv, 0, 0);
+			rai::state_block block (0, 0, 0, 0, 100, 0, rai::keypair ().prv, 0, 0);
 			std::cerr << "Starting generation profiling\n";
 			for (uint64_t i (0); true; ++i)
 			{
@@ -249,7 +249,7 @@ int main (int argc, char * const * argv)
 								return opencl->generate_work (root_a);
 							}
 							                                                                        : std::function<boost::optional<uint64_t> (rai::uint256_union const &)> (nullptr));
-							rai::change_block block (0, 0, rai::keypair ().prv, 0, 0);
+							rai::state_block block (0, 0, 0, 0, 100, 0, rai::keypair ().prv, 0, 0);
 							std::cerr << boost::str (boost::format ("Starting OpenCL generation profiling. Platform: %1%. Device: %2%. Threads: %3%\n") % platform % device % threads);
 							for (uint64_t i (0); true; ++i)
 							{
@@ -284,7 +284,7 @@ int main (int argc, char * const * argv)
 		else if (vm.count ("debug_profile_verify"))
 		{
 			rai::work_pool work (std::numeric_limits<unsigned>::max (), nullptr);
-			rai::change_block block (0, 0, rai::keypair ().prv, 0, 0);
+			rai::state_block block (0, 0, 0, 0, 100, 0, rai::keypair ().prv, 0, 0);
 			std::cerr << "Starting verification profiling\n";
 			for (uint64_t i (0); true; ++i)
 			{
@@ -324,7 +324,7 @@ int main (int argc, char * const * argv)
 				auto begin1 (std::chrono::high_resolution_clock::now ());
 				for (uint64_t balance (0); balance < 1000; ++balance)
 				{
-					rai::send_block send (latest, key.pub, balance, key.prv, key.pub, 0);
+					rai::state_block send (key.pub, latest, 0, rai::genesis_account, balance, key.pub, key.prv, key.pub, 0);
 					latest = send.hash ();
 				}
 				auto end1 (std::chrono::high_resolution_clock::now ());

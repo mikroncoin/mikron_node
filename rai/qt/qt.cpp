@@ -511,38 +511,6 @@ public:
 	ledger (ledger_a)
 	{
 	}
-	void send_block (rai::send_block const & block_a)
-	{
-		type = "Send";
-		account = block_a.hashables.destination;
-		amount = ledger.amount (transaction, block_a.hash ());
-	}
-	void receive_block (rai::receive_block const & block_a)
-	{
-		type = "Receive";
-		account = ledger.account (transaction, block_a.source ());
-		amount = ledger.amount (transaction, block_a.source ());
-	}
-	void open_block (rai::open_block const & block_a)
-	{
-		type = "Receive";
-		if (block_a.hashables.source != rai::genesis_account)
-		{
-			account = ledger.account (transaction, block_a.hashables.source);
-			amount = ledger.amount (transaction, block_a.hash ());
-		}
-		else
-		{
-			account = rai::genesis_account;
-			amount = rai::genesis_amount;
-		}
-	}
-	void change_block (rai::change_block const & block_a)
-	{
-		type = "Change";
-		amount = 0;
-		account = block_a.hashables.representative;
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		block_time = block_a.creation_time ().number ();

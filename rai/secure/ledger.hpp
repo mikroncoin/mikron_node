@@ -53,7 +53,5 @@ public:
 	std::unordered_map<rai::account, rai::amount_t> bootstrap_weights;
 	uint64_t bootstrap_weight_max_blocks;
 	std::atomic<bool> check_bootstrap_weights;
-	//rai::uint256_union epoch_link;
-	//rai::account epoch_signer;
 };
 };

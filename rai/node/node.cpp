@@ -926,9 +926,6 @@ bootstrap_connections_max (64),
 callback_port (0),
 lmdb_max_dbs (128)
 {
-	//const char * epoch_message ("epoch v1 block");
-	//strncpy ((char *)epoch_block_link.bytes.data (), epoch_message, epoch_block_link.bytes.size ());
-	//epoch_block_signer = rai::genesis_account;
 	switch (rai::rai_network)
 	{
 		case rai::rai_networks::rai_test_network:
@@ -2955,19 +2952,6 @@ public:
 	{
 		scan_receivable (block_a.hashables.link);
 	}
-	void send_block (rai::send_block const & block_a) override
-	{
-		scan_receivable (block_a.hashables.destination);
-	}
-	void receive_block (rai::receive_block const &) override
-	{
-	}
-	void open_block (rai::open_block const &) override
-	{
-	}
-	void change_block (rai::change_block const &) override
-	{
-	}
 	MDB_txn * transaction;
 	rai::node & node;
 	std::shared_ptr<rai::block> block;
@@ -2999,10 +2983,6 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		{
 			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
 			pending_account = state->hashables.link;
-		}
-		if (auto send = dynamic_cast<rai::send_block *> (block_a.get ()))
-		{
-			pending_account = send->hashables.destination;
 		}
 		observers.blocks.notify (block_a, account, amount, is_state_send);
 		if (amount > 0)

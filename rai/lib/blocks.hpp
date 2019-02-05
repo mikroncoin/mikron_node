@@ -34,10 +34,10 @@ enum class block_type : uint8_t
 {
 	invalid = 0,
 	not_a_block = 1,
-	send = 2,
-	receive = 3,
-	open = 4,
-	change = 5,
+	//send = 2,
+	//receive = 3,
+	//open = 4,
+	//change = 5,
 	state = 6
 };
 
@@ -95,179 +95,6 @@ public:
 	virtual rai::signature block_signature () const = 0;
 	virtual void signature_set (rai::uint512_union const &) = 0;
 	virtual ~block () = default;
-	virtual bool valid_predecessor (rai::block const &) const = 0;
-};
-
-class send_hashables
-{
-public:
-	send_hashables (rai::account const &, rai::block_hash const &, rai::amount const &);
-	send_hashables (bool &, rai::stream &);
-	send_hashables (bool &, boost::property_tree::ptree const &);
-	void hash (blake2b_state &) const;
-	rai::block_hash previous;
-	rai::account destination;
-	rai::amount balance;
-};
-class send_block : public rai::block
-{
-public:
-	send_block (rai::block_hash const &, rai::account const &, rai::amount const &, rai::raw_key const &, rai::public_key const &, uint64_t);
-	send_block (bool &, rai::stream &);
-	send_block (bool &, boost::property_tree::ptree const &);
-	virtual ~send_block () = default;
-	using rai::block::hash;
-	void hash (blake2b_state &) const override;
-	uint64_t block_work () const override;
-	void block_work_set (uint64_t) override;
-	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
-	rai::block_hash previous () const override;
-	rai::block_hash source () const override;
-	rai::block_hash root () const override;
-	rai::account representative () const override;
-	void serialize (rai::stream &) const override;
-	void serialize_json (std::string &) const override;
-	bool deserialize (rai::stream &);
-	bool deserialize_json (boost::property_tree::ptree const &);
-	void visit (rai::block_visitor &) const override;
-	rai::block_type type () const override;
-	rai::signature block_signature () const override;
-	void signature_set (rai::uint512_union const &) override;
-	bool operator== (rai::block const &) const override;
-	bool operator== (rai::send_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
-	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::amount) + sizeof (rai::signature) + sizeof (uint64_t);
-	send_hashables hashables;
-	rai::signature signature;
-	uint64_t work;
-};
-class receive_hashables
-{
-public:
-	receive_hashables (rai::block_hash const &, rai::block_hash const &);
-	receive_hashables (bool &, rai::stream &);
-	receive_hashables (bool &, boost::property_tree::ptree const &);
-	void hash (blake2b_state &) const;
-	rai::block_hash previous;
-	rai::block_hash source;
-};
-class receive_block : public rai::block
-{
-public:
-	receive_block (rai::block_hash const &, rai::block_hash const &, rai::raw_key const &, rai::public_key const &, uint64_t);
-	receive_block (bool &, rai::stream &);
-	receive_block (bool &, boost::property_tree::ptree const &);
-	virtual ~receive_block () = default;
-	using rai::block::hash;
-	void hash (blake2b_state &) const override;
-	uint64_t block_work () const override;
-	void block_work_set (uint64_t) override;
-	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
-	rai::block_hash previous () const override;
-	rai::block_hash source () const override;
-	rai::block_hash root () const override;
-	rai::account representative () const override;
-	void serialize (rai::stream &) const override;
-	void serialize_json (std::string &) const override;
-	bool deserialize (rai::stream &);
-	bool deserialize_json (boost::property_tree::ptree const &);
-	void visit (rai::block_visitor &) const override;
-	rai::block_type type () const override;
-	rai::signature block_signature () const override;
-	void signature_set (rai::uint512_union const &) override;
-	bool operator== (rai::block const &) const override;
-	bool operator== (rai::receive_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
-	static size_t constexpr size = sizeof (rai::block_hash) + sizeof (rai::block_hash) + sizeof (rai::signature) + sizeof (uint64_t);
-	receive_hashables hashables;
-	rai::signature signature;
-	uint64_t work;
-};
-class open_hashables
-{
-public:
-	open_hashables (rai::block_hash const &, rai::account const &, rai::account const &);
-	open_hashables (bool &, rai::stream &);
-	open_hashables (bool &, boost::property_tree::ptree const &);
-	void hash (blake2b_state &) const;
-	rai::block_hash source;
-	rai::account representative;
-	rai::account account;
-};
-class open_block : public rai::block
-{
-public:
-	open_block (rai::block_hash const &, rai::account const &, rai::account const &, rai::raw_key const &, rai::public_key const &, uint64_t);
-	open_block (rai::block_hash const &, rai::account const &, rai::account const &, std::nullptr_t);
-	open_block (bool &, rai::stream &);
-	open_block (bool &, boost::property_tree::ptree const &);
-	virtual ~open_block () = default;
-	using rai::block::hash;
-	void hash (blake2b_state &) const override;
-	uint64_t block_work () const override;
-	void block_work_set (uint64_t) override;
-	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
-	rai::block_hash previous () const override;
-	rai::block_hash source () const override;
-	rai::block_hash root () const override;
-	rai::account representative () const override;
-	void serialize (rai::stream &) const override;
-	void serialize_json (std::string &) const override;
-	bool deserialize (rai::stream &);
-	bool deserialize_json (boost::property_tree::ptree const &);
-	void visit (rai::block_visitor &) const override;
-	rai::block_type type () const override;
-	rai::signature block_signature () const override;
-	void signature_set (rai::uint512_union const &) override;
-	bool operator== (rai::block const &) const override;
-	bool operator== (rai::open_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
-	static size_t constexpr size = sizeof (rai::block_hash) + sizeof (rai::account) + sizeof (rai::account) + sizeof (rai::signature) + sizeof (uint64_t);
-	rai::open_hashables hashables;
-	rai::signature signature;
-	uint64_t work;
-};
-class change_hashables
-{
-public:
-	change_hashables (rai::block_hash const &, rai::account const &);
-	change_hashables (bool &, rai::stream &);
-	change_hashables (bool &, boost::property_tree::ptree const &);
-	void hash (blake2b_state &) const;
-	rai::block_hash previous;
-	rai::account representative;
-};
-class change_block : public rai::block
-{
-public:
-	change_block (rai::block_hash const &, rai::account const &, rai::raw_key const &, rai::public_key const &, uint64_t);
-	change_block (bool &, rai::stream &);
-	change_block (bool &, boost::property_tree::ptree const &);
-	virtual ~change_block () = default;
-	using rai::block::hash;
-	void hash (blake2b_state &) const override;
-	uint64_t block_work () const override;
-	void block_work_set (uint64_t) override;
-	rai::short_timestamp creation_time () const override { return rai::short_timestamp (); }
-	rai::block_hash previous () const override;
-	rai::block_hash source () const override;
-	rai::block_hash root () const override;
-	rai::account representative () const override;
-	void serialize (rai::stream &) const override;
-	void serialize_json (std::string &) const override;
-	bool deserialize (rai::stream &);
-	bool deserialize_json (boost::property_tree::ptree const &);
-	void visit (rai::block_visitor &) const override;
-	rai::block_type type () const override;
-	rai::signature block_signature () const override;
-	void signature_set (rai::uint512_union const &) override;
-	bool operator== (rai::block const &) const override;
-	bool operator== (rai::change_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
-	static size_t constexpr size = sizeof (rai::block_hash) + sizeof (rai::account) + sizeof (rai::signature) + sizeof (uint64_t);
-	rai::change_hashables hashables;
-	rai::signature signature;
-	uint64_t work;
 };
 
 enum class state_block_subtype : uint8_t
@@ -331,7 +158,6 @@ public:
 	void signature_set (rai::uint512_union const &) override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
 	// Determining whether it is a send or receive block requires the previous balance too.  A more convenient version is through ledger, use that if possible.
 	rai::state_block_subtype get_subtype (rai::amount_t, rai::timestamp_t) const;
 	bool is_valid_open_subtype () const;
@@ -349,10 +175,6 @@ public:
 class block_visitor
 {
 public:
-	virtual void send_block (rai::send_block const &) = 0;
-	virtual void receive_block (rai::receive_block const &) = 0;
-	virtual void open_block (rai::open_block const &) = 0;
-	virtual void change_block (rai::change_block const &) = 0;
 	virtual void state_block (rai::state_block const &) = 0;
 	virtual ~block_visitor () = default;
 };
