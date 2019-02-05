@@ -524,9 +524,43 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 // Return amount decrease or increase for block
 rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	amount_visitor amount (transaction_a, store);
-	amount.compute (hash_a);
-	return amount.amount;
+	if (hash_a.is_zero ())
+	{
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	if (block == nullptr)
+	{
+		if (hash_a == rai::genesis_account)
+		{
+			return rai::genesis_amount;
+		}
+		assert (block != nullptr);
+		return 0;
+	}
+	// block != nullptr
+	auto prev_hash (block->previous ());
+	auto balance (block->balance ().number ());
+
+	if (prev_hash.is_zero ())
+	{
+		return balance;
+	}
+	// prev_hash != 0
+	auto prev_block (store.block_get (transaction_a, prev_hash));
+	assert (prev_block != nullptr);
+	if (prev_block == nullptr)
+	{
+		return balance;
+	}
+	auto prev_balance (prev_block->balance ().number ());
+	if (rai::manna_control::is_manna_account (prev_block->account ()))
+	{ 
+		// manna adjustment
+		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
+	}
+	rai::amount_t amount = balance < prev_balance ? prev_balance - balance : balance - prev_balance;
+	return amount;
 }
 
 // Return latest block for account
