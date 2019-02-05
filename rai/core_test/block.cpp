@@ -35,21 +35,6 @@ TEST (transaction_block, empty)
 	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature));
 }
 
-TEST (block, open_serialize_json)
-{
-	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
-	std::string string1;
-	block1.serialize_json (string1);
-	ASSERT_NE (0, string1.size ());
-	boost::property_tree::ptree tree1;
-	std::stringstream istream (string1);
-	boost::property_tree::read_json (istream, tree1);
-	bool error (false);
-	rai::open_block block2 (error, tree1);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
-}
-
 TEST (uint512_union, parse_zero)
 {
 	rai::uint512_union input (rai::uint512_t (0));
@@ -115,23 +100,6 @@ TEST (uint512_union, parse_error_overflow)
 	rai::uint512_union output;
 	auto error (output.decode_hex (text));
 	ASSERT_TRUE (error);
-}
-
-TEST (open_block, deserialize)
-{
-	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
-	ASSERT_EQ (block1.hash (), block1.hash ());
-	std::vector<uint8_t> bytes;
-	{
-		rai::vectorstream stream (bytes);
-		block1.serialize (stream);
-	}
-	ASSERT_EQ (rai::open_block::size, bytes.size ());
-	rai::bufferstream stream (bytes.data (), bytes.size ());
-	bool error (false);
-	rai::open_block block2 (error, stream);
-	ASSERT_FALSE (error);
-	ASSERT_EQ (block1, block2);
 }
 
 TEST (frontier_req, serialization)

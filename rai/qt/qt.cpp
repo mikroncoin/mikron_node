@@ -511,20 +511,6 @@ public:
 	ledger (ledger_a)
 	{
 	}
-	void open_block (rai::open_block const & block_a)
-	{
-		type = "Receive";
-		if (block_a.hashables.source != rai::genesis_account)
-		{
-			account = ledger.account (transaction, block_a.hashables.source);
-			amount = ledger.amount (transaction, block_a.hash ());
-		}
-		else
-		{
-			account = rai::genesis_account;
-			amount = rai::genesis_amount;
-		}
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		block_time = block_a.creation_time ().number ();

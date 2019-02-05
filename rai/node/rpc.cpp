@@ -1002,7 +1002,6 @@ void rai::rpc_handler::block_count_type ()
 {
 	rai::transaction transaction (node.store.environment, nullptr, false);
 	rai::block_counts count (node.store.block_count (transaction));
-	response_l.put ("open", std::to_string (count.open));
 	response_l.put ("state", std::to_string (count.state));
 	response_errors ();
 }
@@ -1200,25 +1199,6 @@ void rai::rpc_handler::block_create ()
 				else
 				{
 					ec = nano::error_rpc::block_create_requirements_state;
-				}
-			}
-			else if (type == "open")
-			{
-				if (representative != 0 && source != 0)
-				{
-					if (work == 0)
-					{
-						work = node.work_generate_blocking (pub);
-					}
-					rai::open_block open (source, representative, pub, prv, pub, work);
-					response_l.put ("hash", open.hash ().to_string ());
-					std::string contents;
-					open.serialize_json (contents);
-					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_open;
 				}
 			}
 			else
@@ -1446,31 +1426,6 @@ public:
 	{
 	}
 	virtual ~history_visitor () = default;
-	void open_block (rai::open_block const & block_a)
-	{
-		if (raw)
-		{
-			tree.put ("type", "open");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("source", block_a.hashables.source.to_string ());
-			tree.put ("opened", block_a.hashables.account.to_account ());
-		}
-		else
-		{
-			// Report opens as a receive
-			tree.put ("type", "receive");
-		}
-		if (block_a.hashables.source != rai::genesis_account)
-		{
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.source).to_account ());
-			tree.put ("amount", std::to_string (handler.node.ledger.amount (transaction, hash)));
-		}
-		else
-		{
-			tree.put ("account", rai::genesis_account.to_account ());
-			tree.put ("amount", std::to_string (rai::genesis_amount));
-		}
-	}
 	void state_block (rai::state_block const & block_a)
 	{
 		if (raw)

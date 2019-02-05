@@ -435,7 +435,6 @@ void rai::send_block::signature_set (rai::uint512_union const & signature_a)
 {
 	signature = signature_a;
 }
-*/
 
 rai::open_hashables::open_hashables (rai::block_hash const & source_a, rai::account const & representative_a, rai::account const & account_a) :
 source (source_a),
@@ -691,7 +690,6 @@ void rai::open_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
-/*
 rai::change_hashables::change_hashables (rai::block_hash const & previous_a, rai::account const & representative_a) :
 previous (previous_a),
 representative (representative_a)
@@ -1314,16 +1312,7 @@ std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::p
 	try
 	{
 		auto type (tree_a.get<std::string> ("type"));
-		if (type == "open")
-		{
-			bool error (false);
-			std::unique_ptr<rai::open_block> obj (new rai::open_block (error, tree_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-		}
-		else if (type == "state")
+		if (type == "state")
 		{
 			bool error (false);
 			std::unique_ptr<rai::state_block> obj (new rai::state_block (error, tree_a));
@@ -1356,16 +1345,6 @@ std::unique_ptr<rai::block> rai::deserialize_block (rai::stream & stream_a, rai:
 	std::unique_ptr<rai::block> result;
 	switch (type_a)
 	{
-		case rai::block_type::open:
-		{
-			bool error (false);
-			std::unique_ptr<rai::open_block> obj (new rai::open_block (error, stream_a));
-			if (!error)
-			{
-				result = std::move (obj);
-			}
-			break;
-		}
 		case rai::block_type::state:
 		{
 			bool error (false);

@@ -78,7 +78,7 @@ TEST (ledger, deep_account_compute)
 	ASSERT_FALSE (init);
 	rai::stat stats;
 	rai::ledger ledger (store, stats);
-	rai::genesis_legacy_with_open genesis;
+	rai::genesis genesis;
 	rai::transaction transaction (store.environment, nullptr, true);
 	genesis.initialize (transaction, store);
 	rai::keypair key;
@@ -86,14 +86,14 @@ TEST (ledger, deep_account_compute)
 	auto balance2 (1);
 	rai::state_block send (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
-	rai::open_block open (send.hash (), rai::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
+	rai::state_block open (key.pub, 0, 0, rai::test_genesis_key.pub, balance2, send.hash (), key.prv, key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, open).code);
 	auto sprevious (send.hash ());
 	auto rprevious (open.hash ());
 	for (auto i (0), n (100000); i != n; ++i)
 	{
 		balance -= 1;
-		balance += 1;
+		balance2 += 1;
 		rai::state_block send (rai::genesis_account, sprevious, 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 		sprevious = send.hash ();
@@ -170,10 +170,12 @@ TEST (node, fork_storm)
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	auto previous (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	auto balance (system.nodes[0]->balance (rai::test_genesis_key.pub));
+	auto balance2 (0);
 	ASSERT_FALSE (previous.is_zero ());
 	for (auto j (0); j != system.nodes.size (); ++j)
 	{
 		balance -= 1;
+		balance2 += 1;
 		rai::keypair key;
 		rai::state_block send (rai::test_genesis_key.pub, previous, 0, rai::test_genesis_key.pub, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		previous = send.hash ();
@@ -182,7 +184,7 @@ TEST (node, fork_storm)
 			auto send_result (system.nodes[i]->process (send));
 			ASSERT_EQ (rai::process_result::progress, send_result.code);
 			rai::keypair rep;
-			auto open (std::make_shared<rai::open_block> (previous, rep.pub, key.pub, key.prv, key.pub, 0));
+			auto open (std::make_shared<rai::state_block> (key.pub, 0, 0, rep.pub, balance2, previous, key.prv, key.pub, 0));
 			system.nodes[i]->work_generate_blocking (*open);
 			auto open_result (system.nodes[i]->process (*open));
 			ASSERT_EQ (rai::process_result::progress, open_result.code);

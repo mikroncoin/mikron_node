@@ -179,15 +179,15 @@ public:
 	 * rai::block_hash -> rai::receive_block
 	 *
 	MDB_dbi receive_blocks;
-	 */
+	 *
 
-	/**
+	 **
 	 * Maps block hash to open block.
 	 * rai::block_hash -> rai::open_block
-	 */
+	 *
 	MDB_dbi open_blocks;
 
-	/**
+	**
 	 * Maps block hash to change block.
 	 * rai::block_hash -> rai::change_block
 	 *

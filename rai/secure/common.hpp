@@ -39,7 +39,6 @@ public:
 	balance_visitor (MDB_txn *, rai::block_store &);
 	virtual ~balance_visitor () = default;
 	void compute (rai::block_hash const &);
-	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	MDB_txn * transaction;
 	rai::block_store & store;
@@ -58,7 +57,6 @@ public:
 	amount_visitor (MDB_txn *, rai::block_store &);
 	virtual ~amount_visitor () = default;
 	void compute (rai::block_hash const &);
-	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void from_send (rai::block_hash const &);
 	MDB_txn * transaction;
@@ -77,7 +75,6 @@ public:
 	representative_visitor (MDB_txn * transaction_a, rai::block_store & store_a);
 	virtual ~representative_visitor () = default;
 	void compute (rai::block_hash const & hash_a);
-	void open_block (rai::open_block const & block_a) override;
 	void state_block (rai::state_block const & block_a) override;
 	MDB_txn * transaction;
 	rai::block_store & store;
@@ -176,7 +173,6 @@ class block_counts
 public:
 	block_counts ();
 	size_t sum ();
-	size_t open;
 	size_t state;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
@@ -264,7 +260,6 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
-extern std::string const & rai_test_genesis_legacy;
 extern rai::keypair const & test_manna_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
@@ -286,15 +281,6 @@ public:
 	rai::state_block const & block () const;
 	rai::block_hash root () const;
 	std::unique_ptr<rai::state_block> genesis_block;
-};
-
-class genesis_legacy_with_open
-{
-public:
-	explicit genesis_legacy_with_open();
-	void initialize(MDB_txn *, rai::block_store &) const;
-	rai::block_hash hash() const;
-	std::unique_ptr<rai::open_block> genesis_block;
 };
 
 class manna_control

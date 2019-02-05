@@ -17,19 +17,6 @@ public:
 	{
 	}
 	virtual ~rollback_visitor () = default;
-	void open_block (rai::open_block const & block_a) override
-	{
-		auto hash (block_a.hash ());
-		auto amount (ledger.amount (transaction, block_a.hashables.source));
-		auto destination_account (ledger.account (transaction, hash));
-		auto source_account (ledger.account (transaction, block_a.hashables.source));
-		ledger.store.representation_add (transaction, ledger.representative (transaction, hash), 0 - amount);
-		ledger.change_latest (transaction, destination_account, 0, 0, 0, 0, 0);
-		ledger.store.block_del (transaction, hash);
-		ledger.store.pending_put (transaction, rai::pending_key (destination_account, block_a.hashables.source), { source_account, amount});
-		ledger.store.frontier_del (transaction, hash);
-		ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::open);
-	}
 	void state_block (rai::state_block const & block_a) override
 	{
 		auto hash (block_a.hash ());
@@ -99,7 +86,6 @@ class ledger_processor : public rai::block_visitor
 public:
 	ledger_processor (rai::ledger &, MDB_txn *);
 	virtual ~ledger_processor () = default;
-	void open_block (rai::open_block const &) override;
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
 	//void epoch_block_impl (rai::state_block const &);
@@ -484,7 +470,6 @@ void ledger_processor::receive_block (rai::receive_block const & block_a)
 		}
 	}
 }
-*/
 
 void ledger_processor::open_block (rai::open_block const & block_a)
 {
@@ -530,6 +515,7 @@ void ledger_processor::open_block (rai::open_block const & block_a)
 		}
 	}
 }
+*/
 
 ledger_processor::ledger_processor (rai::ledger & ledger_a, MDB_txn * transaction_a) :
 ledger (ledger_a),
@@ -841,10 +827,6 @@ public:
 	transaction (transaction_a),
 	result (false)
 	{
-	}
-	void open_block (rai::open_block const & block_a) override
-	{
-		result = ledger.store.block_exists (transaction, block_a.source ());
 	}
 	void state_block (rai::state_block const & block_a) override
 	{

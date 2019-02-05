@@ -3134,8 +3134,6 @@ TEST (rpc, block_count_type)
 	ASSERT_EQ (200, response.status);
 	std::string state_count (response.json.get<std::string> ("state"));
 	ASSERT_EQ ("3", state_count);
-	std::string open_count (response.json.get<std::string> ("open"));
-	ASSERT_EQ ("0", open_count);
 }
 
 TEST (rpc, ledger)

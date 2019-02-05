@@ -2955,9 +2955,6 @@ public:
 	{
 		scan_receivable (block_a.hashables.link);
 	}
-	void open_block (rai::open_block const &) override
-	{
-	}
 	MDB_txn * transaction;
 	rai::node & node;
 	std::shared_ptr<rai::block> block;
