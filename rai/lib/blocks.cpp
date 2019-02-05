@@ -484,8 +484,6 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_b
 	{
 		return rai::state_block_subtype::change;
 	}
-	// if (balance == previous_balance && !handler.node.ledger.epoch_link.is_zero() && block_a.hashables.link == handler.node.ledger.epoch_link)
-	// epoch
 	// otherwise: undefined, which is not a valid block
 	return rai::state_block_subtype::undefined;
 }

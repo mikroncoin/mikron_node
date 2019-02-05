@@ -89,7 +89,6 @@ public:
 	rai::store_iterator block_info_begin (MDB_txn *);
 	rai::store_iterator block_info_end ();
 	rai::amount_t block_balance (MDB_txn *, rai::block_hash const &);
-	//rai::epoch block_version (MDB_txn *, rai::block_hash const &);
 	static size_t const block_info_max = 32;
 
 	rai::amount_t representation_get (MDB_txn *, rai::account const &);

@@ -91,7 +91,6 @@ public:
 	virtual ~ledger_processor () = default;
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
-	//void epoch_block_impl (rai::state_block const &);
 	static bool check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance);
 	static bool check_time_sequence (rai::state_block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance);
 	rai::ledger & ledger;
@@ -290,8 +289,6 @@ rai::ledger::ledger (rai::block_store & store_a, rai::stat & stat_a) :
 store (store_a),
 stats (stat_a),
 check_bootstrap_weights (true)
-//epoch_link (epoch_link_a),
-//epoch_signer (epoch_signer_a)
 {
 }
 
