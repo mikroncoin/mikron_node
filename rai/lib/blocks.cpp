@@ -1182,11 +1182,6 @@ bool rai::state_block::operator== (rai::state_block const & other_a) const
 	return hashables.account == other_a.hashables.account && hashables.previous == other_a.hashables.previous && hashables.representative == other_a.hashables.representative && hashables.balance == other_a.hashables.balance && hashables.link == other_a.hashables.link && signature == other_a.signature && work == other_a.work;
 }
 
-bool rai::state_block::valid_predecessor (rai::block const & block_a) const
-{
-	return true;
-}
-
 rai::block_hash rai::state_block::source () const
 {
 	return 0;

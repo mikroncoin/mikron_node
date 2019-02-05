@@ -95,7 +95,6 @@ public:
 	virtual rai::signature block_signature () const = 0;
 	virtual void signature_set (rai::uint512_union const &) = 0;
 	virtual ~block () = default;
-	virtual bool valid_predecessor (rai::block const &) const = 0;
 };
 
 /*
@@ -336,7 +335,6 @@ public:
 	void signature_set (rai::uint512_union const &) override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
-	bool valid_predecessor (rai::block const &) const override;
 	// Determining whether it is a send or receive block requires the previous balance too.  A more convenient version is through ledger, use that if possible.
 	rai::state_block_subtype get_subtype (rai::amount_t, rai::timestamp_t) const;
 	bool is_valid_open_subtype () const;
