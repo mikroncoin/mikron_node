@@ -777,7 +777,7 @@ void rai::block_store::block_del (MDB_txn * transaction_a, rai::block_hash const
 	assert (status == 0 || status == MDB_NOTFOUND);
 	//if (status != 0)
 	//{
-		// mdb_del ...
+	//	mdb_del ...
 }
 
 bool rai::block_store::block_exists (MDB_txn * transaction_a, rai::block_hash const & hash_a)
