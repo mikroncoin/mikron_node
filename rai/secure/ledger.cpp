@@ -53,7 +53,14 @@ public:
 			//auto source_version (ledger.store.block_version (transaction, block_a.hashables.link));
 			rai::pending_info pending_info (ledger.account (transaction, block_a.hashables.link), block_a.hashables.balance.number () - previous_balance);
 			ledger.store.pending_put (transaction, rai::pending_key (block_a.hashables.account, block_a.hashables.link), pending_info);
-			ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::receive);
+			if (subtype == rai::state_block_subtype::receive)
+			{
+				ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::receive);
+			}
+			else if (subtype == rai::state_block_subtype::open_receive)
+			{
+				ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::open);
+			}
 		}
 
 		assert (!error);
@@ -70,10 +77,6 @@ public:
 			{
 				ledger.store.frontier_put (transaction, block_a.hashables.previous, block_a.hashables.account);
 			}
-		}
-		else
-		{
-			ledger.stats.inc (rai::stat::type::rollback, rai::stat::detail::open);
 		}
 		ledger.store.block_del (transaction, hash);
 	}
@@ -232,7 +235,14 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 		else if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
 		{
 			ledger.store.pending_del (transaction, rai::pending_key (block_a.hashables.account, block_a.hashables.link));
-			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::receive);
+			if (subtype == rai::state_block_subtype::receive)
+			{
+				ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::receive);
+			}
+			else if (subtype == rai::state_block_subtype::open_receive)
+			{
+				ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::open);
+			}
 		}
 
 		ledger.change_latest (transaction, block_a.hashables.account, hash, hash, block_a.hashables.balance, block_a.creation_time ().number (), info.block_count + 1, true);
