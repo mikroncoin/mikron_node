@@ -298,23 +298,29 @@ check_bootstrap_weights (true)
 // Balance for account containing hash
 rai::amount_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	balance_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	return visitor.balance;
+	return store.block_balance (transaction_a, hash_a);
 }
 
 // Balance for account containing hash.  Balance adjusted with current manna increment.
 rai::amount_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::timestamp_t now)
 {
-	balance_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	assert (visitor.balance_block != nullptr);
-	if (visitor.balance_block == nullptr || !rai::manna_control::is_manna_account (visitor.balance_block->hashables.account))
+	if (hash_a.is_zero ())
 	{
-		return visitor.balance;
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	assert (block != nullptr);
+	if (block == nullptr)
+	{
+		return 0;
+	}
+	auto balance (block->balance ().number ());
+	if (!rai::manna_control::is_manna_account (block->account ()))
+	{
+		return balance;
 	}
 	// manna adjustment
-	return rai::manna_control::adjust_balance_with_manna (visitor.balance, visitor.balance_block->creation_time ().number (), now);
+	return rai::manna_control::adjust_balance_with_manna (balance, block->creation_time ().number (), now);
 }
 
 // Balance for an account by account number

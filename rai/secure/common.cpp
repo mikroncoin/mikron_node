@@ -512,64 +512,21 @@ void rai::amount_visitor::compute (rai::block_hash const & block_hash)
 		}
 		else
 		{
-			balance_visitor prev (transaction, store);
-			prev.compute (current_balance);
-			rai::amount_t previous_balance = prev.balance;
-			assert (prev.balance_block != nullptr);
-			if (prev.balance_block != nullptr && rai::manna_control::is_manna_account (prev.balance_block->hashables.account))
+			auto prev_block (store.block_get (transaction, current_balance));
+			assert (prev_block != nullptr);
+			rai::amount_t previous_balance = prev_block->balance ().number ();
+			if (rai::manna_control::is_manna_account (prev_block->account ()))
 			{ 
 				// manna adjustment
 				auto block (store.block_get (transaction, block_hash));
 				assert (block != nullptr);
 				if (block != nullptr)
 				{
-					previous_balance = rai::manna_control::adjust_balance_with_manna (previous_balance, prev.balance_block->creation_time().number (), block->creation_time ().number ());
+					previous_balance = rai::manna_control::adjust_balance_with_manna (previous_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
 				}
 			}
 			amount = amount < previous_balance ? previous_balance - amount : amount - previous_balance;
 			current_balance = 0;
-		}
-	}
-}
-
-rai::balance_visitor::balance_visitor (MDB_txn * transaction_a, rai::block_store & store_a) :
-transaction (transaction_a),
-store (store_a),
-current_balance (0),
-current_amount (0),
-balance (0),
-balance_block (nullptr)
-{
-}
-
-void rai::balance_visitor::state_block (rai::state_block const & block_a)
-{
-	balance = block_a.hashables.balance.number ();
-	balance_block = std::make_shared<rai::state_block> (block_a);
-	current_balance = 0;
-}
-
-void rai::balance_visitor::compute (rai::block_hash const & block_hash)
-{
-	current_balance = block_hash;
-	while (!current_balance.is_zero () || !current_amount.is_zero ())
-	{
-		if (!current_amount.is_zero ())
-		{
-			assert (false);
-			balance = 0;
-			current_balance = 0;
-			current_amount = 0;
-			//amount_visitor source (transaction, store);
-			//source.compute (current_amount);
-			//balance += source.amount;
-			//current_amount = 0;
-		}
-		else
-		{
-			auto block (store.block_get (transaction, current_balance));
-			assert (block != nullptr);
-			block->visit (*this);
 		}
 	}
 }

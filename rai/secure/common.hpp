@@ -30,23 +30,6 @@ const uint8_t protocol_version_min = 3;
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
-/**
- * Determine the balance as of this block
- */
-class balance_visitor : public rai::block_visitor
-{
-public:
-	balance_visitor (MDB_txn *, rai::block_store &);
-	virtual ~balance_visitor () = default;
-	void compute (rai::block_hash const &);
-	void state_block (rai::state_block const &) override;
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current_balance;
-	rai::block_hash current_amount;
-	rai::amount_t balance;
-	std::shared_ptr<rai::state_block> balance_block;
-};
 
 /**
  * Determine the amount delta resultant from this block
