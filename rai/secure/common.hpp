@@ -32,24 +32,6 @@ const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 class block_store;
 
 /**
- * Determine the amount delta resultant from this block
- */
-class amount_visitor : public rai::block_visitor
-{
-public:
-	amount_visitor (MDB_txn *, rai::block_store &);
-	virtual ~amount_visitor () = default;
-	void compute (rai::block_hash const &);
-	void state_block (rai::state_block const &) override;
-	void from_send (rai::block_hash const &);
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current_amount;
-	rai::block_hash current_balance;
-	rai::amount_t amount;
-};
-
-/**
  * Determine the representative for this block
  */
 class representative_visitor : public rai::block_visitor
