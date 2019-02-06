@@ -553,7 +553,7 @@ rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash cons
 	}
 	auto prev_balance (prev_block->balance ().number ());
 	if (rai::manna_control::is_manna_account (prev_block->account ()))
-	{ 
+	{
 		// manna adjustment
 		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
 	}
