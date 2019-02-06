@@ -32,22 +32,6 @@ const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 class block_store;
 
 /**
- * Determine the representative for this block
- */
-class representative_visitor : public rai::block_visitor
-{
-public:
-	representative_visitor (MDB_txn * transaction_a, rai::block_store & store_a);
-	virtual ~representative_visitor () = default;
-	void compute (rai::block_hash const & hash_a);
-	void state_block (rai::state_block const & block_a) override;
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current;
-	rai::block_hash result;
-};
-
-/**
  * A key pair. The private key is generated from the random pool, or passed in
  * as a hex string. The public key is derived using ed25519.
  */
