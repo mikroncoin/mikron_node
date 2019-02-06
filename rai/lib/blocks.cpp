@@ -431,9 +431,19 @@ rai::block_hash rai::state_block::root () const
 	return !hashables.previous.is_zero () ? hashables.previous : hashables.account;
 }
 
+rai::account rai::state_block::account () const
+{
+	return hashables.account;
+}
+
 rai::account rai::state_block::representative () const
 {
 	return hashables.representative;
+}
+
+rai::amount rai::state_block::balance () const
+{
+	return hashables.balance;
 }
 
 rai::signature rai::state_block::block_signature () const

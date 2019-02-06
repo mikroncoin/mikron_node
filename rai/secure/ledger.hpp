@@ -30,8 +30,8 @@ public:
 	std::unique_ptr<rai::block> forked_block (MDB_txn *, rai::block const &);
 	rai::block_hash latest (MDB_txn *, rai::account const &);
 	rai::block_hash latest_root (MDB_txn *, rai::account const &);
-	rai::block_hash representative (MDB_txn *, rai::block_hash const &);
-	rai::block_hash representative_calculated (MDB_txn *, rai::block_hash const &);
+	// return block representative
+	rai::account representative_get (MDB_txn *, rai::block_hash const &);
 	bool block_exists (rai::block_hash const &);
 	std::string block_text (char const *);
 	std::string block_text (rai::block_hash const &);

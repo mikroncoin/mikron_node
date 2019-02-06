@@ -609,9 +609,17 @@ void rai::block_store::clear (MDB_dbi db_a)
 
 rai::amount_t rai::block_store::block_balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	balance_visitor visitor (transaction_a, *this);
-	visitor.compute (hash_a);
-	return visitor.balance;
+	if (hash_a.is_zero ())
+	{
+		return 0;
+	}
+	auto block (block_get (transaction_a, hash_a));
+	assert (block != nullptr);
+	if (block == nullptr)
+	{
+		return 0;
+	}
+	return block->balance ().number ();
 }
 
 void rai::block_store::representation_add (MDB_txn * transaction_a, rai::block_hash const & source_a, rai::amount_t const & amount_a)

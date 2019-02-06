@@ -23,7 +23,7 @@ public:
 		rai::block_hash representative (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
-			representative = ledger.representative (transaction, block_a.hashables.previous);
+			representative = block_a.hashables.previous;
 		}
 		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
 		auto subtype (ledger.state_subtype (transaction, block_a));
@@ -295,23 +295,29 @@ check_bootstrap_weights (true)
 // Balance for account containing hash
 rai::amount_t rai::ledger::balance (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	balance_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	return visitor.balance;
+	return store.block_balance (transaction_a, hash_a);
 }
 
 // Balance for account containing hash.  Balance adjusted with current manna increment.
 rai::amount_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::timestamp_t now)
 {
-	balance_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	assert (visitor.balance_block != nullptr);
-	if (visitor.balance_block == nullptr || !rai::manna_control::is_manna_account (visitor.balance_block->hashables.account))
+	if (hash_a.is_zero ())
 	{
-		return visitor.balance;
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	assert (block != nullptr);
+	if (block == nullptr)
+	{
+		return 0;
+	}
+	auto balance (block->balance ().number ());
+	if (!rai::manna_control::is_manna_account (block->account ()))
+	{
+		return balance;
 	}
 	// manna adjustment
-	return rai::manna_control::adjust_balance_with_manna (visitor.balance, visitor.balance_block->creation_time ().number (), now);
+	return rai::manna_control::adjust_balance_with_manna (balance, block->creation_time ().number (), now);
 }
 
 // Balance for an account by account number
@@ -358,18 +364,19 @@ rai::process_return rai::ledger::process (MDB_txn * transaction_a, rai::block co
 	return processor.result;
 }
 
-rai::block_hash rai::ledger::representative (MDB_txn * transaction_a, rai::block_hash const & hash_a)
+rai::account rai::ledger::representative_get (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	auto result (representative_calculated (transaction_a, hash_a));
-	assert (result.is_zero () || store.block_exists (transaction_a, result));
-	return result;
-}
-
-rai::block_hash rai::ledger::representative_calculated (MDB_txn * transaction_a, rai::block_hash const & hash_a)
-{
-	representative_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	return visitor.result;
+	if (hash_a.is_zero ())
+	{
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	assert (block != nullptr);
+	if (block == nullptr)
+	{
+		return 0;
+	}
+	return block->representative ();
 }
 
 bool rai::ledger::block_exists (rai::block_hash const & hash_a)
@@ -515,9 +522,43 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 // Return amount decrease or increase for block
 rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	amount_visitor amount (transaction_a, store);
-	amount.compute (hash_a);
-	return amount.amount;
+	if (hash_a.is_zero ())
+	{
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	if (block == nullptr)
+	{
+		if (hash_a == rai::genesis_account)
+		{
+			return rai::genesis_amount;
+		}
+		assert (block != nullptr);
+		return 0;
+	}
+	// block != nullptr
+	auto prev_hash (block->previous ());
+	auto balance (block->balance ().number ());
+
+	if (prev_hash.is_zero ())
+	{
+		return balance;
+	}
+	// prev_hash != 0
+	auto prev_block (store.block_get (transaction_a, prev_hash));
+	assert (prev_block != nullptr);
+	if (prev_block == nullptr)
+	{
+		return balance;
+	}
+	auto prev_balance (prev_block->balance ().number ());
+	if (rai::manna_control::is_manna_account (prev_block->account ()))
+	{
+		// manna adjustment
+		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
+	}
+	rai::amount_t amount = balance < prev_balance ? prev_balance - balance : balance - prev_balance;
+	return amount;
 }
 
 // Return latest block for account
