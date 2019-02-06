@@ -23,7 +23,7 @@ public:
 		rai::block_hash representative (0);
 		if (!block_a.hashables.previous.is_zero ())
 		{
-			representative = ledger.representative (transaction, block_a.hashables.previous);
+			representative = block_a.hashables.previous;
 		}
 		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
 		auto subtype (ledger.state_subtype (transaction, block_a));
@@ -367,18 +367,19 @@ rai::process_return rai::ledger::process (MDB_txn * transaction_a, rai::block co
 	return processor.result;
 }
 
-rai::block_hash rai::ledger::representative (MDB_txn * transaction_a, rai::block_hash const & hash_a)
+rai::account rai::ledger::representative_get (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	auto result (representative_calculated (transaction_a, hash_a));
-	assert (result.is_zero () || store.block_exists (transaction_a, result));
-	return result;
-}
-
-rai::block_hash rai::ledger::representative_calculated (MDB_txn * transaction_a, rai::block_hash const & hash_a)
-{
-	representative_visitor visitor (transaction_a, store);
-	visitor.compute (hash_a);
-	return visitor.result;
+	if (hash_a.is_zero ())
+	{
+		return 0;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	assert (block != nullptr);
+	if (block == nullptr)
+	{
+		return 0;
+	}
+	return block->representative ();
 }
 
 bool rai::ledger::block_exists (rai::block_hash const & hash_a)
