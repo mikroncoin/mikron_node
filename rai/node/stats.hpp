@@ -202,7 +202,6 @@ public:
 		open,
 		//change,
 		state_block,
-		//epoch_block,
 
 		// message specific
 		keepalive,

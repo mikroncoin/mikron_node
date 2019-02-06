@@ -622,16 +622,6 @@ rai::amount_t rai::block_store::block_balance (MDB_txn * transaction_a, rai::blo
 	return block->balance ().number ();
 }
 
-/*
-rai::epoch rai::block_store::block_version (MDB_txn * transaction_a, rai::block_hash const & hash_a)
-{
-	rai::mdb_val value;
-	auto status (mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), value));
-	assert (status == 0 || status == MDB_NOTFOUND);
-	return status == 0 ? rai::epoch::epoch_1 : rai::epoch::epoch_0;
-}
-*/
-
 void rai::block_store::representation_add (MDB_txn * transaction_a, rai::block_hash const & source_a, rai::amount_t const & amount_a)
 {
 	auto source_block (block_get (transaction_a, source_a));

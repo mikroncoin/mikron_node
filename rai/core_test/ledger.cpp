@@ -2256,12 +2256,6 @@ TEST (ledger, state_receive_change_rollback)
 	ASSERT_EQ (0, ledger.weight (transaction, rep.pub));
 }
 
-/* Epoch and upgrades are no longer relevant
-TEST (ledger, epoch_blocks_general)
-TEST (ledger, epoch_blocks_receive_upgrade)
-TEST (ledger, epoch_blocks_fork)
-*/
-
 rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
 {
 	uint32_t t1 = (uint32_t)(time1 / rai::manna_control::manna_freq);
