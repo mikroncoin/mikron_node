@@ -95,7 +95,7 @@ public:
 	virtual void visit (rai::block_visitor &) const = 0;
 	virtual bool operator== (rai::block const &) const = 0;
 	virtual rai::block_type type () const = 0;
-	virtual rai::signature block_signature () const = 0;
+	virtual rai::signature const & block_signature () const = 0;
 	virtual void signature_set (rai::uint512_union const &) = 0;
 	virtual ~block () = default;
 };
@@ -104,10 +104,18 @@ public:
 class base_block : public block
 {
 public:
+	base_block (rai::signature const &, uint64_t);
 	// Return a digest of the hashables in this block.
-	rai::block_hash hash () const override;
-	std::string to_json () const override;
+	virtual rai::block_hash hash () const override;
+	virtual std::string to_json () const override;
 	virtual void hash (blake2b_state &) const = 0;
+	virtual rai::signature const & block_signature () const override;
+	virtual void signature_set (rai::uint512_union const &) override;
+	virtual uint64_t block_work () const override;
+	virtual void block_work_set (uint64_t) override;
+protected:
+	rai::signature signature;
+	rai::work work;
 };
 
 // Non-final base class for block hashables, with some common fields
@@ -163,8 +171,6 @@ public:
 	virtual ~state_block () = default;
 	using rai::block::hash;
 	void hash (blake2b_state &) const override;
-	uint64_t block_work () const override;
-	void block_work_set (uint64_t) override;
 	rai::short_timestamp creation_time () const override;
 	rai::block_hash previous () const override;
 	rai::block_hash source () const override;
@@ -178,8 +184,6 @@ public:
 	bool deserialize_json (boost::property_tree::ptree const &);
 	void visit (rai::block_visitor &) const override;
 	rai::block_type type () const override;
-	rai::signature block_signature () const override;
-	void signature_set (rai::uint512_union const &) override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::state_block const &) const;
 	// Determining whether it is a send or receive block requires the previous balance too.  A more convenient version is through ledger, use that if possible.
@@ -192,8 +196,6 @@ public:
 	bool has_representative () const;
 	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
-	rai::signature signature;
-	rai::work work;
 };
 
 class block_visitor

@@ -147,11 +147,10 @@ std::string rai::short_timestamp::to_date_string_local () const
 	return ss.str ();
 }
 
-std::string rai::base_block::to_json () const
+rai::base_block::base_block (rai::signature const & signature_a, uint64_t work_a) :
+signature (signature_a),
+work (work_a)
 {
-	std::string result;
-	serialize_json (result);
-	return result;
 }
 
 rai::block_hash rai::base_block::hash () const
@@ -164,6 +163,33 @@ rai::block_hash rai::base_block::hash () const
 	status = blake2b_final (&hash_l, result.bytes.data (), sizeof (result.bytes));
 	assert (status == 0);
 	return result;
+}
+
+std::string rai::base_block::to_json () const
+{
+	std::string result;
+	serialize_json (result);
+	return result;
+}
+
+rai::signature const & rai::base_block::block_signature () const
+{
+	return signature;
+}
+
+void rai::base_block::signature_set (rai::uint512_union const & signature_a)
+{
+	signature = signature_a;
+}
+
+uint64_t rai::base_block::block_work () const
+{
+	return work.number ();
+}
+
+void rai::base_block::block_work_set (uint64_t work_a)
+{
+	work = work_a;
 }
 
 // if time is 0, current time is taken
@@ -263,13 +289,13 @@ void rai::state_hashables::hash (blake2b_state & hash_a) const
 
 // if time is 0, current time is taken
 rai::state_block::state_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
-hashables (account_a, previous_a, creation_time_a, representative_a, balance_a, link_a),
-signature (rai::sign_message (prv_a, pub_a, rai::base_block::hash ())),
-work (work_a)
+base_block (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()), work_a),
+hashables (account_a, previous_a, creation_time_a, representative_a, balance_a, link_a)
 {
 }
 
 rai::state_block::state_block (bool & error_a, rai::stream & stream_a) :
+base_block (uint512_union (), 0),
 hashables (error_a, stream_a)
 {
 	if (!error_a)
@@ -283,6 +309,7 @@ hashables (error_a, stream_a)
 }
 
 rai::state_block::state_block (bool & error_a, boost::property_tree::ptree const & tree_a) :
+base_block (uint512_union (), 0),
 hashables (error_a, tree_a)
 {
 	if (!error_a)
@@ -314,16 +341,6 @@ void rai::state_block::hash (blake2b_state & hash_a) const
 	rai::uint256_union preamble (static_cast<uint64_t> (rai::block_type::state));
 	blake2b_update (&hash_a, preamble.bytes.data (), preamble.bytes.size ());
 	hashables.hash (hash_a);
-}
-
-uint64_t rai::state_block::block_work () const
-{
-	return work.number ();
-}
-
-void rai::state_block::block_work_set (uint64_t work_a)
-{
-	work = work_a;
 }
 
 rai::short_timestamp rai::state_block::creation_time () const
@@ -469,16 +486,6 @@ rai::account rai::state_block::representative () const
 rai::amount rai::state_block::balance () const
 {
 	return hashables.balance;
-}
-
-rai::signature rai::state_block::block_signature () const
-{
-	return signature;
-}
-
-void rai::state_block::signature_set (rai::uint512_union const & signature_a)
-{
-	signature = signature_a;
 }
 
 rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_balance_a, rai::timestamp_t previous_block_time) const
