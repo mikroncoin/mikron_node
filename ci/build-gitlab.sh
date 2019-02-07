@@ -33,6 +33,13 @@ else
     CRYPTOPP_CFG="-DCRYPTOPP_CUSTOM=ON"
 fi
 
+if [[ ${SSL} -eq 1 ]]; then
+    SSL_CFG="-DRAIBLOCKS_SECURE_RPC=ON"
+    echo SSL enabled
+else
+    SSL_CFG=""
+fi
+
 if [[ ${ASAN_INT} -eq 1 ]]; then
     SANITIZERS="-DRAIBLOCKS_ASAN_INT=ON"
 elif [[ ${ASAN} -eq 1 ]]; then
@@ -79,6 +86,7 @@ run_build() {
        -DBOOST_ROOT=/usr/local/boost \
        ${BOOST_CFG} \
        ${SANITIZERS} \
+       ${SSL_CFG} \
        ..
 
     cmake --build ${PWD} -- -v
