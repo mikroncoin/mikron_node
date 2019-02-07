@@ -1565,8 +1565,8 @@ void rai::rpc_handler::account_history ()
 						if (output_raw)
 						{
 							entry.put ("block_time_utc", block->creation_time ().to_date_string_utc ());
-							entry.put ("work", rai::to_string_hex (block->block_work ()));
-							entry.put ("signature", block->block_signature ().to_string ());
+							entry.put ("work", rai::to_string_hex (block->work_get ()));
+							entry.put ("signature", block->signature_get ().to_string ());
 						}
 						history.push_back (std::make_pair ("", entry));
 					}

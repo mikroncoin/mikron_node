@@ -172,7 +172,7 @@ std::string rai::base_block::to_json () const
 	return result;
 }
 
-rai::signature const & rai::base_block::block_signature () const
+rai::signature const & rai::base_block::signature_get () const
 {
 	return signature;
 }
@@ -182,12 +182,12 @@ void rai::base_block::signature_set (rai::uint512_union const & signature_a)
 	signature = signature_a;
 }
 
-uint64_t rai::base_block::block_work () const
+uint64_t rai::base_block::work_get () const
 {
 	return work.number ();
 }
 
-void rai::base_block::block_work_set (uint64_t work_a)
+void rai::base_block::work_set (uint64_t work_a)
 {
 	work = work_a;
 }

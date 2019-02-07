@@ -7,7 +7,7 @@ TEST (work, one)
 {
 	rai::work_pool pool (std::numeric_limits<unsigned>::max (), nullptr);
 	rai::state_block block (rai::genesis_account, 1, 0, 1, rai::genesis_amount, 0, rai::keypair ().prv, 3, 4);
-	block.block_work_set (pool.generate (block.root ()));
+	block.work_set (pool.generate (block.root ()));
 	ASSERT_FALSE (rai::work_validate (block));
 }
 
@@ -16,7 +16,7 @@ TEST (work, validate)
 	rai::work_pool pool (std::numeric_limits<unsigned>::max (), nullptr);
 	rai::state_block send_block (4, 1, 0, 4, 2, 1, rai::keypair ().prv, 4, 6);
 	ASSERT_TRUE (rai::work_validate (send_block));
-	send_block.block_work_set (pool.generate (send_block.root ()));
+	send_block.work_set (pool.generate (send_block.root ()));
 	ASSERT_FALSE (rai::work_validate (send_block));
 }
 

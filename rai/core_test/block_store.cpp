@@ -522,7 +522,7 @@ TEST (block_store, block_replace)
 	store.block_put (transaction, 0, send2);
 	auto block3 (store.block_get (transaction, 0));
 	ASSERT_NE (nullptr, block3);
-	ASSERT_EQ (2, block3->block_work ());
+	ASSERT_EQ (2, block3->work_get ());
 }
 
 TEST (block_store, block_count)

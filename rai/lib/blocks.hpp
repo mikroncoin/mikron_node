@@ -77,8 +77,8 @@ public:
 	virtual rai::block_hash hash () const = 0;
 	virtual std::string to_json () const = 0;
 	virtual void hash (blake2b_state &) const = 0;
-	virtual uint64_t block_work () const = 0;
-	virtual void block_work_set (uint64_t) = 0;
+	virtual uint64_t work_get () const = 0;
+	virtual void work_set (uint64_t) = 0;
 	// Block creation time, seconds since short_timestamp_epoch, 4-byte
 	virtual rai::short_timestamp creation_time () const = 0;
 	// Previous block in account's chain, zero for open block
@@ -95,7 +95,7 @@ public:
 	virtual void visit (rai::block_visitor &) const = 0;
 	virtual bool operator== (rai::block const &) const = 0;
 	virtual rai::block_type type () const = 0;
-	virtual rai::signature const & block_signature () const = 0;
+	virtual rai::signature const & signature_get () const = 0;
 	virtual void signature_set (rai::uint512_union const &) = 0;
 	virtual ~block () = default;
 };
@@ -109,10 +109,10 @@ public:
 	virtual rai::block_hash hash () const override;
 	virtual std::string to_json () const override;
 	virtual void hash (blake2b_state &) const = 0;
-	virtual rai::signature const & block_signature () const override;
+	virtual rai::signature const & signature_get () const override;
 	virtual void signature_set (rai::uint512_union const &) override;
-	virtual uint64_t block_work () const override;
-	virtual void block_work_set (uint64_t) override;
+	virtual uint64_t work_get () const override;
+	virtual void work_set (uint64_t) override;
 protected:
 	rai::signature signature;
 	rai::work work;

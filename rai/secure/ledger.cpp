@@ -127,7 +127,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 	// creation time should be filled
 	result.code = block_a.hashables.creation_time.is_zero () ? rai::process_result::invalid_block_creation_time : rai::process_result::progress;
 	if (result.code != rai::process_result::progress) return;
-	result.code = validate_message (block_a.hashables.account, hash, block_a.block_signature ()) ? rai::process_result::bad_signature : rai::process_result::progress; // Is this block signed correctly (Unambiguous)
+	result.code = validate_message (block_a.hashables.account, hash, block_a.signature_get ()) ? rai::process_result::bad_signature : rai::process_result::progress; // Is this block signed correctly (Unambiguous)
 	if (result.code != rai::process_result::progress) return;
 	result.code = block_a.hashables.account.is_zero () ? rai::process_result::opened_burn_account : rai::process_result::progress; // Is this for the burn account? (Unambiguous)
 	if (result.code != rai::process_result::progress) return;

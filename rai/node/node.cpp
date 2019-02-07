@@ -1427,7 +1427,7 @@ bool rai::block_processor::full ()
 void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono::steady_clock::time_point origination)
 {
 	auto hash_l (block_a->hash ());
-	if (!rai::work_validate (block_a->root (), block_a->block_work ()))
+	if (!rai::work_validate (block_a->root (), block_a->work_get ()))
 	{
 		std::lock_guard<std::mutex> lock (mutex);
 		if (blocks_hashes.find (hash_l) == blocks_hashes.end ())
@@ -1439,7 +1439,7 @@ void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono
 	}
 	else
 	{
-		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
+		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->work_get ());
 		assert (false && "rai::block_processor::add called with invalid work");
 	}
 }
@@ -2869,7 +2869,7 @@ public:
 
 void rai::node::work_generate_blocking (rai::block & block_a)
 {
-	block_a.block_work_set (work_generate_blocking (block_a.root ()));
+	block_a.work_set (work_generate_blocking (block_a.root ()));
 }
 
 void rai::node::work_generate (rai::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a)
