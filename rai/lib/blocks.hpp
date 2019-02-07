@@ -110,23 +110,13 @@ public:
 	virtual void hash (blake2b_state &) const = 0;
 };
 
-enum class state_block_subtype : uint8_t
-{
-	undefined = 0,
-	send = 2,
-	receive = 3,
-	open_receive = 4,
-	open_genesis = 5,
-	change = 6
-};
-
-class state_hashables
+// Non-final base class for block hashables, with some common fields
+class base_hashables
 {
 public:
-	state_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &);
-	state_hashables (bool &, rai::stream &);
-	state_hashables (bool &, boost::property_tree::ptree const &);
-	void hash (blake2b_state &) const;
+	base_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &);
+	base_hashables (bool &, rai::stream &);
+	base_hashables (bool &, boost::property_tree::ptree const &);
 	// Account# / public key that operates this account
 	// Uses:
 	// Bulk signature validation in advance of further ledger processing
@@ -141,6 +131,25 @@ public:
 	// Current balance of this account
 	// Allows lookup of account balance simply by looking at the head block
 	rai::amount balance;
+};
+
+enum class state_block_subtype : uint8_t
+{
+	undefined = 0,
+	send = 2,
+	receive = 3,
+	open_receive = 4,
+	open_genesis = 5,
+	change = 6
+};
+
+class state_hashables : public base_hashables
+{
+public:
+	state_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &);
+	state_hashables (bool &, rai::stream &);
+	state_hashables (bool &, boost::property_tree::ptree const &);
+	void hash (blake2b_state &) const;
 	// Link field contains source block_hash if receiving, destination account if sending
 	rai::uint256_union link;
 };

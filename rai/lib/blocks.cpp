@@ -167,13 +167,12 @@ rai::block_hash rai::base_block::hash () const
 }
 
 // if time is 0, current time is taken
-rai::state_hashables::state_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a) :
+rai::base_hashables::base_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a) :
 account (account_a),
 creation_time (creation_time_a),
 previous (previous_a),
 representative (representative_a),
-balance (balance_a),
-link (link_a)
+balance (balance_a)
 {
 	if (creation_time_a == 0)
 	{
@@ -181,8 +180,9 @@ link (link_a)
 	}
 }
 
-rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a)
+rai::base_hashables::base_hashables (bool & error_a, rai::stream & stream_a)
 {
+	if (error_a) return;
 	error_a = rai::read (stream_a, account);
 	if (error_a) return;
 	error_a = creation_time.data.deserialize (stream_a);
@@ -192,12 +192,11 @@ rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a)
 	error_a = rai::read (stream_a, representative);
 	if (error_a) return;
 	error_a = balance.deserialize (stream_a);
-	if (error_a) return;
-	error_a = rai::read (stream_a, link);
 }
 
-rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptree const & tree_a)
+rai::base_hashables::base_hashables (bool & error_a, boost::property_tree::ptree const & tree_a)
 {
+	if (error_a) return;
 	try
 	{
 		auto account_l (tree_a.get<std::string> ("account"));
@@ -205,7 +204,6 @@ rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptr
 		auto previous_l (tree_a.get<std::string> ("previous"));
 		auto representative_l (tree_a.get<std::string> ("representative"));
 		auto balance_l (tree_a.get<std::string> ("balance"));
-		auto link_l (tree_a.get<std::string> ("link"));
 		error_a = account.decode_account (account_l);
 		if (error_a) return;
 		error_a = creation_time.data.decode_dec (creation_time_l);
@@ -215,7 +213,34 @@ rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptr
 		error_a = representative.decode_account (representative_l);
 		if (error_a) return;
 		error_a = balance.decode_dec (balance_l);
-		if (error_a) return;
+	}
+	catch (std::runtime_error const &)
+	{
+		error_a = true;
+	}
+}
+
+// if time is 0, current time is taken
+rai::state_hashables::state_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a) :
+base_hashables (account_a, previous_a, creation_time_a, representative_a, balance_a),
+link (link_a)
+{
+}
+
+rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a) :
+base_hashables (error_a, stream_a)
+{
+	if (error_a) return;
+	error_a = rai::read (stream_a, link);
+}
+
+rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptree const & tree_a) :
+base_hashables (error_a, tree_a)
+{
+	if (error_a) return;
+	try
+	{
+		auto link_l (tree_a.get<std::string> ("link"));
 		error_a = link.decode_account (link_l) && link.decode_hex (link_l);
 	}
 	catch (std::runtime_error const &)
