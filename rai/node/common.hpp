@@ -90,7 +90,7 @@ struct ip_address_hash<8>
 	{
 		uint64_t big (ip_address_hash_raw (ip_address_a));
 		uint32_t result (static_cast<uint32_t> (big) ^ static_cast<uint32_t> (big >> 32));
-		return result;	
+		return result;
 	}
 };
 template <>
