@@ -147,14 +147,14 @@ std::string rai::short_timestamp::to_date_string_local () const
 	return ss.str ();
 }
 
-std::string rai::block::to_json ()
+std::string rai::base_block::to_json () const
 {
 	std::string result;
 	serialize_json (result);
 	return result;
 }
 
-rai::block_hash rai::block::hash () const
+rai::block_hash rai::base_block::hash () const
 {
 	rai::uint256_union result;
 	blake2b_state hash_l;
@@ -239,7 +239,7 @@ void rai::state_hashables::hash (blake2b_state & hash_a) const
 // if time is 0, current time is taken
 rai::state_block::state_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
 hashables (account_a, previous_a, creation_time_a, representative_a, balance_a, link_a),
-signature (rai::sign_message (prv_a, pub_a, hash ())),
+signature (rai::sign_message (prv_a, pub_a, rai::base_block::hash ())),
 work (work_a)
 {
 }

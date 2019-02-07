@@ -69,12 +69,13 @@ public:
 	uint32_struct data;
 };
 
+// Abstract base class (interface) for blocks.
 class block
 {
 public:
 	// Return a digest of the hashables in this block.
-	rai::block_hash hash () const;
-	std::string to_json ();
+	virtual rai::block_hash hash () const = 0;
+	virtual std::string to_json () const = 0;
 	virtual void hash (blake2b_state &) const = 0;
 	virtual uint64_t block_work () const = 0;
 	virtual void block_work_set (uint64_t) = 0;
@@ -97,6 +98,16 @@ public:
 	virtual rai::signature block_signature () const = 0;
 	virtual void signature_set (rai::uint512_union const &) = 0;
 	virtual ~block () = default;
+};
+
+// Non-final base class for blocks, with some common fields and implementations.
+class base_block : public block
+{
+public:
+	// Return a digest of the hashables in this block.
+	rai::block_hash hash () const override;
+	std::string to_json () const override;
+	virtual void hash (blake2b_state &) const = 0;
 };
 
 enum class state_block_subtype : uint8_t
@@ -134,7 +145,7 @@ public:
 	rai::uint256_union link;
 };
 
-class state_block : public rai::block
+class state_block : public rai::base_block
 {
 public:
 	state_block (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &, rai::raw_key const &, rai::public_key const &, uint64_t);
