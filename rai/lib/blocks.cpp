@@ -208,7 +208,8 @@ balance (balance_a)
 
 rai::base_hashables::base_hashables (bool & error_a, rai::stream & stream_a)
 {
-	if (error_a) return;
+	if (error_a)
+		return;
 	error_a = rai::read (stream_a, account);
 	if (error_a) return;
 	error_a = creation_time.data.deserialize (stream_a);
@@ -222,7 +223,8 @@ rai::base_hashables::base_hashables (bool & error_a, rai::stream & stream_a)
 
 rai::base_hashables::base_hashables (bool & error_a, boost::property_tree::ptree const & tree_a)
 {
-	if (error_a) return;
+	if (error_a)
+		return;
 	try
 	{
 		auto account_l (tree_a.get<std::string> ("account"));
@@ -256,14 +258,16 @@ link (link_a)
 rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a) :
 base_hashables (error_a, stream_a)
 {
-	if (error_a) return;
+	if (error_a)
+		return;
 	error_a = rai::read (stream_a, link);
 }
 
 rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptree const & tree_a) :
 base_hashables (error_a, tree_a)
 {
-	if (error_a) return;
+	if (error_a)
+		return;
 	try
 	{
 		auto link_l (tree_a.get<std::string> ("link"));
