@@ -30,9 +30,9 @@ TEST (transaction_block, empty)
 	rai::keypair key1;
 	rai::state_block block (key1.pub, 0, 0, rai::genesis_account, 13, 1, key1.prv, key1.pub, 2);
 	rai::uint256_union hash (block.hash ());
-	ASSERT_FALSE (rai::validate_message (key1.pub, hash, block.signature));
+	ASSERT_FALSE (rai::validate_message (key1.pub, hash, block.signature_get ()));
 	block.signature.bytes[32] ^= 0x1;
-	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature));
+	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature_get ()));
 }
 
 TEST (uint512_union, parse_zero)
@@ -205,8 +205,8 @@ TEST (state_block, serialization)
 	block2.hashables.representative.clear ();
 	block2.hashables.balance.clear ();
 	block2.hashables.link.clear ();
-	block2.signature.clear ();
-	block2.work = 0;
+	block2.signature_set (rai::uint512_union (0));
+	block2.work_set (0);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
 	ASSERT_FALSE (block2.deserialize (stream2));
 	ASSERT_EQ (block1, block2);
@@ -225,8 +225,8 @@ TEST (state_block, serialization)
 	block3.hashables.representative.clear ();
 	block3.hashables.balance.clear ();
 	block3.hashables.link.clear ();
-	block3.signature.clear ();
-	block3.work = 0;
+	block3.signature_set (rai::uint512_union (0));
+	block3.work_set (0);
 	ASSERT_FALSE (block3.deserialize_json (tree));
 	ASSERT_EQ (block1, block3);
 }
