@@ -324,7 +324,7 @@ TEST (wallet, process_block)
 	std::string balance;
 	send.hashables.balance.encode_hex (balance);
 	std::string signature;
-	send.signature.encode_hex (signature);
+	send.signature_get ().encode_hex (signature);
 	std::string block_json;
 	send.serialize_json (block_json);
 	block_json.erase (std::remove (block_json.begin (), block_json.end (), '\n'), block_json.end ());
