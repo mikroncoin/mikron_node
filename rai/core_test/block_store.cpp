@@ -54,7 +54,7 @@ TEST (block_store, add_nonempty_block)
 	rai::keypair key1;
 	rai::state_block block (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
-	block.signature = rai::sign_message (key1.prv, key1.pub, hash1);
+	block.signature_set (rai::sign_message (key1.prv, key1.pub, hash1));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto latest1 (store.block_get (transaction, hash1));
 	ASSERT_EQ (nullptr, latest1);
@@ -72,14 +72,14 @@ TEST (block_store, add_two_items)
 	rai::keypair key1;
 	rai::state_block block (1, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
-	block.signature = rai::sign_message (key1.prv, key1.pub, hash1);
+	block.signature_set (rai::sign_message (key1.prv, key1.pub, hash1));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto latest1 (store.block_get (transaction, hash1));
 	ASSERT_EQ (nullptr, latest1);
 	rai::state_block block2 (3, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	block2.hashables.account = 3;
 	rai::uint256_union hash2 (block2.hash ());
-	block2.signature = rai::sign_message (key1.prv, key1.pub, hash2);
+	block2.signature_set (rai::sign_message (key1.prv, key1.pub, hash2));
 	auto latest2 (store.block_get (transaction, hash2));
 	ASSERT_EQ (nullptr, latest2);
 	store.block_put (transaction, hash1, block);

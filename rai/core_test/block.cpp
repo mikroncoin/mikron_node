@@ -31,7 +31,9 @@ TEST (transaction_block, empty)
 	rai::state_block block (key1.pub, 0, 0, rai::genesis_account, 13, 1, key1.prv, key1.pub, 2);
 	rai::uint256_union hash (block.hash ());
 	ASSERT_FALSE (rai::validate_message (key1.pub, hash, block.signature_get ()));
-	block.signature.bytes[32] ^= 0x1;
+	auto signature (block.signature_get ());
+	signature.bytes[32] ^= 0x1;
+	block.signature_set (signature);
 	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature_get ()));
 }
 

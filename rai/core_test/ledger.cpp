@@ -1242,7 +1242,7 @@ TEST (ledger, fail_open_bad_signature)
 	rai::state_block block1 (::ledger_create_send_state_block_helper (genesis.block (), key1.pub, 1, rai::test_genesis_key));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, block1).code);
 	rai::state_block block2 (::ledger_create_open_state_block_helper (block1, 1, key1.pub, rai::genesis_amount - 1, key1));
-	block2.signature.clear ();
+	block2.signature_set (rai::uint512_union ());
 	ASSERT_EQ (rai::process_result::bad_signature, ledger.process (transaction, block2).code);
 }
 
