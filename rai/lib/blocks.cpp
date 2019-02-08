@@ -293,9 +293,10 @@ void rai::state_hashables::hash (blake2b_state & hash_a) const
 
 // if time is 0, current time is taken
 rai::state_block::state_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
-base_block (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()), work_a),
+base_block (uint512_union (), work_a),
 hashables (account_a, previous_a, creation_time_a, representative_a, balance_a, link_a)
 {
+	signature_set (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()));
 }
 
 rai::state_block::state_block (bool & error_a, rai::stream & stream_a) :
