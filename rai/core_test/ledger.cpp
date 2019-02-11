@@ -10,12 +10,12 @@ using namespace std::chrono_literals;
 // Helper methods introduced when switched from legacy block types to state block, to reduce the effort of test updates
 rai::state_block ledger_create_send_state_block_helper (rai::state_block const & prev_block_a, rai::account const & destination_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, prev_block_a.hashables.representative, balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, prev_block_a.representative (), balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
 }
 
 rai::state_block ledger_create_receive_state_block_helper (rai::state_block const & prev_block_a, rai::state_block const & source_send_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, prev_block_a.hashables.representative, balance_a, source_send_a.hash (), keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, prev_block_a.representative (), balance_a, source_send_a.hash (), keys_a.prv, keys_a.pub, 0);
 }
 
 rai::state_block ledger_create_open_state_block_helper (rai::state_block const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::keypair const & keys_a)
@@ -25,7 +25,7 @@ rai::state_block ledger_create_open_state_block_helper (rai::state_block const &
 
 rai::state_block ledger_create_change_state_block_helper (rai::state_block const & prev_block_a, rai::account const & representative_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, representative_a, prev_block_a.hashables.balance, 0, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, representative_a, prev_block_a.balance (), 0, keys_a.prv, keys_a.pub, 0);
 }
 
 // Init returns an error if it can't open files at the path

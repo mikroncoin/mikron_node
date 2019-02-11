@@ -493,6 +493,11 @@ rai::amount rai::state_block::balance () const
 	return hashables.balance;
 }
 
+rai::uint256_union rai::state_block::link () const
+{
+	return hashables.link;
+}
+
 rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_balance_a, rai::timestamp_t previous_block_time) const
 {
 	// if there is no previous: open

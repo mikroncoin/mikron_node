@@ -729,8 +729,8 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash (0));
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, genesis_block->creation_time ().number (), 1 });
-	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->balance (), genesis_block->creation_time ().number (), 1 });
+	store_a.representation_put (transaction_a, genesis_account, genesis_block->balance ().number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
 }

@@ -320,9 +320,9 @@ TEST (wallet, process_block)
 	ASSERT_EQ (wallet->block_entry.window, wallet->main_stack->currentWidget ());
 	rai::state_block send (rai::test_genesis_key.pub, latest, 0, rai::test_genesis_key.pub, 0, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest));
 	std::string previous;
-	send.hashables.previous.encode_hex (previous);
+	send.previous ().encode_hex (previous);
 	std::string balance;
-	send.hashables.balance.encode_hex (balance);
+	send.balance ().encode_hex (balance);
 	std::string signature;
 	send.signature_get ().encode_hex (signature);
 	std::string block_json;

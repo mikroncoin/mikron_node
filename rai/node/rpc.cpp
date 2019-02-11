@@ -1431,12 +1431,12 @@ public:
 		if (raw)
 		{
 			tree.put ("type", "state");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("link", block_a.hashables.link.to_string ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("link", block_a.link ().to_string ());
+			tree.put ("previous", block_a.previous ().to_string ());
 		}
-		auto cur_balance (block_a.hashables.balance.number ());
-		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		auto cur_balance (block_a.balance ().number ());
+		auto previous_balance = handler.node.ledger.balance (transaction, block_a.previous ());
 		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
 		switch (subtype)
@@ -1450,9 +1450,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("amount", block_a.balance ().to_string_dec ());
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::open_genesis:
@@ -1464,9 +1464,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", block_a.hashables.account.to_account ()); // self
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("amount", block_a.balance ().to_string_dec ());
+			tree.put ("account", block_a.account ().to_account ()); // self
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::send:
@@ -1478,9 +1478,9 @@ public:
 			{
 				tree.put ("type", "send");
 			}
-			tree.put ("account", block_a.hashables.link.to_account ());
+			tree.put ("account", block_a.link ().to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::receive:
@@ -1492,9 +1492,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		// epoch and undefined not handled

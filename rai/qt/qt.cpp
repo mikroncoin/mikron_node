@@ -515,11 +515,11 @@ public:
 	{
 		block_time = block_a.creation_time ().number ();
 		rai::timestamp_t block_time = block_a.creation_time ().number ();
-		balance = block_a.hashables.balance.number ();
+		balance = block_a.balance ().number ();
 		rai::amount_t previous_balance (0);
-		if (!block_a.hashables.previous.is_zero ())
+		if (!block_a.previous ().is_zero ())
 		{
-			previous_balance = ledger.balance_with_manna (transaction, block_a.hashables.previous, block_time);
+			previous_balance = ledger.balance_with_manna (transaction, block_a.previous (), block_time);
 		}
 		rai::state_block_subtype subtype (ledger.state_subtype (transaction, block_a));
 		switch (subtype)
@@ -527,27 +527,27 @@ public:
 			case rai::state_block_subtype::send:
 				type = "Send";
 				amount = previous_balance - balance;
-				account = block_a.hashables.link;
+				account = block_a.link ();
 				break;
 			case rai::state_block_subtype::receive:
 				type = "Receive";
 				amount = balance - previous_balance;
-				account = ledger.account (transaction, block_a.hashables.link);
+				account = ledger.account (transaction, block_a.link ());
 				break;
 			case rai::state_block_subtype::open_receive:
 				type = "Receive";
 				amount = balance;
-				account = ledger.account (transaction, block_a.hashables.link);
+				account = ledger.account (transaction, block_a.link ());
 				break;
 			case rai::state_block_subtype::open_genesis:
 				type = "Open";
 				amount = balance;
-				account = block_a.hashables.account; // self
+				account = block_a.account (); // self
 				break;
 			case rai::state_block_subtype::change:
 				type = "Change";
 				amount = 0;
-				account = block_a.hashables.representative;
+				account = block_a.representative ();
 				break;
 			case rai::state_block_subtype::undefined:
 			default:

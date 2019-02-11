@@ -170,12 +170,12 @@ TEST (state_block, serialization)
 	rai::keypair key1;
 	rai::keypair key2;
 	rai::state_block block1 (key1.pub, 1, 12345, key2.pub, 2, 4, key1.prv, key1.pub, 5);
-	ASSERT_EQ (key1.pub, block1.hashables.account);
+	ASSERT_EQ (key1.pub, block1.account ());
 	ASSERT_EQ (rai::block_hash (1), block1.previous ());
 	ASSERT_EQ (rai::short_timestamp (12345).data.number (), block1.creation_time ().data.number ());
-	ASSERT_EQ (key2.pub, block1.hashables.representative);
-	ASSERT_EQ (rai::amount (2), block1.hashables.balance);
-	ASSERT_EQ (rai::uint256_union (4), block1.hashables.link);
+	ASSERT_EQ (key2.pub, block1.representative ());
+	ASSERT_EQ (rai::amount (2), block1.balance ());
+	ASSERT_EQ (rai::uint256_union (4), block1.link ());
 	std::vector<uint8_t> bytes;
 	{
 		rai::vectorstream stream (bytes);
@@ -194,16 +194,16 @@ TEST (state_block, serialization)
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	rai::state_block block2 (error1, stream);
 	ASSERT_FALSE (error1);
-	ASSERT_EQ (key1.pub, block2.hashables.account);
+	ASSERT_EQ (key1.pub, block2.account ());
 	ASSERT_EQ (rai::block_hash (1), block2.previous ());
 	ASSERT_EQ (rai::short_timestamp (12345).data.number (), block2.creation_time ().data.number ());
-	ASSERT_EQ (key2.pub, block2.hashables.representative);
-	ASSERT_EQ (rai::amount (2), block2.hashables.balance);
-	ASSERT_EQ (rai::uint256_union (4), block2.hashables.link);
+	ASSERT_EQ (key2.pub, block2.representative ());
+	ASSERT_EQ (rai::amount (2), block2.balance ());
+	ASSERT_EQ (rai::uint256_union (4), block2.link ());
 	ASSERT_EQ (block1, block2);
 	block2.hashables.account.clear ();
 	block2.hashables.previous.clear ();
-	block2.hashables.creation_time.data.decode_dec ("0");
+	block2.creation_time ().data.decode_dec ("0");
 	block2.hashables.representative.clear ();
 	block2.hashables.balance.clear ();
 	block2.hashables.link.clear ();
@@ -223,7 +223,7 @@ TEST (state_block, serialization)
 	ASSERT_EQ (block1, block3);
 	block3.hashables.account.clear ();
 	block3.hashables.previous.clear ();
-	block2.hashables.creation_time.data.decode_dec ("0");
+	block2.creation_time ().data.decode_dec ("0");
 	block3.hashables.representative.clear ();
 	block3.hashables.balance.clear ();
 	block3.hashables.link.clear ();

@@ -178,6 +178,7 @@ public:
 	rai::account account () const override;
 	rai::account representative () const override;
 	rai::amount balance () const override;
+	rai::uint256_union link () const;
 	void serialize (rai::stream &) const override;
 	void serialize_json (std::string &) const override;
 	bool deserialize (rai::stream &);
