@@ -182,8 +182,11 @@ union uint512_union
 	rai::uint512_t number () const;
 	std::string to_string () const;
 };
-// Only signatures are 512 bit.
+
+// Signatures are 512 bit.
 using signature = uint512_union;
+// Shott UTF-8 string
+using short_string = uint512_union;
 
 rai::uint512_union sign_message (rai::raw_key const &, rai::public_key const &, rai::uint256_union const &);
 bool validate_message (rai::public_key const &, rai::uint256_union const &, rai::uint512_union const &);
