@@ -293,7 +293,7 @@ int main (int argc, char * const * argv)
 			{
 				auto previous (block.previous ());
 				previous.qwords[0] += 1;
-				block.previous_set (previous);				
+				block.previous_set (previous);
 				auto begin1 (std::chrono::high_resolution_clock::now ());
 				for (uint64_t t (0); t < 1000000; ++t)
 				{

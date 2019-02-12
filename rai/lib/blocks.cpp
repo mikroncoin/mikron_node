@@ -507,7 +507,8 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_b
 
 bool rai::state_block::is_valid_open_subtype () const
 {
-	if (base_hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (has_previous ()) return false;
 	if (base_hashables.account != rai::genesis_account)
 	{
@@ -525,7 +526,8 @@ bool rai::state_block::is_valid_open_subtype () const
 bool rai::state_block::is_valid_send_or_receive_subtype () const
 {
 	// balance change is not known
-	if (base_hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (!has_previous ()) return false;
 	if (!has_link ()) return false;
 	return true;
@@ -533,7 +535,8 @@ bool rai::state_block::is_valid_send_or_receive_subtype () const
 
 bool rai::state_block::is_valid_change_subtype () const
 {
-	if (base_hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (!has_representative ()) return false;
 	if (!has_previous ()) return false;
 	if (has_link ()) return false;
