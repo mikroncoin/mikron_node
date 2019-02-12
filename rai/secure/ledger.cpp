@@ -66,8 +66,7 @@ public:
 		assert (!error);
 		//auto previous_version (ledger.store.block_version (transaction, block_a.previous ()));
 		auto previous_block (ledger.store.block_get (transaction, block_a.previous ()));
-		ledger.change_latest (transaction, block_a.account (), block_a.previous (), representative, previous_balance, 
-			previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1, false);
+		ledger.change_latest (transaction, block_a.account (), block_a.previous (), representative, previous_balance, previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1, false);
 
 		auto previous (ledger.store.block_get (transaction, block_a.previous ()));
 		if (previous != nullptr)

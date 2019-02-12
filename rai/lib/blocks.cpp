@@ -147,51 +147,6 @@ std::string rai::short_timestamp::to_date_string_local () const
 	return ss.str ();
 }
 
-rai::base_block::base_block (rai::signature const & signature_a, uint64_t work_a) :
-signature (signature_a),
-work (work_a)
-{
-}
-
-rai::block_hash rai::base_block::hash () const
-{
-	rai::uint256_union result;
-	blake2b_state hash_l;
-	auto status (blake2b_init (&hash_l, sizeof (result.bytes)));
-	assert (status == 0);
-	hash (hash_l);
-	status = blake2b_final (&hash_l, result.bytes.data (), sizeof (result.bytes));
-	assert (status == 0);
-	return result;
-}
-
-std::string rai::base_block::to_json () const
-{
-	std::string result;
-	serialize_json (result);
-	return result;
-}
-
-rai::signature const & rai::base_block::signature_get () const
-{
-	return signature;
-}
-
-void rai::base_block::signature_set (rai::uint512_union const & signature_a)
-{
-	signature = signature_a;
-}
-
-uint64_t rai::base_block::work_get () const
-{
-	return work.number ();
-}
-
-void rai::base_block::work_set (uint64_t work_a)
-{
-	work = work_a;
-}
-
 // if time is 0, current time is taken
 rai::base_hashables::base_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a) :
 account (account_a),
@@ -246,6 +201,62 @@ rai::base_hashables::base_hashables (bool & error_a, boost::property_tree::ptree
 	{
 		error_a = true;
 	}
+}
+
+void rai::base_hashables::hash (blake2b_state & hash_a) const
+{
+	blake2b_update (&hash_a, account.bytes.data (), sizeof (account.bytes));
+	uint32_t creation_time_big_endian (creation_time.data.number_big_endian ());
+	blake2b_update (&hash_a, &creation_time_big_endian, sizeof (creation_time_big_endian));
+	blake2b_update (&hash_a, previous.bytes.data (), sizeof (previous.bytes));
+	blake2b_update (&hash_a, representative.bytes.data (), sizeof (representative.bytes));
+	uint64_t balance_big_endian (balance.number_big_endian ());
+	blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
+}
+
+rai::base_block::base_block (rai::signature const & signature_a, uint64_t work_a) :
+signature (signature_a),
+work (work_a)
+{
+}
+
+rai::block_hash rai::base_block::hash () const
+{
+	rai::uint256_union result;
+	blake2b_state hash_l;
+	auto status (blake2b_init (&hash_l, sizeof (result.bytes)));
+	assert (status == 0);
+	hash (hash_l);
+	status = blake2b_final (&hash_l, result.bytes.data (), sizeof (result.bytes));
+	assert (status == 0);
+	return result;
+}
+
+std::string rai::base_block::to_json () const
+{
+	std::string result;
+	serialize_json (result);
+	return result;
+}
+
+rai::signature const & rai::base_block::signature_get () const
+{
+	return signature;
+}
+
+void rai::base_block::signature_set (rai::uint512_union const & signature_a)
+{
+	signature = signature_a;
+}
+
+uint64_t rai::base_block::work_get () const
+{
+	return work.number ();
+}
+
+void rai::base_block::work_set (uint64_t work_a)
+{
+	work = work_a;
 }
 
 // if time is 0, current time is taken

@@ -76,7 +76,6 @@ public:
 	// Return a digest of the hashables in this block.
 	virtual rai::block_hash hash () const = 0;
 	virtual std::string to_json () const = 0;
-	virtual void hash (blake2b_state &) const = 0;
 	virtual uint64_t work_get () const = 0;
 	virtual void work_set (uint64_t) = 0;
 	// Block creation time, seconds since short_timestamp_epoch, 4-byte
@@ -100,24 +99,6 @@ public:
 	virtual ~block () = default;
 };
 
-// Non-final base class for blocks, with some common fields and implementations.
-class base_block : public block
-{
-public:
-	base_block (rai::signature const &, uint64_t);
-	// Return a digest of the hashables in this block.
-	virtual rai::block_hash hash () const override;
-	virtual std::string to_json () const override;
-	virtual void hash (blake2b_state &) const = 0;
-	virtual rai::signature const & signature_get () const override;
-	virtual void signature_set (rai::uint512_union const &) override;
-	virtual uint64_t work_get () const override;
-	virtual void work_set (uint64_t) override;
-protected:
-	rai::signature signature;
-	rai::work work;
-};
-
 // Non-final base class for block hashables, with some common fields
 class base_hashables
 {
@@ -125,6 +106,7 @@ public:
 	base_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &);
 	base_hashables (bool &, rai::stream &);
 	base_hashables (bool &, boost::property_tree::ptree const &);
+	void hash (blake2b_state &) const;
 	// Account# / public key that operates this account
 	// Uses:
 	// Bulk signature validation in advance of further ledger processing
@@ -139,6 +121,24 @@ public:
 	// Current balance of this account
 	// Allows lookup of account balance simply by looking at the head block
 	rai::amount balance;
+};
+
+// Non-final base class for blocks, with some common fields and implementations.
+class base_block : public block
+{
+public:
+	base_block (rai::signature const &, uint64_t);
+	// Return a digest of the hashables in this block.
+	rai::block_hash hash () const override;
+	virtual void hash (blake2b_state &) const = 0;
+	virtual std::string to_json () const override;
+	virtual rai::signature const & signature_get () const override;
+	virtual void signature_set (rai::uint512_union const &) override;
+	virtual uint64_t work_get () const override;
+	virtual void work_set (uint64_t) override;
+protected:
+	rai::signature signature;
+	rai::work work;
 };
 
 enum class state_block_subtype : uint8_t
