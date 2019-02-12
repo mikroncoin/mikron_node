@@ -77,7 +77,7 @@ TEST (block_store, add_two_items)
 	auto latest1 (store.block_get (transaction, hash1));
 	ASSERT_EQ (nullptr, latest1);
 	rai::state_block block2 (3, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
-	block2.hashables.account = 3;
+	block2.account_set (3);
 	rai::uint256_union hash2 (block2.hash ());
 	block2.signature_set (rai::sign_message (key1.prv, key1.pub, hash2));
 	auto latest2 (store.block_get (transaction, hash2));
@@ -339,7 +339,7 @@ TEST (block_store, two_block)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::state_block block1 (1, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
-	block1.hashables.account = 1;
+	block1.account_set (1);
 	std::vector<rai::block_hash> hashes;
 	std::vector<rai::state_block> blocks;
 	hashes.push_back (block1.hash ());

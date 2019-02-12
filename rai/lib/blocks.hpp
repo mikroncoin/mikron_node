@@ -103,9 +103,8 @@ public:
 class base_hashables
 {
 public:
+	base_hashables ();
 	base_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &);
-	base_hashables (bool &, rai::stream &);
-	base_hashables (bool &, boost::property_tree::ptree const &);
 	void hash (blake2b_state &) const;
 	// Account# / public key that operates this account
 	// Uses:
@@ -127,16 +126,34 @@ public:
 class base_block : public block
 {
 public:
-	base_block (rai::signature const &, uint64_t);
+	base_block ();
+	base_block (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::signature const &, uint64_t);
 	// Return a digest of the hashables in this block.
 	rai::block_hash hash () const override;
 	virtual void hash (blake2b_state &) const = 0;
+	virtual bool deserialize (rai::stream &) = 0;
+	virtual bool deserialize_json (boost::property_tree::ptree const &) = 0;
 	virtual std::string to_json () const override;
+	rai::short_timestamp creation_time () const override;
+	rai::block_hash previous () const override;
+	rai::block_hash root () const override;
+	rai::account account () const override;
+	rai::account representative () const override;
+	rai::amount balance () const override;
+	rai::block_hash source () const override;
+	bool has_previous () const;
+	bool has_representative () const;
+	void previous_set (rai::block_hash const &);
+	void account_set (rai::account const &);
+	void representative_set (rai::account const &);
+	void balance_set (rai::amount const &);
 	virtual rai::signature const & signature_get () const override;
 	virtual void signature_set (rai::uint512_union const &) override;
 	virtual uint64_t work_get () const override;
 	virtual void work_set (uint64_t) override;
+
 protected:
+	rai::base_hashables base_hashables;
 	rai::signature signature;
 	rai::work work;
 };
@@ -151,12 +168,11 @@ enum class state_block_subtype : uint8_t
 	change = 6
 };
 
-class state_hashables : public base_hashables
+class state_hashables
 {
 public:
-	state_hashables (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::uint256_union const &);
-	state_hashables (bool &, rai::stream &);
-	state_hashables (bool &, boost::property_tree::ptree const &);
+	state_hashables ();
+	state_hashables (rai::uint256_union const &);
 	void hash (blake2b_state &) const;
 	// Link field contains source block_hash if receiving, destination account if sending
 	rai::uint256_union link;
@@ -171,18 +187,11 @@ public:
 	virtual ~state_block () = default;
 	using rai::block::hash;
 	void hash (blake2b_state &) const override;
-	rai::short_timestamp creation_time () const override;
-	rai::block_hash previous () const override;
-	rai::block_hash source () const override;
-	rai::block_hash root () const override;
-	rai::account account () const override;
-	rai::account representative () const override;
-	rai::amount balance () const override;
 	rai::uint256_union link () const;
+	virtual bool deserialize (rai::stream &) override;
+	virtual bool deserialize_json (boost::property_tree::ptree const &) override;
 	void serialize (rai::stream &) const override;
 	void serialize_json (std::string &) const override;
-	bool deserialize (rai::stream &);
-	bool deserialize_json (boost::property_tree::ptree const &);
 	void visit (rai::block_visitor &) const override;
 	rai::block_type type () const override;
 	bool operator== (rai::block const &) const override;
@@ -192,9 +201,7 @@ public:
 	bool is_valid_open_subtype () const;
 	bool is_valid_send_or_receive_subtype () const;
 	bool is_valid_change_subtype () const;
-	bool has_previous () const;
 	bool has_link () const;
-	bool has_representative () const;
 	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
 };

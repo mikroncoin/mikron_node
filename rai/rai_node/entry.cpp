@@ -182,7 +182,9 @@ int main (int argc, char * const * argv)
 			std::cerr << "Starting generation profiling\n";
 			for (uint64_t i (0); true; ++i)
 			{
-				block.hashables.previous.qwords[0] += 1;
+				auto previous (block.previous ());
+				previous.qwords[0] += 1;
+				block.previous_set (previous);
 				auto begin1 (std::chrono::high_resolution_clock::now ());
 				block.work_set (work.generate (block.root ()));
 				auto end1 (std::chrono::high_resolution_clock::now ());
@@ -252,7 +254,9 @@ int main (int argc, char * const * argv)
 							std::cerr << boost::str (boost::format ("Starting OpenCL generation profiling. Platform: %1%. Device: %2%. Threads: %3%\n") % platform % device % threads);
 							for (uint64_t i (0); true; ++i)
 							{
-								block.hashables.previous.qwords[0] += 1;
+								auto previous (block.previous ());
+								previous.qwords[0] += 1;
+								block.previous_set (previous);
 								auto begin1 (std::chrono::high_resolution_clock::now ());
 								block.work_set (work_pool.generate (block.root ()));
 								auto end1 (std::chrono::high_resolution_clock::now ());
@@ -287,11 +291,15 @@ int main (int argc, char * const * argv)
 			std::cerr << "Starting verification profiling\n";
 			for (uint64_t i (0); true; ++i)
 			{
-				block.hashables.previous.qwords[0] += 1;
+				auto previous (block.previous ());
+				previous.qwords[0] += 1;
+				block.previous_set (previous);				
 				auto begin1 (std::chrono::high_resolution_clock::now ());
 				for (uint64_t t (0); t < 1000000; ++t)
 				{
-					block.hashables.previous.qwords[0] += 1;
+					auto previous (block.previous ());
+					previous.qwords[0] += 1;
+					block.previous_set (previous);
 					block.work_set (t);
 					rai::work_validate (block);
 				}
