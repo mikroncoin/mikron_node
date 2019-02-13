@@ -139,8 +139,6 @@ public:
 ledger_constants globals;
 }
 
-size_t constexpr rai::state_block::size;
-
 rai::keypair const & rai::zero_key (globals.zero_key);
 rai::keypair const & rai::test_genesis_key (globals.test_genesis_key);
 rai::account const & rai::rai_test_genesis_account (globals.rai_test_genesis_account);

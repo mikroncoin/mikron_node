@@ -167,6 +167,7 @@ TEST (block, confirm_req_serialization)
 
 TEST (state_block, serialization)
 {
+	ASSERT_EQ (212, rai::state_block::size);
 	rai::keypair key1;
 	rai::keypair key2;
 	rai::state_block block1 (key1.pub, 1, 12345, key2.pub, 2, 4, key1.prv, key1.pub, 5);
@@ -321,5 +322,70 @@ TEST (state_block, subtype)
 	ASSERT_FALSE (invalid.is_valid_open_subtype ());
 	ASSERT_TRUE (invalid.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (invalid.is_valid_change_subtype ());
-	ASSERT_EQ(rai::process_result::invalid_state_block, ledger.process (transaction, invalid).code);
+	ASSERT_EQ (rai::process_result::invalid_state_block, ledger.process (transaction, invalid).code);
+}
+
+TEST (comment_block, create)
+{
+	rai::keypair key;
+	auto comment (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, "COMMENT1", key.prv, key.pub, 0));
+	ASSERT_EQ (rai::comment_block_subtype::account, comment.subtype ());
+	ASSERT_EQ ("COMMENT1", comment.comment ());
+}
+
+TEST (comment_block, raw_comment)
+{
+	auto comment1 ("COMMENT1");
+	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
+	ASSERT_EQ ('C', comment_raw1.bytes[0]);
+	ASSERT_EQ ('O', comment_raw1.bytes[1]);
+	ASSERT_EQ ('M', comment_raw1.bytes[2]);
+	ASSERT_EQ ('1', comment_raw1.bytes[7]);
+	ASSERT_EQ (0, comment_raw1.bytes[8]);
+	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
+	ASSERT_EQ ("COMMENT1", comment2);
+
+	rai::keypair key;
+	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, "COMMENT1", key.prv, key.pub, 0));
+	ASSERT_EQ ("COMMENT1", comment5.comment ());
+	ASSERT_EQ ('O', comment5.comment_raw ().bytes[1]);
+}
+
+TEST (comment_block, long_comment)
+{
+	int maxlen = 64;
+	std::string max_comment;
+	for (auto i (0); i < maxlen; ++i)
+	{
+		max_comment.append(std::to_string (i % 10));
+	}
+	std::string toolong_comment (max_comment);
+	toolong_comment.append ("EXTRA");
+
+	rai::keypair key;
+	// comment truncated
+	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, toolong_comment, key.prv, key.pub, 0));
+	ASSERT_EQ (max_comment, comment5.comment ());
+	ASSERT_EQ (maxlen, comment5.comment ().length ());
+}
+
+TEST (comment_block, utf_comment)
+{
+	// TODO UTF-8 conversion
+	std::string comment1 ("MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (23, comment1.length ());  // longer, UTF
+	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
+	ASSERT_EQ ('M', comment_raw1.bytes[0]);
+	ASSERT_EQ (195, comment_raw1.bytes[1]);
+	ASSERT_EQ ('X', comment_raw1.bytes[22]);
+	ASSERT_EQ (0, comment_raw1.bytes[23]);
+	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
+	ASSERT_EQ (comment1, comment2);
+	ASSERT_EQ (23, comment2.length ());
+}
+
+TEST (comment_block, serialization)
+{
+	ASSERT_EQ (245, rai::comment_block::size);
+	// TODO
 }

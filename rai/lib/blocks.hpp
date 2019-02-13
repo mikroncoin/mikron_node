@@ -38,7 +38,8 @@ enum class block_type : uint8_t
 	//receive = 3,
 	//open = 4,
 	//change = 5,
-	state = 6
+	state = 6,
+	comment = 7
 };
 
 using timestamp_t = uint32_t;
@@ -204,6 +205,51 @@ public:
 	bool has_link () const;
 	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint256_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::state_hashables hashables;
+};
+
+enum class comment_block_subtype : uint8_t
+{
+	undefined = 0,
+	// Comment valid for the account from now on
+	account = 1,
+	// Comment valid for the next send block only
+	send = 2
+};
+
+class comment_hashables
+{
+public:
+	comment_hashables ();
+	comment_hashables (rai::comment_block_subtype, rai::uint512_union const &);
+	void hash (blake2b_state &) const;
+	rai::comment_block_subtype subtype;
+	// Comment string, UTF-8, null-terminated
+	rai::uint512_union comment;
+};
+
+class comment_block : public rai::base_block
+{
+public:
+	comment_block (rai::account const &, rai::block_hash const &, rai::timestamp_t, rai::account const &, rai::amount const &, rai::comment_block_subtype, std::string const &, rai::raw_key const &, rai::public_key const &, uint64_t);
+	comment_block (bool &, rai::stream &);
+	comment_block (bool &, boost::property_tree::ptree const &);
+	virtual ~comment_block () = default;
+	void hash (blake2b_state &) const override;
+	rai::comment_block_subtype subtype () const;
+	static rai::uint512_union comment_string_to_raw (std::string const &);
+	static std::string comment_raw_to_string (rai::uint512_union const &);
+	rai::uint512_union const & comment_raw () const;
+	std::string comment () const;
+	virtual bool deserialize (rai::stream &) override;
+	virtual bool deserialize_json (boost::property_tree::ptree const &) override;
+	void serialize (rai::stream &) const override;
+	void serialize_json (std::string &) const override;
+	void visit (rai::block_visitor &) const override;
+	rai::block_type type () const override;
+	bool operator== (rai::block const &) const override;
+	bool operator== (rai::comment_block const &) const;
+	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::comment_block_subtype) + sizeof (rai::uint512_union) + sizeof (rai::signature) + sizeof (uint64_t);
+	rai::comment_hashables hashables;
 };
 
 class block_visitor
