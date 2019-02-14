@@ -299,7 +299,7 @@ std::error_code rai::handle_node_options (boost::program_options::variables_map 
 		std::cout << "Testing hash function" << std::endl;
 		rai::raw_key key;
 		key.data.clear ();
-		rai::send_block send (0, 0, 0, key, 0, 0);
+		//rai::send_block send (0, 0, 0, key, 0, 0);
 		std::cout << "Testing key derivation function" << std::endl;
 		rai::raw_key junk1;
 		junk1.data.clear ();

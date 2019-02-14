@@ -262,7 +262,8 @@ TEST (rpc, send)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	std::thread thread2 ([&system]() {
 		system.deadline_set (10s);
@@ -285,6 +286,43 @@ TEST (rpc, send)
 	thread2.join ();
 }
 
+TEST (rpc, send_to_self_invalid)
+{
+	rai::system system (24000, 1);
+	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	boost::property_tree::ptree request;
+	std::string wallet;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("wallet", wallet);
+	request.put ("action", "send");
+	request.put ("source", rai::test_genesis_key.pub.to_account ());
+	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	request.put ("amount", "100");
+	std::atomic<bool> done (false);
+	std::thread thread2 ([&system, &done]() {
+		system.deadline_set (10s);
+		while (!done)
+		{
+			ASSERT_NO_ERROR (system.poll ());
+		}
+	});
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	done = true;
+	ASSERT_EQ (200, response.status);
+	boost::optional<std::string> error_text (response.json.get_optional<std::string> ("error"));
+	ASSERT_FALSE (!error_text);
+	boost::optional<std::string> block_text (response.json.get_optional<std::string> ("block"));
+	ASSERT_TRUE (!block_text);
+	ASSERT_EQ (error_text.get (), "Sending to self is invalid");
+	thread2.join ();
+}
+
 TEST (rpc, send_fail)
 {
 	rai::system system (24000, 1);
@@ -296,7 +334,8 @@ TEST (rpc, send_fail)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	std::atomic<bool> done (false);
 	std::thread thread2 ([&system, &done]() {
@@ -329,7 +368,8 @@ TEST (rpc, send_work)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	request.put ("work", "1");
 	test_response response (request, rpc, system.service);
@@ -367,7 +407,8 @@ TEST (rpc, send_idempotent)
 	request.put ("wallet", wallet);
 	request.put ("action", "send");
 	request.put ("source", rai::test_genesis_key.pub.to_account ());
-	request.put ("destination", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
 	request.put ("amount", "100");
 	request.put ("id", "123abc");
 	test_response response (request, rpc, system.service);
@@ -3093,14 +3134,6 @@ TEST (rpc, block_count_type)
 	ASSERT_EQ (200, response.status);
 	std::string state_count (response.json.get<std::string> ("state"));
 	ASSERT_EQ ("3", state_count);
-	std::string send_count (response.json.get<std::string> ("send"));
-	ASSERT_EQ ("0", send_count);
-	std::string receive_count (response.json.get<std::string> ("receive"));
-	ASSERT_EQ ("0", receive_count);
-	std::string open_count (response.json.get<std::string> ("open"));
-	ASSERT_EQ ("0", open_count);
-	std::string change_count (response.json.get<std::string> ("change"));
-	ASSERT_EQ ("0", change_count);
 }
 
 TEST (rpc, ledger)
@@ -3303,8 +3336,8 @@ TEST (rpc, block_create)
 	auto change_text (response4.json.get<std::string> ("block"));
 	std::stringstream block_stream4 (change_text);
 	boost::property_tree::read_json (block_stream4, block_l);
-	auto change_block (rai::deserialize_block_json (block_l));
-	ASSERT_EQ (change.hash (), change_block->hash ());
+	auto state_block_change (rai::deserialize_block_json (block_l));
+	ASSERT_EQ (change.hash (), state_block_change->hash ());
 	ASSERT_EQ (rai::process_result::progress, node1.process (change).code);
 	rai::state_block send2 (rai::genesis_account, send.hash (), creation_time, rai::genesis_account, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (send.hash ()));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (send2).code);
@@ -3531,7 +3564,7 @@ TEST (rpc, wallet_create_fail)
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	auto node = system.nodes[0];
 	// lmdb_max_dbs should be removed once the wallet store is refactored to support more wallets.
-	for (int i = 0; i < 113; i++)
+	for (int i = 0; i < 173; i++)
 	{
 		rai::keypair key;
 		node->wallets.create (key.pub);
@@ -3544,6 +3577,7 @@ TEST (rpc, wallet_create_fail)
 	{
 		system.poll ();
 	}
+	ASSERT_EQ (200, response.status);
 	ASSERT_EQ ("Failed to create wallet. Increase lmdb_max_dbs in node config", response.json.get<std::string> ("error"));
 }
 

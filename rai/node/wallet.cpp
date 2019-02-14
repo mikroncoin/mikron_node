@@ -288,7 +288,8 @@ rai::wallet_store::wallet_store (bool & init_a, rai::kdf & kdf_a, rai::transacti
 password (0, fanout_a),
 wallet_key_mem (0, fanout_a),
 kdf (kdf_a),
-environment (transaction_a.environment)
+environment (transaction_a.environment),
+handle (0)
 {
 	init_a = false;
 	initialize (transaction_a, init_a, wallet_a);
@@ -345,7 +346,8 @@ rai::wallet_store::wallet_store (bool & init_a, rai::kdf & kdf_a, rai::transacti
 password (0, fanout_a),
 wallet_key_mem (0, fanout_a),
 kdf (kdf_a),
-environment (transaction_a.environment)
+environment (transaction_a.environment),
+handle (0)
 {
 	init_a = false;
 	initialize (transaction_a, init_a, wallet_a);
@@ -445,29 +447,43 @@ void rai::wallet_store::insert_watch (MDB_txn * transaction_a, rai::public_key c
 
 void rai::wallet_store::erase (MDB_txn * transaction_a, rai::public_key const & pub)
 {
+	assert (handle != 0);
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_del (transaction_a, handle, rai::mdb_val (pub), nullptr));
 	assert (status == 0);
 }
 
 rai::wallet_value rai::wallet_store::entry_get_raw (MDB_txn * transaction_a, rai::public_key const & pub_a)
 {
-	rai::wallet_value result;
-	rai::mdb_val value;
-	auto status (mdb_get (transaction_a, handle, rai::mdb_val (pub_a), value));
-	if (status == 0)
+	if (handle == 0)
 	{
-		result = rai::wallet_value (value);
-	}
-	else
-	{
+		rai::wallet_value result;
 		result.key.clear ();
 		result.work = 0;
+		return result;
 	}
-	return result;
+	rai::mdb_val value;
+	auto status (mdb_get (transaction_a, handle, rai::mdb_val (pub_a), value));
+	if (status != 0)
+	{
+		rai::wallet_value result;
+		result.key.clear ();
+		result.work = 0;
+		return result;
+	}
+	return rai::wallet_value (value);
 }
 
 void rai::wallet_store::entry_put_raw (MDB_txn * transaction_a, rai::public_key const & pub_a, rai::wallet_value const & entry_a)
 {
+	assert (handle != 0);
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_put (transaction_a, handle, rai::mdb_val (pub_a), entry_a.val (), 0));
 	assert (status == 0);
 }
@@ -551,7 +567,7 @@ bool rai::wallet_store::fetch (MDB_txn * transaction_a, rai::public_key const & 
 
 bool rai::wallet_store::exists (MDB_txn * transaction_a, rai::public_key const & pub)
 {
-	return !pub.is_zero () && find (transaction_a, pub) != end ();
+	return handle > 0 && !pub.is_zero () && find (transaction_a, pub) != end ();
 }
 
 void rai::wallet_store::serialize_json (MDB_txn * transaction_a, std::string & string_a)
@@ -906,8 +922,14 @@ void rai::wallet::serialize (std::string & json_a)
 
 void rai::wallet_store::destroy (MDB_txn * transaction_a)
 {
+	assert (handle != 0);
+	if (handle == 0)
+	{
+		return;
+	}
 	auto status (mdb_drop (transaction_a, handle, 1));
 	assert (status == 0);
+	handle = 0;
 }
 
 std::shared_ptr<rai::block> rai::wallet::receive_action (rai::block const & send_a, rai::account const & representative_a, rai::amount const & amount_a, bool generate_work_a)
@@ -1299,7 +1321,8 @@ rai::wallets::wallets (bool & error_a, rai::node & node_a) :
 observer ([](bool) {}),
 node (node_a),
 stopped (false),
-thread ([this]() { do_wallet_actions (); })
+thread ([this]() { do_wallet_actions (); }),
+handle (0)
 {
 	if (!error_a)
 	{
@@ -1486,12 +1509,14 @@ rai::amount_t const rai::wallets::high_priority = std::numeric_limits<rai::amoun
 
 rai::store_iterator rai::wallet_store::begin (MDB_txn * transaction_a)
 {
+	assert (handle != 0);
 	rai::store_iterator result (transaction_a, handle, rai::mdb_val (rai::uint256_union (special_count)));
 	return result;
 }
 
 rai::store_iterator rai::wallet_store::begin (MDB_txn * transaction_a, rai::uint256_union const & key)
 {
+	assert (handle != 0);
 	rai::store_iterator result (transaction_a, handle, rai::mdb_val (key));
 	return result;
 }

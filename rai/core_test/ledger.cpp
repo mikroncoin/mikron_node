@@ -409,7 +409,8 @@ TEST (ledger, representative_genesis)
 	genesis.initialize (transaction, store);
 	auto latest (ledger.latest (transaction, rai::test_genesis_key.pub));
 	ASSERT_FALSE (latest.is_zero ());
-	ASSERT_EQ (genesis.hash (), ledger.representative (transaction, latest));
+	ASSERT_EQ (genesis.hash (), latest);
+	ASSERT_EQ (rai::genesis_account, ledger.representative_get (transaction, latest));
 }
 
 TEST (ledger, weight)
@@ -2254,12 +2255,6 @@ TEST (ledger, state_receive_change_rollback)
 	ASSERT_EQ (rai::genesis_amount - rai::Gxrb_ratio, ledger.weight (transaction, rai::genesis_account));
 	ASSERT_EQ (0, ledger.weight (transaction, rep.pub));
 }
-
-/* Epoch and upgrades are no longer relevant
-TEST (ledger, epoch_blocks_general)
-TEST (ledger, epoch_blocks_receive_upgrade)
-TEST (ledger, epoch_blocks_fork)
-*/
 
 rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
 {

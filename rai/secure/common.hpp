@@ -30,69 +30,6 @@ const uint8_t protocol_version_min = 3;
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
-/**
- * Determine the balance as of this block
- */
-class balance_visitor : public rai::block_visitor
-{
-public:
-	balance_visitor (MDB_txn *, rai::block_store &);
-	virtual ~balance_visitor () = default;
-	void compute (rai::block_hash const &);
-	void send_block (rai::send_block const &) override;
-	void receive_block (rai::receive_block const &) override;
-	void open_block (rai::open_block const &) override;
-	void change_block (rai::change_block const &) override;
-	void state_block (rai::state_block const &) override;
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current_balance;
-	rai::block_hash current_amount;
-	rai::amount_t balance;
-	std::shared_ptr<rai::state_block> balance_block;
-};
-
-/**
- * Determine the amount delta resultant from this block
- */
-class amount_visitor : public rai::block_visitor
-{
-public:
-	amount_visitor (MDB_txn *, rai::block_store &);
-	virtual ~amount_visitor () = default;
-	void compute (rai::block_hash const &);
-	void send_block (rai::send_block const &) override;
-	void receive_block (rai::receive_block const &) override;
-	void open_block (rai::open_block const &) override;
-	void change_block (rai::change_block const &) override;
-	void state_block (rai::state_block const &) override;
-	void from_send (rai::block_hash const &);
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current_amount;
-	rai::block_hash current_balance;
-	rai::amount_t amount;
-};
-
-/**
- * Determine the representative for this block
- */
-class representative_visitor : public rai::block_visitor
-{
-public:
-	representative_visitor (MDB_txn * transaction_a, rai::block_store & store_a);
-	virtual ~representative_visitor () = default;
-	void compute (rai::block_hash const & hash_a);
-	void send_block (rai::send_block const & block_a) override;
-	void receive_block (rai::receive_block const & block_a) override;
-	void open_block (rai::open_block const & block_a) override;
-	void change_block (rai::change_block const & block_a) override;
-	void state_block (rai::state_block const & block_a) override;
-	MDB_txn * transaction;
-	rai::block_store & store;
-	rai::block_hash current;
-	rai::block_hash result;
-};
 
 /**
  * A key pair. The private key is generated from the random pool, or passed in
@@ -185,10 +122,6 @@ class block_counts
 public:
 	block_counts ();
 	size_t sum ();
-	size_t send;
-	size_t receive;
-	size_t open;
-	size_t change;
 	size_t state;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
@@ -276,7 +209,6 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
-extern std::string const & rai_test_genesis_legacy;
 extern rai::keypair const & test_manna_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
@@ -299,15 +231,6 @@ public:
 	rai::block_hash root () const;
 	std::unique_ptr<rai::state_block> genesis_block;
 };
-
-class genesis_legacy_with_open
-{
-public:
-	explicit genesis_legacy_with_open();
-	void initialize(MDB_txn *, rai::block_store &) const;
-	rai::block_hash hash() const;
-	std::unique_ptr<rai::open_block> genesis_block;
-}; 
 
 class manna_control
 {

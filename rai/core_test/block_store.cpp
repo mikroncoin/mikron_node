@@ -29,7 +29,7 @@ TEST (block_store, add_item)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::open_block block (0, 1, 0, rai::keypair ().prv, 0, 0);
+	rai::state_block block (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto latest1 (store.block_get (transaction, hash1));
@@ -52,7 +52,7 @@ TEST (block_store, add_nonempty_block)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::keypair key1;
-	rai::open_block block (0, 1, 0, rai::keypair ().prv, 0, 0);
+	rai::state_block block (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
 	block.signature = rai::sign_message (key1.prv, key1.pub, hash1);
 	rai::transaction transaction (store.environment, nullptr, true);
@@ -70,13 +70,13 @@ TEST (block_store, add_two_items)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::keypair key1;
-	rai::open_block block (0, 1, 1, rai::keypair ().prv, 0, 0);
+	rai::state_block block (1, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
 	block.signature = rai::sign_message (key1.prv, key1.pub, hash1);
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto latest1 (store.block_get (transaction, hash1));
 	ASSERT_EQ (nullptr, latest1);
-	rai::open_block block2 (0, 1, 3, rai::keypair ().prv, 0, 0);
+	rai::state_block block2 (3, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	block2.hashables.account = 3;
 	rai::uint256_union hash2 (block2.hash ());
 	block2.signature = rai::sign_message (key1.prv, key1.pub, hash2);
@@ -91,26 +91,6 @@ TEST (block_store, add_two_items)
 	ASSERT_NE (nullptr, latest4);
 	ASSERT_EQ (block2, *latest4);
 	ASSERT_FALSE (*latest3 == *latest4);
-}
-
-TEST (block_store, add_receive)
-{
-	bool init (false);
-	rai::block_store store (init, rai::unique_path ());
-	ASSERT_TRUE (!init);
-	rai::keypair key1;
-	rai::keypair key2;
-	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
-	rai::transaction transaction (store.environment, nullptr, true);
-	store.block_put (transaction, block1.hash (), block1);
-	rai::receive_block block (block1.hash (), 1, rai::keypair ().prv, 2, 3);
-	rai::block_hash hash1 (block.hash ());
-	auto latest1 (store.block_get (transaction, hash1));
-	ASSERT_EQ (nullptr, latest1);
-	store.block_put (transaction, hash1, block);
-	auto latest2 (store.block_get (transaction, hash1));
-	ASSERT_NE (nullptr, latest2);
-	ASSERT_EQ (block, *latest2);
 }
 
 TEST (block_store, add_pending)
@@ -191,7 +171,7 @@ TEST (bootstrap, simple)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (0, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 0, 0, 5, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -209,7 +189,7 @@ TEST (unchecked, multiple)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (4, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 4, 0, 4, 3, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -226,7 +206,7 @@ TEST (unchecked, double_put)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (4, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 4, 0, 4, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto block2 (store.unchecked_get (transaction, block1->previous ()));
 	ASSERT_TRUE (block2.empty ());
@@ -270,7 +250,7 @@ TEST (block_store, one_block)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::open_block block1 (0, 1, 0, rai::keypair ().prv, 0, 0);
+	rai::state_block block1 (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.block_put (transaction, block1.hash (), block1);
 	ASSERT_TRUE (store.block_exists (transaction, block1.hash ()));
@@ -292,7 +272,7 @@ TEST (block_store, one_bootstrap)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto block1 (std::make_shared<rai::send_block> (0, 1, 2, rai::keypair ().prv, 4, 5));
+	auto block1 (std::make_shared<rai::state_block> (4, 0, 0, 4, 2, 1, rai::keypair ().prv, 4, 5));
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.unchecked_put (transaction, block1->hash (), block1);
 	store.flush (transaction);
@@ -313,8 +293,8 @@ TEST (block_store, unchecked_begin_search)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	rai::keypair key0;
-	rai::send_block block1 (0, 1, 2, key0.prv, key0.pub, 3);
-	rai::send_block block2 (5, 6, 7, key0.prv, key0.pub, 8);
+	rai::state_block block1 (key0.pub, 0, 0, key0.pub, 2, 1, key0.prv, key0.pub, 3);
+	rai::state_block block2 (key0.pub, 5, 0, key0.pub, 7, 6, key0.prv, key0.pub, 8);
 }
 
 TEST (block_store, frontier_retrieval)
@@ -358,15 +338,15 @@ TEST (block_store, two_block)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::open_block block1 (0, 1, 1, rai::keypair ().prv, 0, 0);
+	rai::state_block block1 (1, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	block1.hashables.account = 1;
 	std::vector<rai::block_hash> hashes;
-	std::vector<rai::open_block> blocks;
+	std::vector<rai::state_block> blocks;
 	hashes.push_back (block1.hash ());
 	blocks.push_back (block1);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.block_put (transaction, hashes[0], block1);
-	rai::open_block block2 (0, 1, 2, rai::keypair ().prv, 0, 0);
+	rai::state_block block2 (2, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	hashes.push_back (block2.hash ());
 	blocks.push_back (block2);
 	store.block_put (transaction, hashes[1], block2);
@@ -454,13 +434,11 @@ TEST (block_store, roots)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::send_block send_block (0, 1, 2, rai::keypair ().prv, 4, 5);
+	rai::state_block send_block (0, 0, 0, rai::genesis_account, rai::genesis_amount - 2, 1, rai::keypair ().prv, 4, 5);
 	ASSERT_EQ (send_block.hashables.previous, send_block.root ());
-	rai::change_block change_block (0, 1, rai::keypair ().prv, 3, 4);
-	ASSERT_EQ (change_block.hashables.previous, change_block.root ());
-	rai::receive_block receive_block (0, 1, rai::keypair ().prv, 3, 4);
-	ASSERT_EQ (receive_block.hashables.previous, receive_block.root ());
-	rai::open_block open_block (0, 1, 2, rai::keypair ().prv, 4, 5);
+	rai::state_block state_block (0, 0, 0, 1, rai::genesis_amount, 0, rai::keypair ().prv, 3, 4);
+	ASSERT_EQ (state_block.hashables.previous, state_block.root ());
+	rai::state_block open_block (2, 0, 0, 1, 0, 0, rai::keypair ().prv, 4, 5);
 	ASSERT_EQ (open_block.hashables.account, open_block.root ());
 }
 
@@ -537,8 +515,8 @@ TEST (block_store, block_replace)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::send_block send1 (0, 0, 0, rai::keypair ().prv, 0, 1);
-	rai::send_block send2 (0, 0, 0, rai::keypair ().prv, 0, 2);
+	rai::state_block send1 (0, 0, 0, 0, 0, 0, rai::keypair ().prv, 0, 1);
+	rai::state_block send2 (0, 0, 0, 0, 0, 0, rai::keypair ().prv, 0, 2);
 	rai::transaction transaction (store.environment, nullptr, true);
 	store.block_put (transaction, 0, send1);
 	store.block_put (transaction, 0, send2);
@@ -553,7 +531,7 @@ TEST (block_store, block_count)
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
 	ASSERT_EQ (0, store.block_count (rai::transaction (store.environment, nullptr, false)).sum ());
-	rai::open_block block (0, 1, 0, rai::keypair ().prv, 0, 0);
+	rai::state_block block (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0);
 	rai::uint256_union hash1 (block.hash ());
 	store.block_put (rai::transaction (store.environment, nullptr, true), hash1, block);
 	ASSERT_EQ (1, store.block_count (rai::transaction (store.environment, nullptr, false)).sum ());
@@ -577,7 +555,7 @@ TEST (block_store, sequence_increment)
 	ASSERT_TRUE (!init);
 	rai::keypair key1;
 	rai::keypair key2;
-	auto block1 (std::make_shared<rai::open_block> (0, 1, 0, rai::keypair ().prv, 0, 0));
+	auto block1 (std::make_shared<rai::state_block> (0, 0, 0, 1, 0, 0, rai::keypair ().prv, 0, 0));
 	rai::transaction transaction (store.environment, nullptr, true);
 	auto vote1 (store.vote_generate (transaction, key1.pub, key1.prv, block1));
 	ASSERT_EQ (1, vote1->sequence);
@@ -813,7 +791,6 @@ TEST (block_store, upgrade_v6_v7)
 	rai::transaction transaction (store.environment, nullptr, false);
 	ASSERT_EQ (store.unchecked_end (), store.unchecked_begin (transaction));
 }
-*/
 
 // Databases need to be dropped in order to convert to dupsort compatible
 TEST (block_store, change_dupsort)
@@ -860,7 +837,6 @@ TEST (block_store, change_dupsort)
 	}
 }
 
-/*
 TEST (block_store, upgrade_v7_v8)
 {
 	auto path (rai::unique_path ());
@@ -899,7 +875,7 @@ TEST (block_store, sequence_flush)
 	ASSERT_FALSE (init);
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::keypair key1;
-	auto send1 (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	auto vote1 (store.vote_generate (transaction, key1.pub, key1.prv, send1));
 	auto seq2 (store.vote_get (transaction, vote1->account));
 	ASSERT_EQ (nullptr, seq2);
@@ -998,10 +974,8 @@ TEST (block_store, state_block)
 	ASSERT_EQ (block1, *block2);
 	auto count (store.block_count (transaction));
 	ASSERT_EQ (2, count.state);
-	ASSERT_EQ (0, count.open);
 	store.block_del (transaction, block1.hash ());
 	ASSERT_FALSE (store.block_exists (transaction, block1.hash ()));
 	auto count2 (store.block_count (transaction));
 	ASSERT_EQ (1, count2.state);
-	ASSERT_EQ (0, count.open);
 }
