@@ -630,7 +630,7 @@ std::string rai::comment_block::comment_raw_to_string (rai::uint512_union const 
 {
 	// TODO UTF-8 conversion
 	std::array<uint8_t, 64> const & data = comment_raw_a.bytes;
-	auto nullidx (std::find (data.begin(), data.end(), 0));
+	auto nullidx (std::find (data.begin (), data.end (), 0));
 	std::string comment (data.begin (), nullidx);
 	return comment;
 }
@@ -648,21 +648,29 @@ std::string rai::comment_block::comment () const
 bool rai::comment_block::deserialize (rai::stream & stream_a)
 {
 	auto error (read (stream_a, base_hashables.account));
-	if (error) return error;
+	if (error)
+		return error;
 	error = base_hashables.creation_time.data.deserialize (stream_a);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, base_hashables.previous);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, base_hashables.representative);
-	if (error) return error;
+	if (error)
+		return error;
 	error = base_hashables.balance.deserialize (stream_a);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, hashables.subtype);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, hashables.comment);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, signature);
-	if (error) return error;
+	if (error)
+		return error;
 	error = work.deserialize (stream_a);
 	return error;
 }
@@ -675,25 +683,32 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 		assert (tree_a.get<std::string> ("type") == "state");
 		auto account_l (tree_a.get<std::string> ("account"));
 		error = base_hashables.account.decode_account (account_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto creation_time_l (tree_a.get<std::string> ("creation_time"));
 		error = base_hashables.creation_time.data.decode_dec (creation_time_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto previous_l (tree_a.get<std::string> ("previous"));
 		error = base_hashables.previous.decode_hex (previous_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto representative_l (tree_a.get<std::string> ("representative"));
 		error = base_hashables.representative.decode_account (representative_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto balance_l (tree_a.get<std::string> ("balance"));
 		error = base_hashables.balance.decode_dec (balance_l);
-		if (error) return error;
-		auto comment_l (tree_a.get<std::string> ("comment_as_hex"));  // TODO comment
+		if (error)
+			return error;
+		auto comment_l (tree_a.get<std::string> ("comment_as_hex")); // TODO comment
 		error = hashables.comment.decode_hex (comment_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto work_l (tree_a.get<std::string> ("work"));
 		error = work.decode_hex (work_l);
-		if (error) return error;
+		if (error)
+			return error;
 		auto signature_l (tree_a.get<std::string> ("signature"));
 		error = signature.decode_hex (signature_l);
 	}
@@ -741,7 +756,7 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 
 void rai::comment_block::visit (rai::block_visitor & visitor_a) const
 {
-	//visitor_a.comment_block (*this);  // TODO
+	//visitor_a.comment_block (*this); // TODO
 }
 
 rai::block_type rai::comment_block::type () const

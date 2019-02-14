@@ -357,7 +357,7 @@ TEST (comment_block, long_comment)
 	std::string max_comment;
 	for (auto i (0); i < maxlen; ++i)
 	{
-		max_comment.append(std::to_string (i % 10));
+		max_comment.append (std::to_string (i % 10));
 	}
 	std::string toolong_comment (max_comment);
 	toolong_comment.append ("EXTRA");
@@ -373,7 +373,7 @@ TEST (comment_block, utf_comment)
 {
 	// TODO UTF-8 conversion
 	std::string comment1 ("MÍKRÓ+ÁÉÍÓŐÚŰX");
-	ASSERT_EQ (23, comment1.length ());  // longer, UTF
+	ASSERT_EQ (23, comment1.length ()); // longer, UTF
 	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
 	ASSERT_EQ ('M', comment_raw1.bytes[0]);
 	ASSERT_EQ (195, comment_raw1.bytes[1]);
