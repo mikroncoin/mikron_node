@@ -25,8 +25,8 @@ struct hash<rai::uint256_union>
 }
 namespace rai
 {
-const uint8_t protocol_version = 3;
-const uint8_t protocol_version_min = 3;
+const uint8_t protocol_version = 14; // Due to comment, to prevent accidental tainting TODO
+const uint8_t protocol_version_min = 14;
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
