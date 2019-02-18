@@ -100,14 +100,9 @@ public:
 void ledger_processor::state_block (rai::state_block const & block_a)
 {
 	result.code = rai::process_result::progress;
-	rai::amount prev_balance (0);
 	if (!block_a.previous ().is_zero ())
 	{
 		result.code = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous;
-		if (result.code == rai::process_result::progress)
-		{
-			prev_balance = ledger.balance (transaction, block_a.previous ());
-		}
 	}
 	if (result.code == rai::process_result::progress)
 	{
