@@ -89,7 +89,7 @@ public:
 	ledger_processor (rai::ledger &, MDB_txn *);
 	virtual ~ledger_processor () = default;
 	// Checks involving base_block members
-	rai::process_result base_block_check (rai::base_block const & block_a);
+	rai::process_result base_block_check (rai::base_block const &);
 	void state_block (rai::state_block const &) override;
 	static bool check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance);
 	static bool check_time_sequence (rai::block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance);
@@ -166,6 +166,7 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 		}
 		else
 		{
+			// Account does not yet exists
 			subtype = block_a.get_subtype (0, 0);
 			result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
 			if (result.code == rai::process_result::progress)
