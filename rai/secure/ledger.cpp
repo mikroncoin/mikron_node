@@ -79,6 +79,12 @@ public:
 		}
 		ledger.store.block_del (transaction, hash);
 	}
+
+	void comment_block (rai::comment_block const & block_a) override
+	{
+		// TODO
+	}
+
 	MDB_txn * transaction;
 	rai::ledger & ledger;
 };
@@ -91,6 +97,7 @@ public:
 	// Checks involving base_block members
 	rai::process_result base_block_check (rai::base_block const &);
 	void state_block (rai::state_block const &) override;
+	void comment_block (rai::comment_block const &) override;
 	static bool check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance);
 	static bool check_time_sequence (rai::block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance);
 	rai::ledger & ledger;
@@ -241,6 +248,11 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 	}
 	// Frontier table is unnecessary for state blocks and this also prevents old blocks from being inserted on top of state blocks
 	result.account = block_a.account ();
+}
+
+void ledger_processor::comment_block (rai::comment_block const & block_a)
+{
+	// TODO
 }
 
 bool ledger_processor::check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance)
@@ -613,6 +625,12 @@ public:
 			result &= ledger.store.block_exists (transaction, block_a.link ());
 		}
 	}
+	
+	void comment_block (rai::comment_block const & block_a) override
+	{
+		// TODO
+	}
+
 	rai::ledger & ledger;
 	MDB_txn * transaction;
 	bool result;

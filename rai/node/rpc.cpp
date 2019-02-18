@@ -1503,6 +1503,17 @@ public:
 			break;
 		}
 	}
+	void comment_block (rai::comment_block const & block_a)
+	{
+		tree.put ("type", "comment");
+		tree.put ("comment", block_a.comment ());
+		tree.put ("balance", block_a.balance ().to_string_dec ());
+		if (raw)
+		{
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("previous", block_a.previous ().to_string ());
+		}		
+	}	
 	rai::rpc_handler & handler;
 	bool raw;
 	rai::transaction & transaction;

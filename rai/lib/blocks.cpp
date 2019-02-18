@@ -756,7 +756,7 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 
 void rai::comment_block::visit (rai::block_visitor & visitor_a) const
 {
-	//visitor_a.comment_block (*this); // TODO
+	visitor_a.comment_block (*this);
 }
 
 rai::block_type rai::comment_block::type () const

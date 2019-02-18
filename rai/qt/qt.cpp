@@ -557,6 +557,16 @@ public:
 				break;
 		}
 	}
+	void comment_block (rai::comment_block const & block_a)
+	{
+		block_time = block_a.creation_time ().number ();
+		rai::timestamp_t block_time = block_a.creation_time ().number ();
+		balance = block_a.balance ().number ();
+		type = "Comment";
+		amount = 0;
+		account = block_a.account ();
+		// TODO: include comment
+	}
 	MDB_txn * transaction;
 	rai::ledger & ledger;
 	std::string type;

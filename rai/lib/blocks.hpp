@@ -234,6 +234,7 @@ public:
 	comment_block (bool &, rai::stream &);
 	comment_block (bool &, boost::property_tree::ptree const &);
 	virtual ~comment_block () = default;
+	using rai::block::hash;
 	void hash (blake2b_state &) const override;
 	rai::comment_block_subtype subtype () const;
 	static rai::uint512_union comment_string_to_raw (std::string const &);
@@ -256,6 +257,7 @@ class block_visitor
 {
 public:
 	virtual void state_block (rai::state_block const &) = 0;
+	virtual void comment_block (rai::comment_block const &) = 0;
 	virtual ~block_visitor () = default;
 };
 std::unique_ptr<rai::block> deserialize_block (rai::stream &);

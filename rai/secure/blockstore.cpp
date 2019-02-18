@@ -34,6 +34,13 @@ public:
 			fill_value (block_a);
 		}
 	}
+	void comment_block (rai::comment_block const & block_a) override
+	{
+		if (!block_a.previous ().is_zero ())
+		{
+			fill_value (block_a);
+		}
+	}
 	MDB_txn * transaction;
 	rai::block_store & store;
 };

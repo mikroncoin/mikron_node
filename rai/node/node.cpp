@@ -2952,6 +2952,10 @@ public:
 	{
 		scan_receivable (block_a.link ());
 	}
+	void comment_block (rai::comment_block const &) override
+	{
+		// do nothing
+	}
 	MDB_txn * transaction;
 	rai::node & node;
 	std::shared_ptr<rai::block> block;
