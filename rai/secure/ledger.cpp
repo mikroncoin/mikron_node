@@ -88,6 +88,8 @@ class ledger_processor : public rai::block_visitor
 public:
 	ledger_processor (rai::ledger &, MDB_txn *);
 	virtual ~ledger_processor () = default;
+	// Checks involving base_block members
+	rai::process_result base_block_check (rai::base_block const & block_a);
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
 	static bool check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance);
@@ -97,19 +99,24 @@ public:
 	rai::process_return result;
 };
 
+rai::process_result ledger_processor::base_block_check (rai::base_block const & block_a)
+{
+	rai::process_result result_l = rai::process_result::progress;
+	return result_l;
+}
+
 void ledger_processor::state_block (rai::state_block const & block_a)
 {
 	result.code = rai::process_result::progress;
+	result.code = base_block_check (block_a);
+	if (result.code != rai::process_result::progress) return;
 	if (!block_a.previous ().is_zero ())
 	{
 		result.code = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous;
 	}
-	if (result.code == rai::process_result::progress)
-	{
-		state_block_impl (block_a);
-	}
+	if (result.code != rai::process_result::progress) return;
+	state_block_impl (block_a);
 }
-
 
 void ledger_processor::state_block_impl (rai::state_block const & block_a)
 {
