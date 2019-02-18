@@ -91,7 +91,7 @@ public:
 	void state_block (rai::state_block const &) override;
 	void state_block_impl (rai::state_block const &);
 	static bool check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance);
-	static bool check_time_sequence (rai::state_block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance);
+	static bool check_time_sequence (rai::block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance);
 	rai::ledger & ledger;
 	MDB_txn * transaction;
 	rai::process_return result;
@@ -259,7 +259,7 @@ bool ledger_processor::check_time_sequence (rai::timestamp_t new_time, rai::time
 	return new_time >= prev_with_tolerance;
 }
 
-bool ledger_processor::check_time_sequence (rai::state_block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance)
+bool ledger_processor::check_time_sequence (rai::block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance)
 {
 	if (prev_block == nullptr) return false;
 	return check_time_sequence (new_block.creation_time ().number (), prev_block->creation_time ().number (), tolerance);
