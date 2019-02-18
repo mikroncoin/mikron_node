@@ -102,6 +102,23 @@ public:
 rai::process_result ledger_processor::base_block_check (rai::base_block const & block_a)
 {
 	rai::process_result result_l = rai::process_result::progress;
+	if (!block_a.previous ().is_zero ())
+	{
+		result_l = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous;
+	}
+	if (result_l != rai::process_result::progress) return result_l;
+	auto hash (block_a.hash ());
+	auto existing (ledger.store.block_exists (transaction, hash));
+	result_l = existing ? rai::process_result::old : rai::process_result::progress; // Have we seen this block before? (Unambiguous)
+	if (result_l != rai::process_result::progress) return result_l;
+	// creation time should be filled
+	result_l = block_a.creation_time ().is_zero () ? rai::process_result::invalid_block_creation_time : rai::process_result::progress;
+	if (result_l != rai::process_result::progress) return result_l;
+	// check signature
+	result_l = validate_message (block_a.account (), hash, block_a.signature_get ()) ? rai::process_result::bad_signature : rai::process_result::progress; // Is this block signed correctly (Unambiguous)
+	if (result_l != rai::process_result::progress) return result_l;
+	result_l = block_a.account ().is_zero () ? rai::process_result::opened_burn_account : rai::process_result::progress; // Is this for the burn account? (Unambiguous)
+	if (result_l != rai::process_result::progress) return result_l;
 	return result_l;
 }
 
@@ -110,11 +127,6 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 	result.code = rai::process_result::progress;
 	result.code = base_block_check (block_a);
 	if (result.code != rai::process_result::progress) return;
-	if (!block_a.previous ().is_zero ())
-	{
-		result.code = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous;
-	}
-	if (result.code != rai::process_result::progress) return;
 	state_block_impl (block_a);
 }
 
@@ -122,16 +134,6 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 {
 	auto hash (block_a.hash ());
 	auto now (block_a.creation_time ().number ());
-	auto existing (ledger.store.block_exists (transaction, hash));
-	result.code = existing ? rai::process_result::old : rai::process_result::progress; // Have we seen this block before? (Unambiguous)
-	if (result.code != rai::process_result::progress) return;
-	// creation time should be filled
-	result.code = block_a.creation_time ().is_zero () ? rai::process_result::invalid_block_creation_time : rai::process_result::progress;
-	if (result.code != rai::process_result::progress) return;
-	result.code = validate_message (block_a.account (), hash, block_a.signature_get ()) ? rai::process_result::bad_signature : rai::process_result::progress; // Is this block signed correctly (Unambiguous)
-	if (result.code != rai::process_result::progress) return;
-	result.code = block_a.account ().is_zero () ? rai::process_result::opened_burn_account : rai::process_result::progress; // Is this for the burn account? (Unambiguous)
-	if (result.code != rai::process_result::progress) return;
 	rai::account_info info;
 	result.amount = block_a.balance ();
 	auto subtype (rai::state_block_subtype::undefined);
