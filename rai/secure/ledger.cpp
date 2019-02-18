@@ -144,114 +144,103 @@ rai::process_result ledger_processor::base_block_check (rai::base_block const & 
 
 void ledger_processor::state_block (rai::state_block const & block_a)
 {
-	result.code = base_block_check (block_a);
+	result.code = rai::process_result::progress;
 	result.amount = block_a.balance ();
+	result.code = base_block_check (block_a);
+	if (result.code != rai::process_result::progress) return;
 	auto subtype (rai::state_block_subtype::undefined);
 	rai::account_info info;
-	if (result.code == rai::process_result::progress)
+	auto account_error (ledger.store.account_get (transaction, block_a.account (), info));
+	if (!account_error)
 	{
-		auto account_error (ledger.store.account_get (transaction, block_a.account (), info));
-		if (!account_error)
+		// Account already exists
+		subtype = ledger.state_subtype (transaction, block_a);
+		result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
+		if (result.code != rai::process_result::progress) return;
+		auto now (block_a.creation_time ().number ());
+		auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), now).number ());
+		result.amount = (rai::state_block_subtype::send == subtype) ? (prev_balance_with_manna - result.amount.number ()) : (result.amount.number () - prev_balance_with_manna);
+		result.code = (block_a.previous () == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
+		if (result.code != rai::process_result::progress) return;
+	}
+	else
+	{
+		// Account does not yet exists
+		subtype = block_a.get_subtype (0, 0);
+		result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
+		if (result.code != rai::process_result::progress) return;
+		result.code = !block_a.link ().is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
+		if (result.code != rai::process_result::progress) return;
+	}
+	if (result.code != rai::process_result::progress) return;
+	if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
+	{
+		if (!block_a.link ().is_zero ())
 		{
-			// Account already exists
-			subtype = ledger.state_subtype (transaction, block_a);
-			result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
-			if (result.code == rai::process_result::progress)
-			{
-				auto now (block_a.creation_time ().number ());
-				auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), now).number ());
-				result.amount = (rai::state_block_subtype::send == subtype) ? (prev_balance_with_manna - result.amount.number ()) : (result.amount.number () - prev_balance_with_manna);
-				result.code = (block_a.previous () == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
-			}
+			rai::block_hash source_hash (block_a.link ());
+			result.code = ledger.store.block_exists (transaction, source_hash) ? rai::process_result::progress : rai::process_result::gap_source; // Have we seen the source block already? (Harmless)
+			if (result.code != rai::process_result::progress) return;
+			auto source_block (ledger.store.block_get (transaction, source_hash));
+			assert (source_block != nullptr);
+			// creation time should be later, with large tolerance (this is a cross-account-chain check, timezone issues are probable)
+			result.code = check_time_sequence (block_a, source_block, rai::ledger::time_tolearance_long) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
+			if (result.code != rai::process_result::progress) return;
+			// check that received amount matches pending send amount
+			rai::pending_key key (block_a.account (), block_a.link ());
+			rai::pending_info pending;
+			result.code = ledger.store.pending_get (transaction, key, pending) ? rai::process_result::unreceivable : rai::process_result::progress; // Has this source already been received (Malformed)
+			if (result.code != rai::process_result::progress) return;
+			result.code = (result.amount == pending.amount) ? rai::process_result::progress : rai::process_result::balance_mismatch;
+			if (result.code != rai::process_result::progress) return;
 		}
 		else
 		{
-			// Account does not yet exists
-			subtype = block_a.get_subtype (0, 0);
-			result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
-			if (result.code == rai::process_result::progress)
-			{
-				result.code = !block_a.link ().is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
-			}
+			// If there's no link, the balance must remain the same, only the representative can change
+			result.code = result.amount.is_zero () ? rai::process_result::progress : rai::process_result::balance_mismatch;
+			if (result.code != rai::process_result::progress) return;
 		}
 	}
-	if (result.code == rai::process_result::progress)
-	{
-		if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
-		{
-			if (!block_a.link ().is_zero ())
-			{
-				rai::block_hash source_hash (block_a.link ());
-				result.code = ledger.store.block_exists (transaction, source_hash) ? rai::process_result::progress : rai::process_result::gap_source; // Have we seen the source block already? (Harmless)
-				if (result.code == rai::process_result::progress)
-				{
-					auto source_block (ledger.store.block_get (transaction, source_hash));
-					assert (source_block != nullptr);
-					// creation time should be later, with large tolerance (this is a cross-account-chain check, timezone issues are probable)
-					result.code = check_time_sequence (block_a, source_block, rai::ledger::time_tolearance_long) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
-					if (result.code == rai::process_result::progress)
-					{
-						// check that received amount matches pending send amount
-						rai::pending_key key (block_a.account (), block_a.link ());
-						rai::pending_info pending;
-						result.code = ledger.store.pending_get (transaction, key, pending) ? rai::process_result::unreceivable : rai::process_result::progress; // Has this source already been received (Malformed)
-						if (result.code == rai::process_result::progress)
-						{
-							result.code = (result.amount == pending.amount) ? rai::process_result::progress : rai::process_result::balance_mismatch;
-						}
-					}
-				}
-			}
-			else
-			{
-				// If there's no link, the balance must remain the same, only the representative can change
-				result.code = result.amount.is_zero () ? rai::process_result::progress : rai::process_result::balance_mismatch;
-			}
-		}
-	}
+	if (result.code != rai::process_result::progress) return;
 	auto hash (block_a.hash ());
-	if (result.code == rai::process_result::progress)
+	ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
+	result.state_subtype = subtype;
+	ledger.store.block_put (transaction, hash, block_a, 0);
+
+	if (!info.rep_block.is_zero ())
 	{
-		ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
-		result.state_subtype = subtype;
-		ledger.store.block_put (transaction, hash, block_a, 0);
-
-		if (!info.rep_block.is_zero ())
-		{
-			// Move existing representation
-			ledger.store.representation_add (transaction, info.rep_block, 0 - info.balance.number ());
-		}
-		// Add in amount delta
-		ledger.store.representation_add (transaction, hash, block_a.balance ().number ());
-
-		if (subtype == rai::state_block_subtype::send)
-		{
-			rai::pending_key key (block_a.link (), hash);
-			rai::pending_info info (block_a.account (), result.amount.number ());
-			ledger.store.pending_put (transaction, key, info);
-			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::send);
-		}
-		else if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
-		{
-			ledger.store.pending_del (transaction, rai::pending_key (block_a.account (), block_a.link ()));
-			if (subtype == rai::state_block_subtype::receive)
-			{
-				ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::receive);
-			}
-			else if (subtype == rai::state_block_subtype::open_receive)
-			{
-				ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::open);
-			}
-		}
-
-		ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
-		if (!ledger.store.frontier_get (transaction, info.head).is_zero ())
-		{
-			ledger.store.frontier_del (transaction, info.head);
-		}
-		// Frontier table is unnecessary for state blocks and this also prevents old blocks from being inserted on top of state blocks
-		result.account = block_a.account ();
+		// Move existing representation
+		ledger.store.representation_add (transaction, info.rep_block, 0 - info.balance.number ());
 	}
+	// Add in amount delta
+	ledger.store.representation_add (transaction, hash, block_a.balance ().number ());
+
+	if (subtype == rai::state_block_subtype::send)
+	{
+		rai::pending_key key (block_a.link (), hash);
+		rai::pending_info info (block_a.account (), result.amount.number ());
+		ledger.store.pending_put (transaction, key, info);
+		ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::send);
+	}
+	else if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
+	{
+		ledger.store.pending_del (transaction, rai::pending_key (block_a.account (), block_a.link ()));
+		if (subtype == rai::state_block_subtype::receive)
+		{
+			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::receive);
+		}
+		else if (subtype == rai::state_block_subtype::open_receive)
+		{
+			ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::open);
+		}
+	}
+
+	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
+	if (!ledger.store.frontier_get (transaction, info.head).is_zero ())
+	{
+		ledger.store.frontier_del (transaction, info.head);
+	}
+	// Frontier table is unnecessary for state blocks and this also prevents old blocks from being inserted on top of state blocks
+	result.account = block_a.account ();
 }
 
 bool ledger_processor::check_time_sequence (rai::timestamp_t new_time, rai::timestamp_t prev_time, rai::timestamp_t tolerance)
