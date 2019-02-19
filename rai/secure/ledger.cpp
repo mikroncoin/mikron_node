@@ -276,25 +276,29 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	result.code = rai::process_result::progress;
 	result.amount = 0;
 	result.code = base_block_check (block_a);
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	auto hash (block_a.hash ());
 	rai::account_info info;
 	auto account_error (ledger.store.account_get (transaction, block_a.account (), info));
 	// Account must exist
 	result.code = account_error ? rai::process_result::block_position : rai::process_result::progress;
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	// Account already exists
 	auto balance (block_a.balance ().number ());
 	auto now (block_a.creation_time ().number ());
 	auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), now).number ());
 	// The balance must remain the same,
 	result.code = (balance == prev_balance_with_manna)  ? rai::process_result::progress : rai::process_result::balance_mismatch;
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	auto representative (block_a.representative ());
 	auto prev_representative (ledger.representative_get (transaction, hash));
 	// The representative must remain the same,
 	result.code = (representative == prev_representative)  ? rai::process_result::progress : rai::process_result::representative_mismatch;
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	//ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
 	ledger.store.block_put (transaction, hash, block_a, 0);
 	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
