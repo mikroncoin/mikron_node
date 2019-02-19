@@ -1134,23 +1134,6 @@ void rai::rpc_handler::block_create ()
 				ec = nano::error_rpc::invalid_balance;
 			}
 		}
-		rai::uint256_union link (0);
-		boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
-		if (!ec && link_text.is_initialized ())
-		{
-			if (link.decode_account (link_text.get ()))
-			{
-				if (link.decode_hex (link_text.get ()))
-				{
-					ec = nano::error_rpc::bad_link;
-				}
-			}
-		}
-		else
-		{
-			// Retrieve link from source or destination
-			link = source.is_zero () ? destination : source;
-		}
 		if (prv.data != 0)
 		{
 			rai::uint256_union pub (rai::pub_key (prv.data));
@@ -1180,7 +1163,28 @@ void rai::rpc_handler::block_create ()
 			}
 			if (type == "state")
 			{
-				if (previous_text.is_initialized () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
+				rai::uint256_union link (0);
+				boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
+				if (!ec && link_text.is_initialized ())
+				{
+					if (link.decode_account (link_text.get ()))
+					{
+						if (link.decode_hex (link_text.get ()))
+						{
+							ec = nano::error_rpc::bad_link;
+						}
+					}
+				}
+				else
+				{
+					// Retrieve link from source or destination
+					link = source.is_zero () ? destination : source;
+				}
+				if (!previous_text.is_initialized () || representative.is_zero () || (link.is_zero () && !link_text.is_initialized ()))
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
+				}
+				else
 				{
 					if (creation_time.is_zero ())
 					{
@@ -1190,15 +1194,11 @@ void rai::rpc_handler::block_create ()
 					{
 						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
 					}
-					rai::state_block state (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
-					response_l.put ("hash", state.hash ().to_string ());
+					rai::state_block state_block (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
+					response_l.put ("hash", state_block.hash ().to_string ());
 					std::string contents;
-					state.serialize_json (contents);
+					state_block.serialize_json (contents);
 					response_l.put ("block", contents);
-				}
-				else
-				{
-					ec = nano::error_rpc::block_create_requirements_state;
 				}
 			}
 			else
