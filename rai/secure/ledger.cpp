@@ -294,7 +294,7 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	if (result.code != rai::process_result::progress)
 		return;
 	auto representative (block_a.representative ());
-	auto prev_representative (ledger.representative_get (transaction, hash));
+	auto prev_representative (ledger.representative_get (transaction, block_a.previous ()));
 	// The representative must remain the same,
 	result.code = (representative == prev_representative)  ? rai::process_result::progress : rai::process_result::representative_mismatch;
 	if (result.code != rai::process_result::progress)

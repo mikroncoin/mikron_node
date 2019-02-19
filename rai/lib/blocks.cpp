@@ -598,7 +598,7 @@ hashables ()
 
 void rai::comment_block::hash (blake2b_state & hash_a) const
 {
-	rai::uint256_union preamble (static_cast<uint64_t> (rai::block_type::state));
+	rai::uint256_union preamble (static_cast<uint64_t> (rai::block_type::comment));
 	blake2b_update (&hash_a, preamble.bytes.data (), preamble.bytes.size ());
 	base_hashables.hash (hash_a);
 	hashables.hash (hash_a);
@@ -614,12 +614,13 @@ rai::uint512_union rai::comment_block::comment_string_to_raw (std::string const 
 	// TODO UTF-8 conversion
 	auto len (comment_a.length ());
 	rai::uint512_union raw;
+	raw.clear ();
 	auto maxlen (sizeof (raw.bytes));
 	if (len > maxlen)
 	{
 		len = maxlen;
 	}
-	for (auto i (0); i < maxlen; ++i)
+	for (auto i (0); i < len; ++i)
 	{
 		raw.bytes[i] = (uint8_t)comment_a[i];
 	}
@@ -680,7 +681,7 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 	auto error (false);
 	try
 	{
-		assert (tree_a.get<std::string> ("type") == "state");
+		assert (tree_a.get<std::string> ("type") == "comment");
 		auto account_l (tree_a.get<std::string> ("account"));
 		error = base_hashables.account.decode_account (account_l);
 		if (error)
@@ -701,10 +702,9 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 		error = base_hashables.balance.decode_dec (balance_l);
 		if (error)
 			return error;
-		auto comment_l (tree_a.get<std::string> ("comment_as_hex")); // TODO comment
-		error = hashables.comment.decode_hex (comment_l);
-		if (error)
-			return error;
+		hashables.subtype = rai::comment_block_subtype::account; // TODO
+		auto comment_l (tree_a.get<std::string> ("comment"));
+		hashables.comment = comment_string_to_raw (comment_l);
 		auto work_l (tree_a.get<std::string> ("work"));
 		error = work.decode_hex (work_l);
 		if (error)
@@ -735,7 +735,7 @@ void rai::comment_block::serialize (rai::stream & stream_a) const
 void rai::comment_block::serialize_json (std::string & string_a) const
 {
 	boost::property_tree::ptree tree;
-	tree.put ("type", "state");
+	tree.put ("type", "comment");
 	tree.put ("account", base_hashables.account.to_account ());
 	tree.put ("creation_time", base_hashables.creation_time.data.to_string_dec ());
 	tree.put ("creation_time_as_date", base_hashables.creation_time.to_date_string_utc ());
@@ -743,8 +743,8 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 	tree.put ("representative", base_hashables.representative.to_account ());
 	tree.put ("balance", base_hashables.balance.to_string_dec ());
 	tree.put ("subtype", std::to_string ((uint8_t)hashables.subtype));
-	tree.put ("comment", "//TODO");
-	tree.put ("comment_as_hex", hashables.comment.to_string ());
+	tree.put ("comment", comment ());
+	tree.put ("comment_as_hex", comment_raw ().number ());
 	std::string signature_l;
 	signature.encode_hex (signature_l);
 	tree.put ("signature", signature_l);
