@@ -112,39 +112,48 @@ rai::process_result ledger_processor::base_block_check (rai::base_block const & 
 	{
 		result_l = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous;
 	}
-	if (result_l != rai::process_result::progress) return result_l;
+	if (result_l != rai::process_result::progress)
+		return result_l;
 	auto hash (block_a.hash ());
 	auto existing (ledger.store.block_exists (transaction, hash));
 	result_l = existing ? rai::process_result::old : rai::process_result::progress; // Have we seen this block before? (Unambiguous)
-	if (result_l != rai::process_result::progress) return result_l;
+	if (result_l != rai::process_result::progress)
+		return result_l;
 	// creation time should be filled
 	result_l = block_a.creation_time ().is_zero () ? rai::process_result::invalid_block_creation_time : rai::process_result::progress;
-	if (result_l != rai::process_result::progress) return result_l;
+	if (result_l != rai::process_result::progress)
+		return result_l;
 	// check signature
 	result_l = validate_message (block_a.account (), hash, block_a.signature_get ()) ? rai::process_result::bad_signature : rai::process_result::progress; // Is this block signed correctly (Unambiguous)
-	if (result_l != rai::process_result::progress) return result_l;
+	if (result_l != rai::process_result::progress)
+		return result_l;
 	result_l = block_a.account ().is_zero () ? rai::process_result::opened_burn_account : rai::process_result::progress; // Is this for the burn account? (Unambiguous)
-	if (result_l != rai::process_result::progress) return result_l;
+	if (result_l != rai::process_result::progress)
+		return result_l;
 	rai::account_info info;
 	auto account_error (ledger.store.account_get (transaction, block_a.account (), info));
 	if (!account_error)
 	{
 		// Account already exists
 		result_l = block_a.previous ().is_zero () ? rai::process_result::fork : rai::process_result::progress; // Has this account already been opened? (Ambigious)
-		if (result_l != rai::process_result::progress) return result_l;
+		if (result_l != rai::process_result::progress)
+			return result_l;
 		result_l = ledger.store.block_exists (transaction, block_a.previous ()) ? rai::process_result::progress : rai::process_result::gap_previous; // Does the previous block exist in the ledger? (Unambigious)
-		if (result_l != rai::process_result::progress) return result_l;
+		if (result_l != rai::process_result::progress)
+			return result_l;
 		auto prev_block (ledger.store.block_get (transaction, block_a.previous ()));
 		assert (prev_block != nullptr);
 		// creation time should be later, with small tolerance
 		result_l = check_time_sequence (block_a, prev_block, rai::ledger::time_tolearance_short) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
-		if (result_l != rai::process_result::progress) return result_l;
+		if (result_l != rai::process_result::progress)
+			return result_l;
 	}
 	else
 	{
 		// Account does not yet exists
 		result_l = block_a.previous ().is_zero () ? rai::process_result::progress : rai::process_result::gap_previous; // Does the first block in an account yield 0 for previous() ? (Unambigious)
-		if (result_l != rai::process_result::progress) return result_l;
+		if (result_l != rai::process_result::progress)
+			return result_l;
 	}
 	return result_l;
 }
@@ -154,7 +163,8 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 	result.code = rai::process_result::progress;
 	result.amount = block_a.balance ();
 	result.code = base_block_check (block_a);
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	auto subtype (rai::state_block_subtype::undefined);
 	rai::account_info info;
 	auto account_error (ledger.store.account_get (transaction, block_a.account (), info));
@@ -163,51 +173,62 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 		// Account already exists
 		subtype = ledger.state_subtype (transaction, block_a);
 		result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
-		if (result.code != rai::process_result::progress) return;
+		if (result.code != rai::process_result::progress)
+			return;
 		auto now (block_a.creation_time ().number ());
 		auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), now).number ());
 		result.amount = (rai::state_block_subtype::send == subtype) ? (prev_balance_with_manna - result.amount.number ()) : (result.amount.number () - prev_balance_with_manna);
 		result.code = (block_a.previous () == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
-		if (result.code != rai::process_result::progress) return;
+		if (result.code != rai::process_result::progress)
+			return;
 	}
 	else
 	{
 		// Account does not yet exists
 		subtype = block_a.get_subtype (0, 0);
 		result.code = (subtype == rai::state_block_subtype::undefined) ? rai::process_result::invalid_state_block : rai::process_result::progress;
-		if (result.code != rai::process_result::progress) return;
+		if (result.code != rai::process_result::progress)
+			return;
 		result.code = !block_a.link ().is_zero () ? rai::process_result::progress : rai::process_result::gap_source; // Is the first block receiving from a send ? (Unambigious)
-		if (result.code != rai::process_result::progress) return;
+		if (result.code != rai::process_result::progress)
+			return;
 	}
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	if (subtype == rai::state_block_subtype::receive || subtype == rai::state_block_subtype::open_receive)
 	{
 		if (!block_a.link ().is_zero ())
 		{
 			rai::block_hash source_hash (block_a.link ());
 			result.code = ledger.store.block_exists (transaction, source_hash) ? rai::process_result::progress : rai::process_result::gap_source; // Have we seen the source block already? (Harmless)
-			if (result.code != rai::process_result::progress) return;
+			if (result.code != rai::process_result::progress)
+				return;
 			auto source_block (ledger.store.block_get (transaction, source_hash));
 			assert (source_block != nullptr);
 			// creation time should be later, with large tolerance (this is a cross-account-chain check, timezone issues are probable)
 			result.code = check_time_sequence (block_a, source_block, rai::ledger::time_tolearance_long) ? rai::process_result::progress : rai::process_result::invalid_block_creation_time;
-			if (result.code != rai::process_result::progress) return;
+			if (result.code != rai::process_result::progress)
+				return;
 			// check that received amount matches pending send amount
 			rai::pending_key key (block_a.account (), block_a.link ());
 			rai::pending_info pending;
 			result.code = ledger.store.pending_get (transaction, key, pending) ? rai::process_result::unreceivable : rai::process_result::progress; // Has this source already been received (Malformed)
-			if (result.code != rai::process_result::progress) return;
+			if (result.code != rai::process_result::progress)
+				return;
 			result.code = (result.amount == pending.amount) ? rai::process_result::progress : rai::process_result::balance_mismatch;
-			if (result.code != rai::process_result::progress) return;
+			if (result.code != rai::process_result::progress)
+				return;
 		}
 		else
 		{
 			// If there's no link, the balance must remain the same, only the representative can change
 			result.code = result.amount.is_zero () ? rai::process_result::progress : rai::process_result::balance_mismatch;
-			if (result.code != rai::process_result::progress) return;
+			if (result.code != rai::process_result::progress)
+				return;
 		}
 	}
-	if (result.code != rai::process_result::progress) return;
+	if (result.code != rai::process_result::progress)
+		return;
 	auto hash (block_a.hash ());
 	ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
 	result.state_subtype = subtype;
