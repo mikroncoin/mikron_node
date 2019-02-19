@@ -1201,6 +1201,36 @@ void rai::rpc_handler::block_create ()
 					response_l.put ("block", contents);
 				}
 			}
+			else if (type == "comment")
+			{
+				std::string comment;
+				boost::optional<std::string> comment_text (request.get_optional<std::string> ("comment"));
+				if (comment_text.is_initialized ())
+				{
+					comment = comment_text.get ();
+				}
+				std::cerr << "comment " << comment << std::endl;
+				if (!previous_text.is_initialized () || representative.is_zero () || comment.length () == 0)
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
+				}
+				else
+				{
+					if (creation_time.is_zero ())
+					{
+						creation_time.set_time_now ();
+					}
+					if (work == 0)
+					{
+						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
+					}
+					rai::comment_block comment_block (pub, previous, creation_time.number (), representative, balance, rai::comment_block_subtype::account, comment, prv, pub, work);
+					response_l.put ("hash", comment_block.hash ().to_string ());
+					std::string contents;
+					comment_block.serialize_json (contents);
+					response_l.put ("block", contents);
+				}
+			}
 			else
 			{
 				ec = nano::error_blocks::invalid_type;
