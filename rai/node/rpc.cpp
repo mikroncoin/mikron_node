@@ -1641,8 +1641,12 @@ void rai::rpc_handler::key_expand ()
 
 void rai::rpc_handler::ledger ()
 {
-	rpc_control_impl ();
 	auto count (count_optional_impl ());
+	// For large counts it requires control
+	if (count >= 100)
+	{
+		rpc_control_impl ();
+	}
 	if (!ec)
 	{
 		rai::account start (0);
