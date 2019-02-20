@@ -20,6 +20,7 @@ public:
 	ledger (rai::block_store &, rai::stat &);
 	rai::account account (MDB_txn *, rai::block_hash const &);
 	rai::amount_t amount (MDB_txn *, rai::block_hash const &);
+	rai::amount_t amount_with_sign (MDB_txn *, rai::block_hash const &, int &);
 	rai::amount_t balance (MDB_txn *, rai::block_hash const &);
 	rai::amount_t account_balance (MDB_txn *, rai::account const &);
 	rai::amount_t balance_with_manna (MDB_txn *, rai::block_hash const &, rai::timestamp_t); 
