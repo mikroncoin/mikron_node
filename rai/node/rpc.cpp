@@ -920,8 +920,10 @@ void rai::rpc_handler::blocks_info ()
 					boost::property_tree::ptree entry;
 					auto account (node.ledger.account (transaction, hash));
 					entry.put ("block_account", account.to_account ());
-					auto amount (node.ledger.amount (transaction, hash));
+					int amount_sign = 0;
+					auto amount (node.ledger.amount_with_sign (transaction, hash, amount_sign));
 					entry.put ("amount", std::to_string (amount));
+					entry.put ("amount_sign", std::to_string (amount_sign));
 					std::string contents;
 					block->serialize_json (contents);
 					entry.put ("contents", contents);
