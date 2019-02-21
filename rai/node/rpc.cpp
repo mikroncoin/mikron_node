@@ -1644,6 +1644,11 @@ bool ledger_sort_by_balance (std::pair<rai::amount, std::pair<rai::account, rai:
 	return l1.first.number () > l2.first.number ();
 }
 
+bool ledger_sort_by_time (std::pair<uint64_t, std::pair<rai::account, rai::account_info>> & l1, std::pair<uint64_t, std::pair<rai::account, rai::account_info>> & l2)
+{
+	return l1.first > l2.first;
+}
+
 void rai::rpc_handler::ledger ()
 {
 	auto count (count_optional_impl ());
@@ -1671,12 +1676,13 @@ void rai::rpc_handler::ledger ()
 			modified_since = rai::short_timestamp::convert_from_posix_time (modified_since_posix);
 		}
 		const bool sorting = request.get<bool> ("sorting", false);
+		const bool sorting_by_time = request.get<bool> ("sorting_by_time", false);
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
 		boost::property_tree::ptree accounts;
 		rai::transaction transaction (node.store.environment, nullptr, false);
-		if (!ec && !sorting) // Simple unsorted
+		if (!ec && !sorting && !sorting_by_time) // Simple unsorted
 		{
 			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
 			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n && account_infos_l.size () < count; ++i)
@@ -1701,6 +1707,25 @@ void rai::rpc_handler::ledger ()
 				}
 			}
 			std::sort (ledger_l.begin (), ledger_l.end (), ::ledger_sort_by_balance);
+			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
+			for (auto i (ledger_l.begin ()), n (ledger_l.end ()); i != n && account_infos_l.size () < count; ++i)
+			{
+				account_infos_l.push_back (i->second);
+			}
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
+		}
+		else if (!ec && sorting_by_time) // Sorted by time
+		{
+			std::vector<std::pair<uint64_t, std::pair<rai::account, rai::account_info>>> ledger_l;
+			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n; ++i)
+			{
+				rai::account_info info (i->second);
+				if (info.last_block_time () >= modified_since)
+				{
+					ledger_l.push_back (std::make_pair (info.last_block_time_intern, std::make_pair (i->first.uint256 (), info)));
+				}
+			}
+			std::sort (ledger_l.begin (), ledger_l.end (), ::ledger_sort_by_time);
 			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
 			for (auto i (ledger_l.begin ()), n (ledger_l.end ()); i != n && account_infos_l.size () < count; ++i)
 			{
