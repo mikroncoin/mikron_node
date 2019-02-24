@@ -490,6 +490,7 @@ wallet (wallet_a)
 	model->setHorizontalHeaderItem (3, new QStandardItem ("Balance"));
 	model->setHorizontalHeaderItem (4, new QStandardItem ("Account"));
 	model->setHorizontalHeaderItem (5, new QStandardItem ("Hash"));
+	model->setHorizontalHeaderItem (6, new QStandardItem ("Comment"));
 	view->setModel (model);
 	view->setEditTriggers (QAbstractItemView::NoEditTriggers);
 	view->verticalHeader ()->hide ();
@@ -556,6 +557,7 @@ public:
 				account = 0;
 				break;
 		}
+		comment = "";
 	}
 	void comment_block (rai::comment_block const & block_a)
 	{
@@ -565,7 +567,7 @@ public:
 		type = "Comment";
 		amount = 0;
 		account = block_a.account ();
-		// TODO: include comment
+		comment = block_a.comment ();
 	}
 	MDB_txn * transaction;
 	rai::ledger & ledger;
@@ -574,6 +576,7 @@ public:
 	rai::amount_t balance;
 	rai::account account;
 	rai::timestamp_t block_time;
+	std::string comment;
 };
 }
 
@@ -600,6 +603,7 @@ void rai_qt::history::refresh ()
 		items.push_back (balanceItem);
 		items.push_back (new QStandardItem (QString (visitor.account.to_account ().c_str ())));
 		items.push_back (new QStandardItem (QString (hash.to_string ().c_str ())));
+		items.push_back (new QStandardItem (QString (visitor.comment.c_str ())));
 		hash = block->previous ();
 		model->appendRow (items);
 	}
