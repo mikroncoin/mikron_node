@@ -266,13 +266,14 @@ void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)
 }
 
 rai::block_counts::block_counts () :
-state (0)
+state (0),
+comment (0)
 {
 }
 
 size_t rai::block_counts::sum ()
 {
-	return state;
+	return state + comment;
 }
 
 rai::pending_info::pending_info () :

@@ -123,6 +123,7 @@ public:
 	block_counts ();
 	size_t sum ();
 	size_t state;
+	size_t comment;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
 class iterate_vote_blocks_as_hash

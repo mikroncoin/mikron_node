@@ -220,9 +220,9 @@ class comment_hashables
 {
 public:
 	comment_hashables ();
-	comment_hashables (rai::comment_block_subtype, rai::uint512_union const &);
+	comment_hashables (rai::uint32_t, rai::uint512_union const &);
 	void hash (blake2b_state &) const;
-	rai::comment_block_subtype subtype;
+	rai::uint32_t subtype;
 	// Comment string, UTF-8, null-terminated
 	rai::uint512_union comment;
 };
@@ -249,7 +249,7 @@ public:
 	rai::block_type type () const override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::comment_block const &) const;
-	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::comment_block_subtype) + sizeof (rai::uint512_union) + sizeof (rai::signature) + sizeof (uint64_t);
+	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint32_t) + sizeof (rai::uint512_union) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::comment_hashables hashables;
 };
 

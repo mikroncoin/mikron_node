@@ -556,7 +556,7 @@ comment ()
 {
 }
 
-rai::comment_hashables::comment_hashables (rai::comment_block_subtype subtype_a, rai::uint512_union const & comment_a) :
+rai::comment_hashables::comment_hashables (rai::uint32_t subtype_a, rai::uint512_union const & comment_a) :
 subtype (subtype_a),
 comment (comment_a)
 {
@@ -573,7 +573,7 @@ size_t constexpr rai::comment_block::size;
 // if time is 0, current time is taken
 rai::comment_block::comment_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::comment_block_subtype subtype_a, std::string const & comment_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
 base_block (account_a, previous_a, creation_time_a, representative_a, balance_a, uint512_union (), work_a),
-hashables (subtype_a, comment_string_to_raw (comment_a))
+hashables ((uint32_t)subtype_a, comment_string_to_raw (comment_a))
 {
 	signature_set (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()));
 }
@@ -606,7 +606,7 @@ void rai::comment_block::hash (blake2b_state & hash_a) const
 
 rai::comment_block_subtype rai::comment_block::subtype () const
 {
-	return hashables.subtype;
+	return (rai::comment_block_subtype)hashables.subtype;
 }
 
 rai::uint512_union rai::comment_block::comment_string_to_raw (std::string const & comment_a)
@@ -702,7 +702,7 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 		error = base_hashables.balance.decode_dec (balance_l);
 		if (error)
 			return error;
-		hashables.subtype = rai::comment_block_subtype::account; // TODO
+		hashables.subtype = (uint32_t)rai::comment_block_subtype::account; // TODO
 		auto comment_l (tree_a.get<std::string> ("comment"));
 		hashables.comment = comment_string_to_raw (comment_l);
 		auto work_l (tree_a.get<std::string> ("work"));
@@ -742,7 +742,7 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 	tree.put ("previous", base_hashables.previous.to_string ());
 	tree.put ("representative", base_hashables.representative.to_account ());
 	tree.put ("balance", base_hashables.balance.to_string_dec ());
-	tree.put ("subtype", std::to_string ((uint8_t)hashables.subtype));
+	tree.put ("subtype", std::to_string (hashables.subtype));
 	tree.put ("comment", comment ());
 	tree.put ("comment_as_hex", comment_raw ().number ());
 	std::string signature_l;

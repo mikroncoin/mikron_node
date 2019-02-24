@@ -83,6 +83,7 @@ public:
 	void comment_block (rai::comment_block const & block_a) override
 	{
 		// TODO
+		assert (false);
 	}
 
 	MDB_txn * transaction;
@@ -548,7 +549,7 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 		assert (!result.is_zero());
 		return result;
 	}
-	while (!successor.is_zero () && block->type () != rai::block_type::state && store.block_info_get (transaction_a, successor, block_info))
+	while (!successor.is_zero () && block->type () != rai::block_type::state && block->type () != rai::block_type::comment && store.block_info_get (transaction_a, successor, block_info))
 	{
 		successor = store.block_successor (transaction_a, hash);
 		if (!successor.is_zero ())
@@ -557,6 +558,7 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 			block = store.block_get (transaction_a, hash);
 		}
 	}
+	/*
 	if (block->type () == rai::block_type::state)
 	{
 		auto state_block (dynamic_cast<rai::state_block *> (block.get ()));
@@ -570,6 +572,8 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 	{
 		result = block_info.account;
 	}
+	*/
+	result = block->account (); 
 	assert (!result.is_zero ());
 	return result;
 }
@@ -682,7 +686,7 @@ public:
 	
 	void comment_block (rai::comment_block const & block_a) override
 	{
-		// TODO
+		result = block_a.previous ().is_zero () || ledger.store.block_exists (transaction, block_a.previous ());
 	}
 
 	rai::ledger & ledger;
