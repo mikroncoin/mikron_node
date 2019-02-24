@@ -386,6 +386,6 @@ TEST (comment_block, utf_comment)
 
 TEST (comment_block, serialization)
 {
-	ASSERT_EQ (245, rai::comment_block::size);
+	ASSERT_EQ (248, rai::comment_block::size);
 	// TODO
 }

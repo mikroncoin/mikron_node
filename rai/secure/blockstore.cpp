@@ -620,7 +620,6 @@ int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
 
 int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 {
-	std::cerr << "block_store::upgrade_v12_to_v13" << std::endl;
 	version_put (transaction_a, 13);
 
 	// Version 13: 
