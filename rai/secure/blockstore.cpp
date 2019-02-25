@@ -2,9 +2,6 @@
 #include <rai/secure/blockstore.hpp>
 #include <rai/secure/versioning.hpp>
 
-// denote an unitialized MDB DB number
-#define RAI_MDB_INVALID_DB (unsigned int)-1
-
 namespace
 {
 /**
@@ -57,7 +54,7 @@ std::pair<rai::mdb_val, rai::mdb_val> * rai::store_iterator::operator-> ()
 rai::store_iterator::store_iterator (MDB_txn * transaction_a, MDB_dbi db_a) :
 cursor (nullptr)
 {
-	assert (db_a != 0 && db_a != RAI_MDB_INVALID_DB);
+	assert (db_a != 0 && db_a != rai::block_store::invalid_db_handle);
 	auto status (mdb_cursor_open (transaction_a, db_a, &cursor));
 	assert (status == 0);
 	auto status2 (mdb_cursor_get (cursor, &current.first.value, &current.second.value, MDB_FIRST));
@@ -81,7 +78,7 @@ cursor (nullptr)
 rai::store_iterator::store_iterator (MDB_txn * transaction_a, MDB_dbi db_a, MDB_val const & val_a) :
 cursor (nullptr)
 {
-	assert (db_a != 0 && db_a != RAI_MDB_INVALID_DB);
+	assert (db_a != 0 && db_a != rai::block_store::invalid_db_handle);
 	auto status (mdb_cursor_open (transaction_a, db_a, &cursor));
 	assert (status == 0);
 	current.first.value = val_a;
@@ -225,22 +222,24 @@ rai::store_iterator rai::block_store::vote_end ()
 	return rai::store_iterator (nullptr);
 }
 
+const MDB_dbi rai::block_store::invalid_db_handle;
+
 rai::block_store::block_store (bool & error_a, boost::filesystem::path const & path_a, int lmdb_max_dbs) :
 environment (error_a, path_a, lmdb_max_dbs),
-frontiers (RAI_MDB_INVALID_DB),
-accounts (RAI_MDB_INVALID_DB),
+frontiers (invalid_db_handle),
+accounts (invalid_db_handle),
 //send_blocks (0),
 //receive_blocks (0),
 //open_blocks (0),
-state_blocks (RAI_MDB_INVALID_DB),
-comment_blocks (RAI_MDB_INVALID_DB),
-pending (RAI_MDB_INVALID_DB),
-blocks_info (RAI_MDB_INVALID_DB),
-representation (RAI_MDB_INVALID_DB),
-unchecked (RAI_MDB_INVALID_DB),
-checksum (RAI_MDB_INVALID_DB),
-vote (RAI_MDB_INVALID_DB),
-meta (RAI_MDB_INVALID_DB)
+state_blocks (invalid_db_handle),
+comment_blocks (invalid_db_handle),
+pending (invalid_db_handle),
+blocks_info (invalid_db_handle),
+representation (invalid_db_handle),
+unchecked (invalid_db_handle),
+checksum (invalid_db_handle),
+vote (invalid_db_handle),
+meta (invalid_db_handle)
 {
 	if (!error_a)
 	{
@@ -626,9 +625,9 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 	// - Add comment blocks
 
 	// DB comment_blocks is new in v13, but it has been openend already upfront.  No action needed.
-	if (comment_blocks == 0 || comment_blocks == RAI_MDB_INVALID_DB)
+	if (comment_blocks == 0 || comment_blocks == invalid_db_handle)
 	{
-		assert (comment_blocks != 0 && comment_blocks != RAI_MDB_INVALID_DB);
+		assert (comment_blocks != 0 && comment_blocks != invalid_db_handle);
 		return 13;
 	}
 

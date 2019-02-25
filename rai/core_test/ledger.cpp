@@ -2478,3 +2478,79 @@ TEST (ledger, send_self_valid)
 	auto return1 (ledger.process (transaction, send_self));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
 }
+
+TEST (ledger, comment_genesis_process)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Place a comment right after the genesis block
+	std::string comment1_str ("COMMENT1 genesis");
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () + 1234567, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::progress, return1.code);
+	std::string comment2_str ("COMMENT2 genesis Trickier ÁÉÍÓÖŐÚÜŰ");
+	rai::comment_block comment_block2 (rai::genesis_account, comment_block1.hash (), comment_block1.creation_time ().number () + 1, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment2_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, comment_block2));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
+}
+
+TEST (ledger, comment_second_process)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Create a second account and transfer to it
+	rai::keypair key2;
+	rai::state_block send_block (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () + 1234567, rai::genesis_account, rai::genesis_amount - 10, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, send_block));
+	ASSERT_EQ (rai::process_result::progress, return1.code);
+	rai::state_block receive_block (key2.pub, 0, send_block.creation_time ().number () + 1, key2.pub, 10, send_block.hash (), key2.prv, key2.pub, 0);
+	auto return2 (ledger.process (transaction, receive_block));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
+	// Place a comment block
+	std::string comment1_str ("COMMENT1");
+	rai::comment_block comment_block1 (key2.pub, receive_block.hash (), receive_block.creation_time ().number () + 1, key2.pub, 10, rai::comment_block_subtype::account, comment1_str, key2.prv, key2.pub, 0);
+	auto return3 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::progress, return3.code);
+}
+
+TEST (ledger, comment_process_error)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	std::string comment1_str ("COMMENT1 error");
+	rai::keypair key2;
+	// Amount mismatch
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () + 1234567, rai::genesis_account, rai::genesis_amount - 1000000, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::balance_mismatch, return1.code);
+	// Representative mismatch
+	rai::comment_block comment_block2 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () + 1234567, key2.pub, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, comment_block2));
+	ASSERT_EQ (rai::process_result::representative_mismatch, return2.code);
+	// Creation time too early
+	rai::comment_block comment_block3 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () - 1234567, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return3 (ledger.process (transaction, comment_block3));
+	ASSERT_EQ (rai::process_result::invalid_block_creation_time, return3.code);
+	// Invalid subtype
+	rai::comment_block comment_block4 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () + 1234567, rai::genesis_account, rai::genesis_amount, (rai::comment_block_subtype)89, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return4 (ledger.process (transaction, comment_block4));
+	ASSERT_EQ (rai::process_result::invalid_comment_block, return4.code);
+}

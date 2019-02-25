@@ -300,6 +300,12 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	result.code = (representative == prev_representative)  ? rai::process_result::progress : rai::process_result::representative_mismatch;
 	if (result.code != rai::process_result::progress)
 		return;
+	// Check subtype
+	if (block_a.hashables.subtype != (rai::uint32_t)rai::comment_block_subtype::account)
+	{
+		result.code = rai::process_result::invalid_comment_block;
+		return;
+	}
 	//ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
 	ledger.store.block_put (transaction, hash, block_a, 0);
 	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);

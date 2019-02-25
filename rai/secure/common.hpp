@@ -185,7 +185,8 @@ enum class process_result
 	representative_mismatch = 10,  // Representative is changed when it is not allowed
 	block_position = 11,  // This block cannot follow the previous block (e.g. due to epoch)
 	invalid_state_block = 12,  // a state block with undefined subtype
-	invalid_block_creation_time = 13  // Out-of-order block, or invalid block creation time
+	invalid_block_creation_time = 13,  // Out-of-order block, or invalid block creation time
+	invalid_comment_block = 14,  // a comment block with undefined subtype
 };
 class process_return
 {

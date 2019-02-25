@@ -221,5 +221,8 @@ public:
 	 * rai::uint256_union (arbitrary key) -> blob
 	 */
 	MDB_dbi meta;
+
+	// Denotes an uninitialized DB handle
+	static const MDB_dbi invalid_db_handle = (MDB_dbi)-1;
 };
 }
