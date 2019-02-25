@@ -578,9 +578,18 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 	return result;
 }
 
-// Return amount decrease or increase for block
+// Return amount decrease or increase for block (absolute value)
 rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
+	int amount_sign_l = 0;
+	// ignore sign
+	return amount_with_sign (transaction_a, hash_a, amount_sign_l);
+}
+
+// Return amount decrease or increase for block; absolute value and sign (-1/0/+1)
+rai::amount_t rai::ledger::amount_with_sign (MDB_txn * transaction_a, rai::block_hash const & hash_a, int & amount_sign)
+{
+	amount_sign = 0;
 	if (hash_a.is_zero ())
 	{
 		return 0;
@@ -601,6 +610,7 @@ rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash cons
 
 	if (prev_hash.is_zero ())
 	{
+		amount_sign = 1;
 		return balance;
 	}
 	// prev_hash != 0
@@ -608,6 +618,7 @@ rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash cons
 	assert (prev_block != nullptr);
 	if (prev_block == nullptr)
 	{
+		amount_sign = 1;
 		return balance;
 	}
 	auto prev_balance (prev_block->balance ().number ());
@@ -616,7 +627,25 @@ rai::amount_t rai::ledger::amount (MDB_txn * transaction_a, rai::block_hash cons
 		// manna adjustment
 		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
 	}
-	rai::amount_t amount = balance < prev_balance ? prev_balance - balance : balance - prev_balance;
+	rai::amount_t amount = 0;
+	if (prev_balance < balance)
+	{
+		// increase
+		amount_sign = 1;
+		amount = balance - prev_balance;
+	}
+	else if (prev_balance > balance)
+	{
+		// decrease
+		amount_sign = -1;
+		amount = prev_balance - balance;
+	}
+	else
+	{
+		// same
+		amount_sign = 0;
+		amount = 0;
+	}
 	return amount;
 }
 

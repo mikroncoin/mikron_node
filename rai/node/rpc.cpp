@@ -920,8 +920,10 @@ void rai::rpc_handler::blocks_info ()
 					boost::property_tree::ptree entry;
 					auto account (node.ledger.account (transaction, hash));
 					entry.put ("block_account", account.to_account ());
-					auto amount (node.ledger.amount (transaction, hash));
+					int amount_sign = 0;
+					auto amount (node.ledger.amount_with_sign (transaction, hash, amount_sign));
 					entry.put ("amount", std::to_string (amount));
+					entry.put ("amount_sign", std::to_string (amount_sign));
 					std::string contents;
 					block->serialize_json (contents);
 					entry.put ("contents", contents);
@@ -1678,10 +1680,24 @@ void rai::rpc_handler::key_expand ()
 	response_errors ();
 }
 
+bool ledger_sort_by_balance (std::pair<rai::amount, std::pair<rai::account, rai::account_info>> & l1, std::pair<rai::amount, std::pair<rai::account, rai::account_info>> & l2)
+{
+	return l1.first.number () > l2.first.number ();
+}
+
+bool ledger_sort_by_time (std::pair<uint64_t, std::pair<rai::account, rai::account_info>> & l1, std::pair<uint64_t, std::pair<rai::account, rai::account_info>> & l2)
+{
+	return l1.first > l2.first;
+}
+
 void rai::rpc_handler::ledger ()
 {
-	rpc_control_impl ();
 	auto count (count_optional_impl ());
+	// For large counts it requires control
+	if (count >= 100)
+	{
+		rpc_control_impl ();
+	}
 	if (!ec)
 	{
 		rai::account start (0);
@@ -1701,98 +1717,101 @@ void rai::rpc_handler::ledger ()
 			modified_since = rai::short_timestamp::convert_from_posix_time (modified_since_posix);
 		}
 		const bool sorting = request.get<bool> ("sorting", false);
+		const bool sorting_by_time = request.get<bool> ("sorting_by_time", false);
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
 		boost::property_tree::ptree accounts;
 		rai::transaction transaction (node.store.environment, nullptr, false);
-		if (!ec && !sorting) // Simple
+		if (!ec && !sorting && !sorting_by_time) // Simple unsorted
 		{
-			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n && accounts.size () < count; ++i)
+			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
+			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n && account_infos_l.size () < count; ++i)
 			{
 				rai::account_info info (i->second);
 				if (info.last_block_time () >= modified_since)
 				{
-					rai::account account (i->first.uint256 ());
-					boost::property_tree::ptree response_a;
-					response_a.put ("frontier", info.head.to_string ());
-					response_a.put ("open_block", info.open_block.to_string ());
-					response_a.put ("representative_block", info.rep_block.to_string ());
-					std::string balance;
-					rai::amount(info.balance).encode_dec (balance);
-					response_a.put ("balance", balance);
-					response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
-					response_a.put ("block_count", std::to_string (info.block_count));
-					if (representative)
-					{
-						auto block (node.store.block_get (transaction, info.rep_block));
-						assert (block != nullptr);
-						response_a.put ("representative", block->representative ().to_account ());
-					}
-					if (weight)
-					{
-						auto account_weight (node.ledger.weight (transaction, account));
-						response_a.put ("weight", std::to_string (account_weight));
-					}
-					if (pending)
-					{
-						auto account_pending (node.ledger.account_pending (transaction, account));
-						response_a.put ("pending", std::to_string (account_pending));
-					}
-					accounts.push_back (std::make_pair (account.to_account (), response_a));
+					account_infos_l.push_back (std::make_pair (i->first.uint256 (), info));
 				}
 			}
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
 		}
-		else if (!ec) // Sorting
+		else if (!ec && sorting) // Sorted by balance
 		{
-			std::vector<std::pair<rai::amount, rai::account>> ledger_l;
+			std::vector<std::pair<rai::amount, std::pair<rai::account, rai::account_info>>> ledger_l;
 			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n; ++i)
 			{
 				rai::account_info info (i->second);
-				rai::amount balance (info.balance);
 				if (info.last_block_time () >= modified_since)
 				{
-					ledger_l.push_back (std::make_pair (balance, rai::account (i->first.uint256 ())));
+					ledger_l.push_back (std::make_pair (info.balance, std::make_pair (i->first.uint256 (), info)));
 				}
 			}
-			std::sort (ledger_l.begin (), ledger_l.end ());
-			std::reverse (ledger_l.begin (), ledger_l.end ());
-			rai::account_info info;
-			for (auto i (ledger_l.begin ()), n (ledger_l.end ()); i != n && accounts.size () < count; ++i)
+			std::sort (ledger_l.begin (), ledger_l.end (), ::ledger_sort_by_balance);
+			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
+			for (auto i (ledger_l.begin ()), n (ledger_l.end ()); i != n && account_infos_l.size () < count; ++i)
 			{
-				node.store.account_get (transaction, i->second, info);
-				rai::account account (i->second);
-				boost::property_tree::ptree response_a;
-				response_a.put ("frontier", info.head.to_string ());
-				response_a.put ("open_block", info.open_block.to_string ());
-				response_a.put ("representative_block", info.rep_block.to_string ());
-				std::string balance;
-				(i->first).encode_dec (balance);
-				response_a.put ("balance", balance);
-				response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
-				response_a.put ("block_count", std::to_string (info.block_count));
-				if (representative)
-				{
-					auto block (node.store.block_get (transaction, info.rep_block));
-					assert (block != nullptr);
-					response_a.put ("representative", block->representative ().to_account ());
-				}
-				if (weight)
-				{
-					auto account_weight (node.ledger.weight (transaction, account));
-					response_a.put ("weight", std::to_string (account_weight));
-				}
-				if (pending)
-				{
-					auto account_pending (node.ledger.account_pending (transaction, account));
-					response_a.put ("pending", std::to_string (account_pending));
-				}
-				accounts.push_back (std::make_pair (account.to_account (), response_a));
+				account_infos_l.push_back (i->second);
 			}
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
+		}
+		else if (!ec && sorting_by_time) // Sorted by time
+		{
+			std::vector<std::pair<uint64_t, std::pair<rai::account, rai::account_info>>> ledger_l;
+			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n; ++i)
+			{
+				rai::account_info info (i->second);
+				if (info.last_block_time () >= modified_since)
+				{
+					ledger_l.push_back (std::make_pair (info.last_block_time_intern, std::make_pair (i->first.uint256 (), info)));
+				}
+			}
+			std::sort (ledger_l.begin (), ledger_l.end (), ::ledger_sort_by_time);
+			std::vector<std::pair<rai::account, rai::account_info>> account_infos_l;
+			for (auto i (ledger_l.begin ()), n (ledger_l.end ()); i != n && account_infos_l.size () < count; ++i)
+			{
+				account_infos_l.push_back (i->second);
+			}
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
 		}
 		response_l.add_child ("accounts", accounts);
 	}
 	response_errors ();
+}
+
+void rai::rpc_handler::ledger_helper_fill (rai::transaction & transaction_a, std::vector<std::pair<rai::account, rai::account_info>> const & account_list_a, boost::property_tree::ptree & accounts_a, bool representative, bool weight, bool pending)
+{
+	for (auto i (account_list_a.begin ()), n (account_list_a.end ()); i != n; ++i)
+	{
+		rai::account account (i->first);
+		rai::account_info info = i->second;
+		boost::property_tree::ptree response_a;
+		response_a.put ("frontier", info.head.to_string ());
+		response_a.put ("open_block", info.open_block.to_string ());
+		response_a.put ("representative_block", info.rep_block.to_string ());
+		std::string balance;
+		(info.balance).encode_dec (balance);
+		response_a.put ("balance", balance);
+		response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
+		response_a.put ("block_count", std::to_string (info.block_count));
+		if (representative)
+		{
+			auto block (node.store.block_get (transaction_a, info.rep_block));
+			assert (block != nullptr);
+			response_a.put ("representative", block->representative ().to_account ());
+		}
+		if (weight)
+		{
+			auto account_weight (node.ledger.weight (transaction_a, account));
+			response_a.put ("weight", std::to_string (account_weight));
+		}
+		if (pending)
+		{
+			auto account_pending (node.ledger.account_pending (transaction_a, account));
+			response_a.put ("pending", std::to_string (account_pending));
+		}
+		accounts_a.push_back (std::make_pair (account.to_account (), response_a));
+	}
 }
 
 void rai::rpc_handler::mrai_from_raw (rai::amount_t ratio)
