@@ -625,14 +625,12 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 	// Version 13: 
 	// - Add comment blocks
 
-	if (comment_blocks)
+	// DB comment_blocks is new in v13, but it has been openend already upfront.  No action needed.
+	if (comment_blocks == 0 || comment_blocks == RAI_MDB_INVALID_DB)
 	{
-		mdb_drop (transaction_a, comment_blocks, 1);
-		comment_blocks = RAI_MDB_INVALID_DB;
+		assert (comment_blocks != 0 && comment_blocks != RAI_MDB_INVALID_DB);
+		return 13;
 	}
-	int res = mdb_dbi_open (transaction_a, "comment", MDB_CREATE, &comment_blocks);
-	if (res)
-		return res;
 
 	return 0;
 }
