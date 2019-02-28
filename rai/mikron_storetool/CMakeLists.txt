@@ -1,6 +1,8 @@
 add_executable (mikron_storetool
 	block_span_analyzer.hpp
 	block_span_analyzer.cpp
+	blockchain_analyzer.hpp
+	blockchain_analyzer.cpp
 	blockstore_tool.hpp
 	blockstore_tool.cpp
 	entry.cpp)

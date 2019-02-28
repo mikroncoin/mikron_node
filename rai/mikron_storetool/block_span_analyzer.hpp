@@ -22,7 +22,6 @@ class block_span_analyzer
 {
 public:
 	void analyze (boost::filesystem::path);
-	//static std::vector <rai::block_hash> pick_random_blocks (int, std::shared_ptr <rai::node> &);
 	span_info analyze_block (rai::block_hash);
 	span_info get_block_span (rai::block_hash);
 private:

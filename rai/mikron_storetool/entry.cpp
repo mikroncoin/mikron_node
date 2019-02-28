@@ -1,3 +1,4 @@
+#include <rai/mikron_storetool/blockchain_analyzer.hpp>
 #include <rai/mikron_storetool/block_span_analyzer.hpp>
 #include <rai/mikron_storetool/blockstore_tool.hpp>
 #include <rai/node/cli.hpp>
@@ -18,6 +19,7 @@ int main (int argc, char * const * argv)
 	const char * option_help = "help";
 	const char * option_version = "version";
 	const char * option_debug_pending = "debug_pending";
+	const char * option_debug_blockchain_len = "debug_blockchain_len";
 	const char * option_debug_block_span = "debug_block_span";
 	const char * option_debug_send_to_self = "debug_send_to_self";
 	const char * option_debug_receive_times = "debug_receive_times";
@@ -27,6 +29,7 @@ int main (int argc, char * const * argv)
 		(option_help, "Print out options")
 		(option_version, "Prints out version")
 		(option_debug_pending, "List pending transactions")
+		(option_debug_blockchain_len, "Analyze blockchain length statistics")
 		(option_debug_block_span, "Analyze block span statistics")
 		(option_debug_send_to_self, "Search for sends to self")
 		(option_debug_receive_times, "Analyze send-to-receive time differences");
@@ -60,6 +63,11 @@ int main (int argc, char * const * argv)
 		else if (vm.count (option_debug_pending))
 		{
 			rai::blockstore_tool::debug_pending (data_path);
+		}
+		else if (vm.count (option_debug_blockchain_len))
+		{
+			rai::blockchain_analyzer analyzer;
+			analyzer.analyze (data_path);
 		}
 		else if (vm.count (option_debug_block_span))
 		{
