@@ -30,21 +30,31 @@ void rai::blockchain_analyzer::analyze_account_chain_length (boost::filesystem::
 
 long rai::blockchain_analyzer::get_account_chain_length (rai::block_hash hash)
 {
-	// Simple recursive implementation
+	// Non-recursive iterative implementation (recursive does not work with large depths)
 	if (hash.number () == 0)
 	{
 		return 0;
 	}
-	auto block (node->store.block_get (*transaction, hash));
-	rai::block_hash prev = block->previous ();
-	if (prev.number () == 0)
+	// current state
+	rai::block_hash cur_hash (hash);
+	long cur_len = 0;
+	while (true)
 	{
-		// first block of the chain
-		return 1;
+		if (cur_hash.number () == 0)
+		{
+			break;
+		}
+		auto block (node->store.block_get (*transaction, cur_hash));
+		if (!block)
+		{
+			break;
+		}
+		// visit current block
+		++cur_len;
+		// move to previous
+		cur_hash = block->previous ();
 	}
-	// go to prev
-	long prev_len = get_account_chain_length (prev);
-	return 1 + prev_len;
+	return cur_len;
 }
 
 void rai::blockchain_analyzer::printMedianStats (std::string const & prefix, std::vector<long> & numbers)
