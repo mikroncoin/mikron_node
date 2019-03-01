@@ -67,7 +67,7 @@ int main (int argc, char * const * argv)
 		else if (vm.count (option_debug_blockchain_len))
 		{
 			rai::blockchain_analyzer analyzer;
-			analyzer.analyze (data_path);
+			analyzer.analyze_account_chain_length (data_path);
 		}
 		else if (vm.count (option_debug_block_span))
 		{

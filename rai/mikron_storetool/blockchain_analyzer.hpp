@@ -10,10 +10,10 @@ namespace rai
 class blockchain_analyzer
 {
 public:
-	void analyze (boost::filesystem::path);
+	void analyze_account_chain_length (boost::filesystem::path);
 	//static std::vector <rai::block_hash> pick_random_frontiers (int, std::shared_ptr <rai::node> &);
 	long get_account_chain_length (rai::block_hash);
-    static void printMedianStats (std::string const &, std::vector<long> &);
+	static void printMedianStats (std::string const &, std::vector<long> &);
 private:
 	std::shared_ptr<rai::node> node;
 	rai::transaction* transaction;
