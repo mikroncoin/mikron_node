@@ -78,7 +78,7 @@ rai::span_info rai::block_span_analyzer::analyze_block (rai::block_hash hash)
 	{
 		case rai::block_type::state:
 			{
-				auto state_block (dynamic_cast<rai::state_block *> (block.get ()));
+				auto state_block (dynamic_cast<rai::state_block*> (block.get ()));
 				span.merge_block (hash);
 				span.merge_acc (state_block->hashables.account);
 				rai::state_block_subtype subtype = node->ledger.state_subtype (*transaction, *state_block);
