@@ -16,13 +16,14 @@ void rai::blockchain_analyzer::analyze_account_chain_length (boost::filesystem::
 	long cnt = 0;
 	for (auto i (node->store.latest_begin (*transaction)), n (node->store.latest_end ()); i != n; ++i, ++cnt)
 	{
-		std::cerr << "i_cnt " << cnt << " "; // std::endl;
+		//std::cerr << "i_cnt " << cnt << " "; // std::endl;
 		rai::account account = rai::account (i->first.uint256 ());
 		rai::account_info account_info = rai::account_info (i->second);
 		rai::block_hash block_hash = account_info.head;
 		long length = get_account_chain_length (block_hash);
 		account_chain_lengths.push_back (length);
-		std::cerr << std::endl << "i_cnt " << cnt << " len " << length << " bl " << account.to_account () << " " << block_hash.to_string () << std::endl;
+		//std::cerr << std::endl << "i_cnt " << cnt << " len " << length << " bl " << account.to_account () << " " << block_hash.to_string () << std::endl;
+		if (cnt % 20 == 0) std::cerr << "cnt " << cnt << std::endl;
 		std::cout << length << std::endl;
 	}
 	// computing median
@@ -43,14 +44,15 @@ void rai::blockchain_analyzer::analyze_account_chain_length_full (boost::filesys
 	long cnt = 0;
 	for (auto i (node->store.latest_begin (*transaction)), n (node->store.latest_end ()); i != n; ++i, ++cnt)
 	{
-		std::cerr << "i_cnt " << cnt << " "; // std::endl;
+		//std::cerr << "i_cnt " << cnt << " "; // std::endl;
 		rai::account account = rai::account (i->first.uint256 ());
 		rai::account_info account_info = rai::account_info (i->second);
 		rai::block_hash block_hash = account_info.head;
 		rai::chain_length len = get_account_chain_length_full (block_hash);
 		account_chain_lengths.push_back (len.len);
 		account_chain_lengths_full.push_back (len.len_full);
-		std::cerr << std::endl << "i_cnt " << cnt << " len " << len.len << " l_f " << len.len_full << " bl " << account.to_account () << " " << block_hash.to_string () << std::endl;
+		//std::cerr << std::endl << "i_cnt " << cnt << " len " << len.len << " l_f " << len.len_full << " bl " << account.to_account () << " " << block_hash.to_string () << std::endl;
+		if (cnt % 20 == 0) std::cerr << "cnt " << cnt << std::endl;
 		std::cout << len.len << " " << len.len_full << std::endl;
 	}
 	// computing medians
@@ -127,7 +129,7 @@ rai::chain_length rai::blockchain_analyzer::get_account_chain_length_full (rai::
 		// no previous -- open_receive or genesis
 		on_account_chain = false;
 		// obtain receive from
-		rai::block_helper::block_type block_type = rai::block_helper::get_block_type (block, node, *transaction);
+		rai::block_helper::block_type block_type = rai::block_helper::get_block_type (block, node->ledger, *transaction);
 		auto receive_from (rai::block_helper::get_receive_source (block, block_type));
 		if (receive_from.number () != 0)
 		{
