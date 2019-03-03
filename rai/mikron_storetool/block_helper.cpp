@@ -30,33 +30,33 @@ rai::block_hash rai::block_helper::get_receive_source (std::unique_ptr<rai::bloc
     switch (block_type)
 	{
 		/*
-		case block_type::receive: // legacy
+		case rai::block_helper::block_type::receive: // legacy
 			{
 				auto receive_block (dynamic_cast<rai::receive_block*> (block.get ()));
 				return receive_block->hashables.source;
 			}
 			break;
-		case block_type::open: // legacy
+		case rai::block_helper::block_type::open: // legacy
 			{
 				auto open_block (dynamic_cast<rai::open_block*> (block.get ()));
 				return open_block->hashables.source;
 			}
 			break;
 		*/
-		case block_type::state_receive:
-		case block_type::state_open_receive:
+		case rai::block_helper::block_type::state_receive:
+		case rai::block_helper::block_type::state_open_receive:
 			{
 				auto state_block (dynamic_cast<rai::state_block*> (block.get ()));
 				return state_block->hashables.link;
 			}
 			break;
 		/*
-		case block_type::send: // legacy
-		case block_type::change: // legacy
+		case rai::block_helper::block_type::send: // legacy
+		case rai::block_helper::block_type::change: // legacy
 		*/
-		case block_type::state_send:
-		case block_type::state_open_genesis:
-		case block_type::state_change:
+		case rai::block_helper::block_type::state_send:
+		case rai::block_helper::block_type::state_open_genesis:
+		case rai::block_helper::block_type::state_change:
 			// No receive from
 			return 0;
 		default:
@@ -73,11 +73,11 @@ rai::block_helper::block_type rai::block_helper::get_state_subtype (rai::state_b
 	rai::state_block_subtype subtype = ledger_a.state_subtype (transaction_a, block_a);
 	switch (subtype)
 	{
-		case rai::state_block_subtype::send: return block_type::state_send;
-		case rai::state_block_subtype::receive: return block_type::state_receive;
-		case rai::state_block_subtype::open_receive: return block_type::state_open_receive;
-		case rai::state_block_subtype::open_genesis: return block_type::state_open_genesis;
-		case rai::state_block_subtype::change: return block_type::state_change;
+		case rai::state_block_subtype::send: return rai::block_helper::block_type::state_send;
+		case rai::state_block_subtype::receive: return rai::block_helper::block_type::state_receive;
+		case rai::state_block_subtype::open_receive: return rai::block_helper::block_type::state_open_receive;
+		case rai::state_block_subtype::open_genesis: return rai::block_helper::block_type::state_open_genesis;
+		case rai::state_block_subtype::change: return rai::block_helper::block_type::state_change;
 		default:
 			assert (false);
 			break;
@@ -91,7 +91,7 @@ rai::block_helper::block_type rai::block_helper::get_state_subtype (rai::state_b
 	}
 	auto previous_block (ledger_a.store.block_get (transaction_a, previous_hash));
 	assert (previous_block != nullptr);
-	if (previous_block == nullptr) return block_type::undefined;
+	if (previous_block == nullptr) return rai::block_helper::block_type::undefined;
 	auto previous_balance = ledger_a.balance (transaction_a, previous_hash); // could be retrieved directly from the block
 	return get_state_subtype_balance (block_a, previous_balance);
 	*/
@@ -105,12 +105,12 @@ rai::block_helper::block_type rai::block_helper::get_state_subtype_balance (rai:
 		if (!block_a.hashables.link.is_zero ())
 		{
 			// no prev but link: open_receive
-			return block_type::state_open_receive;
+			return rai::block_helper::block_type::state_open_receive;
 		}
 		else
 		{
 			// no prev, no link: open_genesis
-			return block_type::state_open_genesis;
+			return rai::block_helper::block_type::state_open_genesis;
 		}
 	}
 	// has previous, has previous balance
@@ -118,18 +118,18 @@ rai::block_helper::block_type rai::block_helper::get_state_subtype_balance (rai:
 	auto cur_balance (block_a.hashables.balance.number ());
 	if (cur_balance < previous_balance_a)
 	{
-		return block_type::state_send;
+		return rai::block_helper::block_type::state_send;
 	}
 	// if balance increasing: receive
 	if (cur_balance > previous_balance_a)
 	{
-		return block_type::state_receive;
+		return rai::block_helper::block_type::state_receive;
 	}
 	// balance does not change, and no link: change
 	if (block_a.hashables.link.is_zero ())
 	{
-		return block_type::state_change;
+		return rai::block_helper::block_type::state_change;
 	}
 	// otherwise: undefined, which is not a valid block
-	return block_type::undefined;
+	return rai::block_helper::block_type::undefined;
 }

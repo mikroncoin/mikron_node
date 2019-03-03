@@ -169,7 +169,7 @@ std::vector<std::pair<rai::account, rai::block_hash>> rai::blockchain_analyzer::
 	}
 	int n_all = all_frontiers.size ();
 	std::default_random_engine generator;
-	std::uniform_int_distribution<int> distribution(0, n_all - 1);
+	std::uniform_int_distribution<int> distribution (0, n_all - 1);
 	std::vector<std::pair<rai::account, rai::block_hash>> frontiers;
 	for (int i = 0; i < n; ++i)
 	{
