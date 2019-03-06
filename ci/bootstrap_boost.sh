@@ -18,7 +18,7 @@ BOOST_URL=https://downloads.sourceforge.net/project/boost/boost/1.67.0/${BOOST_B
 BOOST_ARCHIVE="${BOOST_BASENAME}.tar.bz2"
 BOOST_ARCHIVE_SHA256='2684c972994ee57fc5632e03bf044746f6eb45d4920c343937a465fd67a5adba'
 
-wget --quiet -O "${BOOST_ARCHIVE}.new" "${BOOST_URL}"
+wget --quiet --no-check-certificate -O "${BOOST_ARCHIVE}.new" "${BOOST_URL}"
 checkHash="$(openssl dgst -sha256 "${BOOST_ARCHIVE}.new" | sed 's@^.*= *@@')"
 if [ "${checkHash}" != "${BOOST_ARCHIVE_SHA256}" ]; then
 	echo "Checksum mismatch.  Expected ${BOOST_ARCHIVE_SHA256}, got ${checkHash}" >&2
