@@ -67,6 +67,8 @@ void rai::write_len (rai::stream & stream_a, size_t len, const uint8_t * value)
 	assert (amount_written == len);
 }
 
+const rai::uint32_t rai::epoch::origin;
+
 rai::short_timestamp::short_timestamp ()
 	: data (0)
 {
@@ -108,16 +110,16 @@ rai::timestamp_t rai::short_timestamp::now ()
 rai::timestamp_t rai::short_timestamp::convert_from_posix_time (uint64_t time_posix)
 {
 	uint64_t current_time_since_epoch = 0;
-	if (time_posix >= (uint64_t)short_timestamp_epoch)
+	if (time_posix >= (uint64_t)rai::epoch::origin)
 	{
-		current_time_since_epoch = time_posix - (uint64_t)short_timestamp_epoch;
+		current_time_since_epoch = time_posix - (uint64_t)rai::epoch::origin;
 	}
 	return (rai::timestamp_t)current_time_since_epoch;
 }
 
 uint64_t rai::short_timestamp::convert_to_posix_time (rai::timestamp_t time)
 {
-	return (uint64_t)short_timestamp_epoch + (uint64_t)time;
+	return (uint64_t)rai::epoch::origin + (uint64_t)time;
 }
 
 void rai::short_timestamp::set_from_posix_time (uint64_t time_posix)
@@ -132,7 +134,7 @@ bool rai::short_timestamp::decode_dec (std::string const & text)
 
 uint64_t rai::short_timestamp::to_posix_time () const
 {
-	return (uint64_t)short_timestamp_epoch + (uint64_t)data.number ();
+	return (uint64_t)rai::epoch::origin + (uint64_t)data.number ();
 }
 
 bool rai::short_timestamp::is_zero() const

@@ -448,7 +448,6 @@ void rai::landing::write_store ()
 
 rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 {
-	// TODO: adjust for smaller amount representation (64 bit)
 	// Halving period ~= Exponent of 2 in seconds approximately 1 year = 2^25 = 33554432
 	// Interval = Exponent of 2 in seconds approximately 1 minute = 2^10 = 64
 	uint64_t intervals_per_period (1 << (25 - interval_exponent));
@@ -457,35 +456,35 @@ rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 	{
 		// Total supply / 2^halving period / intervals per period
 		// 2^128 / 2^1 / (2^25 / 2^10)
-		result = rai::amount_t (1) << (127 - (25 - interval_exponent)); // 50%
+		result = rai::amount_t (1) << (63 - (25 - interval_exponent)); // 50%
 	}
 	else if (interval < intervals_per_period * 2)
 	{
-		result = rai::amount_t (1) << (126 - (25 - interval_exponent)); // 25%
+		result = rai::amount_t (1) << (62 - (25 - interval_exponent)); // 25%
 	}
 	else if (interval < intervals_per_period * 3)
 	{
-		result = rai::amount_t (1) << (125 - (25 - interval_exponent)); // 13%
+		result = rai::amount_t (1) << (61 - (25 - interval_exponent)); // 13%
 	}
 	else if (interval < intervals_per_period * 4)
 	{
-		result = rai::amount_t (1) << (124 - (25 - interval_exponent)); // 6.3%
+		result = rai::amount_t (1) << (60 - (25 - interval_exponent)); // 6.3%
 	}
 	else if (interval < intervals_per_period * 5)
 	{
-		result = rai::amount_t (1) << (123 - (25 - interval_exponent)); // 3.1%
+		result = rai::amount_t (1) << (59 - (25 - interval_exponent)); // 3.1%
 	}
 	else if (interval < intervals_per_period * 6)
 	{
-		result = rai::amount_t (1) << (122 - (25 - interval_exponent)); // 1.6%
+		result = rai::amount_t (1) << (58 - (25 - interval_exponent)); // 1.6%
 	}
 	else if (interval < intervals_per_period * 7)
 	{
-		result = rai::amount_t (1) << (121 - (25 - interval_exponent)); // 0.8%
+		result = rai::amount_t (1) << (57 - (25 - interval_exponent)); // 0.8%
 	}
 	else if (interval < intervals_per_period * 8)
 	{
-		result = rai::amount_t (1) << (121 - (25 - interval_exponent)); // 0.8*
+		result = rai::amount_t (1) << (57 - (25 - interval_exponent)); // 0.8*
 	}
 	else
 	{
