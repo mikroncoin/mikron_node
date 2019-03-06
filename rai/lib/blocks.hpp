@@ -28,6 +28,14 @@ void write (rai::stream & stream_a, T const & value)
 	auto amount_written (stream_a.sputn (reinterpret_cast<uint8_t const *> (&value), sizeof (value)));
 	assert (amount_written == sizeof (value));
 }
+
+class epoch
+{
+public:
+	// The time origin for all block information. Sept 1 2018 00:00 UTC. In Posix time.
+	static const rai::uint32_t origin = 1535760000; // Sept 1 2018 00:00 UTC
+};
+
 class block_visitor;
 
 enum class block_type : uint8_t
@@ -43,12 +51,11 @@ enum class block_type : uint8_t
 
 using timestamp_t = uint32_t;
 
-// Number of seconds since short_timestamp_epoch (Sept 1 2018), 4-byte
+// Number of seconds, relative to rai::epoch::origin (Sept 1 2018), 4-byte
 class short_timestamp
 {
 public:
 	// The time origin for creation times, in Posix time, Sept 1 2018.
-	static const rai::timestamp_t short_timestamp_epoch = 1535760000; // Sept 1 2018
 	// default constructor, 0
 	short_timestamp ();
 	short_timestamp (rai::timestamp_t);
@@ -78,7 +85,7 @@ public:
 	virtual void hash (blake2b_state &) const = 0;
 	virtual uint64_t block_work () const = 0;
 	virtual void block_work_set (uint64_t) = 0;
-	// Block creation time, seconds since short_timestamp_epoch, 4-byte
+	// Block creation time, seconds since rai::epoch::origin, 4-byte
 	virtual rai::short_timestamp creation_time () const = 0;
 	// Previous block in account's chain, zero for open block
 	virtual rai::block_hash previous () const = 0;
@@ -123,7 +130,7 @@ public:
 	rai::account account;
 	// Previous transaction in this chain
 	rai::block_hash previous;
-	// Block creation time, seconds since short_timestamp_epoch (Sept 1 2018), 4-byte
+	// Block creation time, seconds since rai::epoch::origin (Sept 1 2018), 4-byte
 	rai::short_timestamp creation_time;
 	// Representative of this account
 	rai::account representative;
