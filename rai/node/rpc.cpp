@@ -1211,7 +1211,6 @@ void rai::rpc_handler::block_create ()
 				{
 					comment = comment_text.get ();
 				}
-				std::cerr << "comment " << comment << std::endl;
 				if (!previous_text.is_initialized () || representative.is_zero () || comment.length () == 0)
 				{
 					ec = nano::error_rpc::block_create_requirements_state;
