@@ -13,6 +13,8 @@ std::string to_string_hex (uint64_t);
 bool from_string_hex (std::string const &, uint64_t &);
 // We operate on streams of uint8_t by convention
 using stream = std::basic_streambuf<uint8_t>;
+// Read a a number of bytes
+bool read_len (rai::stream & stream_a, size_t len, uint8_t * value);
 // Read a raw byte stream the size of `T' and fill value.
 template <typename T>
 bool read (rai::stream & stream_a, T & value)
@@ -21,6 +23,8 @@ bool read (rai::stream & stream_a, T & value)
 	auto amount_read (stream_a.sgetn (reinterpret_cast<uint8_t *> (&value), sizeof (value)));
 	return amount_read != sizeof (value);
 }
+// Write a number of bytes
+void write_len (rai::stream & stream_a, size_t len, const uint8_t * value);
 template <typename T>
 void write (rai::stream & stream_a, T const & value)
 {
@@ -213,18 +217,18 @@ enum class comment_block_subtype : uint8_t
 	// Comment valid for the account from now on
 	account = 1,
 	// Comment valid for the next send block only
-	send = 2
+	//send = 2
 };
 
 class comment_hashables
 {
 public:
 	comment_hashables ();
-	comment_hashables (rai::uint32_t, rai::uint512_union const &);
+	comment_hashables (rai::uint32_t, rai::var_len_string const &);
 	void hash (blake2b_state &) const;
 	rai::uint32_t subtype;
-	// Comment string, UTF-8, null-terminated
-	rai::uint512_union comment;
+	// Comment string, var len, UTF-8
+	rai::var_len_string comment;
 };
 
 class comment_block : public rai::base_block
@@ -237,9 +241,9 @@ public:
 	using rai::block::hash;
 	void hash (blake2b_state &) const override;
 	rai::comment_block_subtype subtype () const;
-	static rai::uint512_union comment_string_to_raw (std::string const &);
-	static std::string comment_raw_to_string (rai::uint512_union const &);
-	rai::uint512_union const & comment_raw () const;
+	static rai::var_len_string comment_string_to_raw (std::string const &);
+	static std::string comment_raw_to_string (rai::var_len_string const &);
+	rai::var_len_string const & comment_raw () const;
 	std::string comment () const;
 	virtual bool deserialize (rai::stream &) override;
 	virtual bool deserialize_json (boost::property_tree::ptree const &) override;
@@ -249,7 +253,8 @@ public:
 	rai::block_type type () const override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::comment_block const &) const;
-	static size_t constexpr size = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint32_t) + sizeof (rai::uint512_union) + sizeof (rai::signature) + sizeof (uint64_t);
+	static size_t const max_comment_length = 160;
+	static size_t constexpr size_base = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint32_t) + sizeof (uint16_t) + sizeof (rai::signature) + sizeof (uint64_t);
 	rai::comment_hashables hashables;
 };
 

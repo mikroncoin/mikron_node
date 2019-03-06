@@ -183,6 +183,40 @@ union uint512_union
 	std::string to_string () const;
 };
 
+// A variable length array of bytes, with 2-bytes length
+class var_len_bytes16
+{
+public:
+	var_len_bytes16 (std::vector<uint8_t> const &);
+	var_len_bytes16 () = default;
+	size_t length () const { return (size_t)len; }
+	std::vector<uint8_t> const & value () const { return bytes; }
+	void clear () { bytes.clear (); len = 0; }
+	static const uint16_t max_length = 65535;
+	// return hex represenatation
+	std::string to_string () const;
+	void encode_hex (std::string &) const;
+	bool decode_hex (std::string const &);
+	void serialize (rai::stream &) const;
+	bool deserialize (rai::stream &);
+	bool operator== (rai::var_len_bytes16 const &) const;
+protected:
+	uint16_t len;
+	std::vector<uint8_t> bytes;
+};
+
+// A variable length UTF string (max len 65K), storage is var_len_bytes16
+class var_len_string : public var_len_bytes16
+{
+public:
+	var_len_string (std::string const &);
+	var_len_string (std::string const &, size_t);
+	var_len_string () = default;
+	std::string value_string () const;
+	void set_from_string (std::string const &, size_t);
+	static std::string raw_to_string (std::vector<uint8_t> const &, uint16_t);
+};
+
 // Signatures are 512 bit.
 using signature = uint512_union;
 // Shott UTF-8 string

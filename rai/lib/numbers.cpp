@@ -881,3 +881,156 @@ std::string rai::amount::format_balance (rai::uint64_t scale, int precision, boo
 	std::string grouping = std::use_facet<std::moneypunct<char>> (locale).grouping ();
 	return ::format_balance (data, scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
+
+const uint16_t rai::var_len_bytes16::max_length;
+
+rai::var_len_bytes16::var_len_bytes16 (std::vector<uint8_t> const & bytes_a)
+{
+	auto len_a (bytes_a.size ());
+	if (len_a < rai::var_len_bytes16::max_length)
+	{
+		len = len_a;
+		bytes = bytes_a;
+		return;
+	}
+	// size must be truncated
+	len = rai::var_len_bytes16::max_length;
+	auto begin (bytes_a.begin ());
+	auto end (begin + len);
+	std::copy (begin, end, bytes.begin ());
+}
+
+std::string rai::var_len_bytes16::to_string () const
+{
+	std::string result;
+	encode_hex (result);
+	return result;
+}
+
+void rai::var_len_bytes16::encode_hex (std::string & text) const
+{
+	assert (text.empty ());
+	std::stringstream stream;
+	stream << std::hex << std::noshowbase << std::setfill ('0');
+	// length in 2 bytes
+	stream << std::setw (4) << len;
+	// contents
+	stream << std::setw (2);
+	for (int i = 0; i < len; ++i)
+	{
+		stream << (uint16_t)bytes[i]; // uint8 is char, printed as char
+	}
+	text = stream.str ();
+}
+
+bool rai::var_len_bytes16::decode_hex (std::string const & hex)
+{
+	// minimum size is 4 hex chars (=2 bytes) for length
+	if (hex.size () < 2*2)
+	{
+		return true;
+	}
+	try
+	{
+		// read length, 2 bytes
+		{
+			std::stringstream stream (hex.substr (0, 4));
+			stream << std::hex << std::noshowbase;
+			uint16_t len_l;
+			stream >> len_l;
+			len = len_l;
+		}
+		// minimum size (incl. len)
+		if (hex.size () < 2 * (2 + len))
+		{
+			return true;
+		}
+		bytes.clear ();
+		size_t idx = 2 * 2;
+		while (bytes.size () < len)
+		{
+			std::stringstream stream (hex.substr (idx, 2));
+			idx += 2;
+			stream << std::hex << std::noshowbase;
+			uint16_t v1; // uint8_t is char
+			stream >> v1;
+			bytes.push_back ((uint8_t)v1);
+		}
+	}
+	catch (std::runtime_error &)
+	{
+		return true;
+	}
+	return false;
+}
+
+void rai::var_len_bytes16::serialize (rai::stream & stream_a) const
+{
+	write (stream_a, boost::endian::native_to_big (len));
+	rai::write_len (stream_a, len, bytes.data ());
+}
+
+bool rai::var_len_bytes16::deserialize (rai::stream & stream_a)
+{
+	// read length
+	auto error (rai::read (stream_a, len));
+	if (error) return error;
+	boost::endian::big_to_native_inplace (len);
+	// read bytes: create the vector object then fill it
+	bytes = std::vector<uint8_t> (len);
+	error = rai::read_len (stream_a, len, bytes.data ());
+	return error;
+}
+
+bool rai::var_len_bytes16::operator== (rai::var_len_bytes16 const & other_a) const
+{
+	if (len != other_a.len)
+	{
+		return false;
+	}
+	return (bytes == other_a.bytes);
+}
+
+rai::var_len_string::var_len_string (std::string const & string_a) :
+var_len_bytes16 ()
+{
+	set_from_string (string_a, max_length);
+}
+
+rai::var_len_string::var_len_string (std::string const & string_a, size_t max_len_a) :
+var_len_bytes16 ()
+{
+	set_from_string (string_a, max_len_a);
+}
+
+std::string rai::var_len_string::value_string () const
+{
+	return raw_to_string (bytes, len);
+}
+
+void rai::var_len_string::set_from_string (std::string const & string_a, size_t max_len_a)
+{
+	// TODO UTF-8 conversion
+	size_t len_l (string_a.length ());
+	clear ();
+	len = (uint16_t)std::min ((size_t)max_length, std::min ((size_t)max_len_a, (size_t)len_l));
+	for (uint16_t i (0); i < len; ++i)
+	{
+		bytes.push_back ((uint8_t)string_a[i]);
+	}
+}
+
+std::string rai::var_len_string::raw_to_string (std::vector<uint8_t> const & raw_a, uint16_t len_a)
+{
+	// TODO UTF-8 conversion
+	if (raw_a.size () == len_a)
+	{
+		std::string string_l (raw_a.begin (), raw_a.end ());
+		return string_l;
+	}
+	// need to truncate
+	len_a = (uint16_t)std::min ((size_t)max_length, std::min (raw_a.size (), (size_t)len_a));
+	auto end_l (raw_a.begin () + len_a);
+	std::string string_l (raw_a.begin (), end_l);
+	return string_l;
+}

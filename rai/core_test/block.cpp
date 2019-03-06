@@ -337,23 +337,23 @@ TEST (comment_block, raw_comment)
 {
 	auto comment1 ("COMMENT1");
 	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
-	ASSERT_EQ ('C', comment_raw1.bytes[0]);
-	ASSERT_EQ ('O', comment_raw1.bytes[1]);
-	ASSERT_EQ ('M', comment_raw1.bytes[2]);
-	ASSERT_EQ ('1', comment_raw1.bytes[7]);
-	ASSERT_EQ (0, comment_raw1.bytes[8]);
+	ASSERT_EQ (8, comment_raw1.length ());
+	ASSERT_EQ ('C', comment_raw1.value ()[0]);
+	ASSERT_EQ ('O', comment_raw1.value ()[1]);
+	ASSERT_EQ ('M', comment_raw1.value ()[2]);
+	ASSERT_EQ ('1', comment_raw1.value ()[7]);
 	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
-	ASSERT_EQ ("COMMENT1", comment2);
+	ASSERT_EQ (comment1, comment2);
 
 	rai::keypair key;
-	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, "COMMENT1", key.prv, key.pub, 0));
-	ASSERT_EQ ("COMMENT1", comment5.comment ());
-	ASSERT_EQ ('O', comment5.comment_raw ().bytes[1]);
+	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	ASSERT_EQ (comment1, comment5.comment ());
+	ASSERT_EQ ('O', comment5.comment_raw ().value ()[1]);
 }
 
 TEST (comment_block, long_comment)
 {
-	int maxlen = 64;
+	int maxlen = 160;
 	std::string max_comment;
 	for (auto i (0); i < maxlen; ++i)
 	{
@@ -375,10 +375,10 @@ TEST (comment_block, utf_comment)
 	std::string comment1 ("MÍKRÓ+ÁÉÍÓŐÚŰX");
 	ASSERT_EQ (23, comment1.length ()); // longer, UTF
 	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
-	ASSERT_EQ ('M', comment_raw1.bytes[0]);
-	ASSERT_EQ (195, comment_raw1.bytes[1]);
-	ASSERT_EQ ('X', comment_raw1.bytes[22]);
-	ASSERT_EQ (0, comment_raw1.bytes[23]);
+	ASSERT_EQ (23, comment_raw1.length ());
+	ASSERT_EQ ('M', comment_raw1.value ()[0]);
+	ASSERT_EQ (195, comment_raw1.value ()[1]);
+	ASSERT_EQ ('X', comment_raw1.value ()[22]);
 	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
 	ASSERT_EQ (comment1, comment2);
 	ASSERT_EQ (23, comment2.length ());
@@ -386,6 +386,47 @@ TEST (comment_block, utf_comment)
 
 TEST (comment_block, serialization)
 {
-	ASSERT_EQ (248, rai::comment_block::size);
-	// TODO
+	ASSERT_EQ (186, rai::comment_block::size_base);
+	std::string comment1 ("COMMENT_serialization_MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (45, comment1.length ()); // longer, UTF
+	rai::keypair key;
+	auto comment_block (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	// serialize
+	std::vector<uint8_t> bytes;
+	{
+		rai::vectorstream stream (bytes);
+		comment_block.serialize (stream);
+	}
+	ASSERT_EQ (186 + 45, bytes.size ());
+	// deserialize
+	rai::bufferstream stream (bytes.data (), bytes.size ());
+	auto error (false);
+	rai::comment_block comment_block2 (error, stream);
+	ASSERT_FALSE (error);
+	// compare
+	ASSERT_EQ ("COMMENT_serialization_MÍKRÓ+ÁÉÍÓŐÚŰX", comment_block2.comment ());
+	ASSERT_EQ (rai::comment_block_subtype::account, comment_block2.subtype ());
+	ASSERT_EQ (comment_block.hash (), comment_block2.hash ());
+}
+
+TEST (comment_block, serialization_json)
+{
+	std::string comment1 ("COMMENT_serialization_json_MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (50, comment1.length ()); // longer, UTF
+	rai::keypair key;
+	auto comment_block (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	// serialize
+	std::string json;
+	comment_block.serialize_json (json);
+	// deserialize
+	std::stringstream body (json);
+	boost::property_tree::ptree tree;
+	boost::property_tree::read_json (body, tree);
+	auto error (false);
+	rai::comment_block comment_block2 (error, tree);
+	ASSERT_FALSE (error);
+	// compare
+	ASSERT_EQ ("COMMENT_serialization_json_MÍKRÓ+ÁÉÍÓŐÚŰX", comment_block2.comment ());
+	ASSERT_EQ (rai::comment_block_subtype::account, comment_block2.subtype ());
+	ASSERT_EQ (comment_block.hash (), comment_block2.hash ());
 }

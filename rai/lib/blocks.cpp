@@ -53,6 +53,20 @@ bool rai::from_string_hex (std::string const & value_a, uint64_t & target_a)
 	return error;
 }
 
+// Read a a number of bytes
+bool rai::read_len (rai::stream & stream_a, size_t len, uint8_t * value)
+{
+	auto amount_read (stream_a.sgetn (value, len));
+	return amount_read != len;
+}
+
+// Write a number of bytes
+void rai::write_len (rai::stream & stream_a, size_t len, const uint8_t * value)
+{
+	auto amount_written (stream_a.sputn (value, len));
+	assert (amount_written == len);
+}
+
 rai::short_timestamp::short_timestamp ()
 	: data (0)
 {
@@ -556,7 +570,7 @@ comment ()
 {
 }
 
-rai::comment_hashables::comment_hashables (rai::uint32_t subtype_a, rai::uint512_union const & comment_a) :
+rai::comment_hashables::comment_hashables (rai::uint32_t subtype_a, rai::var_len_string const & comment_a) :
 subtype (subtype_a),
 comment (comment_a)
 {
@@ -565,10 +579,11 @@ comment (comment_a)
 void rai::comment_hashables::hash (blake2b_state & hash_a) const
 {
 	blake2b_update (&hash_a, &subtype, sizeof (subtype));
-	blake2b_update (&hash_a, comment.bytes.data (), sizeof (comment.bytes));
+	blake2b_update (&hash_a, comment.value ().data (), comment.value ().size ());
 }
 
-size_t constexpr rai::comment_block::size;
+size_t constexpr rai::comment_block::max_comment_length;
+size_t constexpr rai::comment_block::size_base;
 
 // if time is 0, current time is taken
 rai::comment_block::comment_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::comment_block_subtype subtype_a, std::string const & comment_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
@@ -576,6 +591,7 @@ base_block (account_a, previous_a, creation_time_a, representative_a, balance_a,
 hashables ((uint32_t)subtype_a, comment_string_to_raw (comment_a))
 {
 	signature_set (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()));
+	assert (comment_raw ().length () <= max_comment_length);
 }
 
 rai::comment_block::comment_block (bool & error_a, rai::stream & stream_a) :
@@ -585,6 +601,7 @@ hashables ()
 	if (error_a)
 		return;
 	error_a = deserialize (stream_a);
+	assert (comment_raw ().length () <= max_comment_length);
 }
 
 rai::comment_block::comment_block (bool & error_a, boost::property_tree::ptree const & tree_a) :
@@ -594,6 +611,7 @@ hashables ()
 	if (error_a)
 		return;
 	error_a = deserialize_json (tree_a);
+	assert (comment_raw ().length () <= max_comment_length);
 }
 
 void rai::comment_block::hash (blake2b_state & hash_a) const
@@ -609,34 +627,18 @@ rai::comment_block_subtype rai::comment_block::subtype () const
 	return (rai::comment_block_subtype)hashables.subtype;
 }
 
-rai::uint512_union rai::comment_block::comment_string_to_raw (std::string const & comment_a)
+
+rai::var_len_string rai::comment_block::comment_string_to_raw (std::string const & comment_a)
 {
-	// TODO UTF-8 conversion
-	auto len (comment_a.length ());
-	rai::uint512_union raw;
-	raw.clear ();
-	auto maxlen (sizeof (raw.bytes));
-	if (len > maxlen)
-	{
-		len = maxlen;
-	}
-	for (auto i (0); i < len; ++i)
-	{
-		raw.bytes[i] = (uint8_t)comment_a[i];
-	}
-	return raw;
+	return rai::var_len_string (comment_a, max_comment_length);
 }
 
-std::string rai::comment_block::comment_raw_to_string (rai::uint512_union const & comment_raw_a)
+std::string rai::comment_block::comment_raw_to_string (rai::var_len_string const & comment_raw_a)
 {
-	// TODO UTF-8 conversion
-	std::array<uint8_t, 64> const & data = comment_raw_a.bytes;
-	auto nullidx (std::find (data.begin (), data.end (), 0));
-	std::string comment (data.begin (), nullidx);
-	return comment;
+	return comment_raw_a.value_string ();
 }
 
-rai::uint512_union const & rai::comment_block::comment_raw () const
+rai::var_len_string const & rai::comment_block::comment_raw () const
 {
 	return hashables.comment;
 }
@@ -666,7 +668,7 @@ bool rai::comment_block::deserialize (rai::stream & stream_a)
 	error = read (stream_a, hashables.subtype);
 	if (error)
 		return error;
-	error = read (stream_a, hashables.comment);
+	error = hashables.comment.deserialize (stream_a);
 	if (error)
 		return error;
 	error = read (stream_a, signature);
@@ -703,8 +705,19 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 		if (error)
 			return error;
 		hashables.subtype = (uint32_t)rai::comment_block_subtype::account; // TODO
-		auto comment_l (tree_a.get<std::string> ("comment"));
-		hashables.comment = comment_string_to_raw (comment_l);
+		auto comment_hex_l (tree_a.get_optional<std::string> ("comment_as_hex"));
+		if (comment_hex_l)
+		{
+			error = hashables.comment.decode_hex (comment_hex_l.get ());
+			if (error)
+				return error;
+		}
+		else
+		{
+			// no hex representation, take from string
+			auto comment_l (tree_a.get<std::string> ("comment"));
+			hashables.comment = comment_string_to_raw (comment_l);
+		}
 		auto work_l (tree_a.get<std::string> ("work"));
 		error = work.decode_hex (work_l);
 		if (error)
@@ -727,7 +740,7 @@ void rai::comment_block::serialize (rai::stream & stream_a) const
 	write (stream_a, base_hashables.representative);
 	base_hashables.balance.serialize (stream_a);
 	write (stream_a, hashables.subtype);
-	write (stream_a, hashables.comment);
+	hashables.comment.serialize (stream_a);
 	write (stream_a, signature);
 	work.serialize (stream_a);
 }
@@ -744,7 +757,7 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 	tree.put ("balance", base_hashables.balance.to_string_dec ());
 	tree.put ("subtype", std::to_string (hashables.subtype));
 	tree.put ("comment", comment ());
-	tree.put ("comment_as_hex", comment_raw ().number ());
+	tree.put ("comment_as_hex", comment_raw ().to_string ());
 	std::string signature_l;
 	signature.encode_hex (signature_l);
 	tree.put ("signature", signature_l);
