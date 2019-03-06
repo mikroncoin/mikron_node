@@ -189,9 +189,15 @@ class var_len_bytes16
 public:
 	var_len_bytes16 (std::vector<uint8_t> const &);
 	var_len_bytes16 () = default;
-	size_t length () const { return (size_t)len; }
-	std::vector<uint8_t> const & value () const { return bytes; }
-	void clear () { bytes.clear (); len = 0; }
+	size_t length () const
+	{
+		return (size_t)len;
+	}
+	std::vector<uint8_t> const & value () const
+	{
+		return bytes;
+	}
+	void clear ();
 	static const uint16_t max_length = 65535;
 	// return hex represenatation
 	std::string to_string () const;
@@ -200,6 +206,7 @@ public:
 	void serialize (rai::stream &) const;
 	bool deserialize (rai::stream &);
 	bool operator== (rai::var_len_bytes16 const &) const;
+
 protected:
 	uint16_t len;
 	std::vector<uint8_t> bytes;

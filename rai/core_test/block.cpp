@@ -354,6 +354,7 @@ TEST (comment_block, raw_comment)
 TEST (comment_block, long_comment)
 {
 	int maxlen = 160;
+	ASSERT_EQ (maxlen, rai::comment_block::max_comment_length);
 	std::string max_comment;
 	for (auto i (0); i < maxlen; ++i)
 	{

@@ -627,7 +627,6 @@ rai::comment_block_subtype rai::comment_block::subtype () const
 	return (rai::comment_block_subtype)hashables.subtype;
 }
 
-
 rai::var_len_string rai::comment_block::comment_string_to_raw (std::string const & comment_a)
 {
 	return rai::var_len_string (comment_a, max_comment_length);

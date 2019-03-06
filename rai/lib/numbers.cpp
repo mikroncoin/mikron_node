@@ -900,6 +900,12 @@ rai::var_len_bytes16::var_len_bytes16 (std::vector<uint8_t> const & bytes_a)
 	std::copy (begin, end, bytes.begin ());
 }
 
+void rai::var_len_bytes16::clear ()
+{
+	bytes.clear ();
+	len = 0;
+}
+
 std::string rai::var_len_bytes16::to_string () const
 {
 	std::string result;
@@ -926,7 +932,7 @@ void rai::var_len_bytes16::encode_hex (std::string & text) const
 bool rai::var_len_bytes16::decode_hex (std::string const & hex)
 {
 	// minimum size is 4 hex chars (=2 bytes) for length
-	if (hex.size () < 2*2)
+	if (hex.size () < 2 * 2)
 	{
 		return true;
 	}
@@ -974,7 +980,8 @@ bool rai::var_len_bytes16::deserialize (rai::stream & stream_a)
 {
 	// read length
 	auto error (rai::read (stream_a, len));
-	if (error) return error;
+	if (error)
+		return error;
 	boost::endian::big_to_native_inplace (len);
 	// read bytes: create the vector object then fill it
 	bytes = std::vector<uint8_t> (len);

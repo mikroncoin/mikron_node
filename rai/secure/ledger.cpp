@@ -306,6 +306,13 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 		result.code = rai::process_result::invalid_comment_block;
 		return;
 	}
+	// comment must be present, and not too long
+	if (block_a.comment_raw ().length () < 1 || block_a.comment_raw ().length () > rai::comment_block::max_comment_length)
+	{
+		result.code = rai::process_result::invalid_comment_block;
+		return;
+	}
+	// checks are OK
 	//ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
 	ledger.store.block_put (transaction, hash, block_a, 0);
 	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
