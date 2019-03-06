@@ -22,9 +22,9 @@ const char * live_genesis_public_key_data = "7B73946E4EE555E4E7F2654829F3E557760
 const rai::amount_t test_genesis_amount = std::numeric_limits<rai::amount_t>::max (); // 2^64-1 18446744073709551615
 const rai::amount_t beta_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
 const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amount_t)10000000000;
-const uint32_t test_genesis_time = 2592000; // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
-const uint32_t beta_genesis_time = 2592000; // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
-const uint32_t live_genesis_time = 2592000; // 2018.10.01.  1538352000 - short_timestamp_epoch = 1538352000 - 1535760000 = 2592000
+const uint32_t test_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
+const uint32_t beta_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
+const uint32_t live_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
 const char * test_manna_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
 const char * test_manna_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
 const char * beta_manna_public_key_data = beta_genesis_public_key_data; // manna account is the genesis account
