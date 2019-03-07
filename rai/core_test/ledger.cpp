@@ -2494,7 +2494,12 @@ TEST (ledger, send_self_valid_legacy)
 	genesis.initialize (transaction, store);
 	int cutoff_time = 99929600; // should be epoch2
 	// 'Old' send-to-self is allowed (legacy)
-	rai::state_block send_self (rai::genesis_account, genesis.hash (), cutoff_time - 1000, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
-	auto return1 (ledger.process (transaction, send_self));
+	rai::timestamp_t genesis_time = genesis.block ().creation_time ().number ();
+	rai::state_block send_self1 (rai::genesis_account, genesis.hash (), genesis_time + 1000, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, send_self1));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
+	// another send
+	rai::state_block send_self2 (rai::genesis_account, send_self1.hash (), cutoff_time - 1000, rai::genesis_account, rai::genesis_amount - 200, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, send_self2));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
 }
