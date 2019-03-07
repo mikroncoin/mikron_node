@@ -7,7 +7,7 @@
 
 [![Build Status](https://travis-ci.org/mikroncoin/mikron_node.svg?branch=master)](https://travis-ci.org/mikroncoin/mikron_node)
 [![Build status](https://ci.appveyor.com/api/projects/status/i7rk7dh6lvjxpwb8?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node)
-[![Build status](https://ci.appveyor.com/api/projects/status/2dq0p0i2eeooxib5?svg=true)](https://ci.appveyor.com/project/catenocrypt/mikron-node-112ko)
+[![pipeline status](https://gitlab.com/mikroncoin/mikron_node/badges/master/pipeline.svg)](https://gitlab.com/mikroncoin/mikron_node/pipelines)
 
 ### What is Mikron?
 
@@ -32,33 +32,32 @@ For more information, see [Nano.org](https://nano.org/) or read the [whitepaper]
 
 ### Guides & Documentation
 
-* White Paper
+* [White Paper](https://mikron.io/download/Mikron_Technical_Paper_ENG.pdf)
 * [Build Instructions](https://github.com/mikroncoin/mikron_node/wiki/Build-Instructions)
 * Command Line Interface
 * RPC Protocol
 * Wallet Design
-* Block Lattice
+* [Block Lattice](https://github.com/mikroncoin/mikron_node/wiki/Block-Lattice)
 * Design Features
 
 ### Guides & Documentation -- Nano
 
 * [White Paper](https://nano.org/en/whitepaper)
-* [Build Instructions](https://github.com/nanocurrency/raiblocks/wiki/Build-Instructions)
 * [Command Line Interface](https://github.com/nanocurrency/raiblocks/wiki/Command-line-interface)
 * [RPC Protocol](https://github.com/nanocurrency/raiblocks/wiki/RPC-protocol)
 * [Wallet Design](https://github.com/nanocurrency/raiblocks/wiki/Wallet-design)
-* [Block Lattice](https://github.com/nanocurrency/raiblocks/wiki/Block-lattice)
 * [Design Features](https://github.com/nanocurrency/raiblocks/wiki/Design-features)
 
 ### Links & Resources
 
 * [Mikron Website](https://mikron.io)
 * [Discord Chat](https://discord.gg/QBKr3hv)
+* [GitHub](https://github.com/mikroncoin/mikron_node)
 * [GitHub wiki](https://github.com/mikroncoin/mikron_node/wiki)
 * [Nano GitHub](https://github.com/nanocurrency/raiblocks)
-* (Roadmap)
+* [Roadmap](https://mikron.io/#reszletes-program)
 * (Reddit)
-* (Medium)
+* [Medium](https://medium.com/@mikronsocial)
 * (Twitter)
 * (Forum)
 
@@ -79,13 +78,9 @@ Apart the similar name, not much!  Mikron and [MicroCoin](https://mikrocoin.hu) 
 ### Links & Resources -- Nano
 
 * [Nano Website](https://nano.org)
-* [Nano Roadmap](https://developers.nano.org/roadmap)
-* [Discord Chat](https://chat.nano.org/)
 * [Reddit](https://reddit.com/r/nanocurrency)
-* [Medium](https://medium.com/nanocurrency)
-* [Twitter](https://twitter.com/nano)
-* [Forum](https://forum.raiblocks.net/)
 * [GitHub wiki](https://github.com/nanocurrency/raiblocks/wiki)
+* [BitcoinTalk announcement](https://bitcointalk.org/index.php?topic=1381323.0)
 
 ### Want to Contribute? -- Nano
 

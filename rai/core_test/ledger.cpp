@@ -136,6 +136,9 @@ TEST (ledger, process_send)
 	auto return1 (ledger.process (transaction, send));
 	ASSERT_EQ(rai::process_result::progress, return1.code);
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash1));
+	int amount_sign;
+	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount_with_sign (transaction, hash1, amount_sign));
+	ASSERT_EQ (-1, amount_sign);
 	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ());
 	ASSERT_TRUE (store.frontier_get (transaction, hash1).is_zero ());  // state block does not get into frontier
 	ASSERT_EQ (rai::test_genesis_key.pub, return1.account);
@@ -240,6 +243,9 @@ TEST (ledger, process_receive)
 	ASSERT_TRUE (store.frontier_get (transaction, hash2).is_zero ());
 	auto return2 (ledger.process (transaction, receive));
 	ASSERT_EQ (25, ledger.amount (transaction, hash4));
+	int amount_sign = 0;
+	ASSERT_EQ (25, ledger.amount_with_sign (transaction, hash4, amount_sign));
+	ASSERT_EQ (1, amount_sign);
 	ASSERT_TRUE (store.frontier_get (transaction, hash2).is_zero ());
 	ASSERT_TRUE (store.frontier_get (transaction, hash4).is_zero ());
 	ASSERT_EQ (rai::process_result::progress, return2.code);
@@ -409,7 +415,8 @@ TEST (ledger, representative_genesis)
 	genesis.initialize (transaction, store);
 	auto latest (ledger.latest (transaction, rai::test_genesis_key.pub));
 	ASSERT_FALSE (latest.is_zero ());
-	ASSERT_EQ (genesis.hash (), ledger.representative (transaction, latest));
+	ASSERT_EQ (genesis.hash (), latest);
+	ASSERT_EQ (rai::genesis_account, ledger.representative_get (transaction, latest));
 }
 
 TEST (ledger, weight)
@@ -2254,12 +2261,6 @@ TEST (ledger, state_receive_change_rollback)
 	ASSERT_EQ (rai::genesis_amount - rai::Gxrb_ratio, ledger.weight (transaction, rai::genesis_account));
 	ASSERT_EQ (0, ledger.weight (transaction, rep.pub));
 }
-
-/* Epoch and upgrades are no longer relevant
-TEST (ledger, epoch_blocks_general)
-TEST (ledger, epoch_blocks_receive_upgrade)
-TEST (ledger, epoch_blocks_fork)
-*/
 
 rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
 {

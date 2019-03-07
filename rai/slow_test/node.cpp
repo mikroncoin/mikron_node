@@ -78,24 +78,26 @@ TEST (ledger, deep_account_compute)
 	ASSERT_FALSE (init);
 	rai::stat stats;
 	rai::ledger ledger (store, stats);
-	rai::genesis_legacy_with_open genesis;
+	rai::genesis genesis;
 	rai::transaction transaction (store.environment, nullptr, true);
 	genesis.initialize (transaction, store);
 	rai::keypair key;
 	auto balance (rai::genesis_amount - 1);
-	rai::send_block send (genesis.hash (), key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto balance2 (1);
+	rai::state_block send (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
-	rai::open_block open (send.hash (), rai::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
+	rai::state_block open (key.pub, 0, 0, rai::test_genesis_key.pub, balance2, send.hash (), key.prv, key.pub, 0);
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, open).code);
 	auto sprevious (send.hash ());
 	auto rprevious (open.hash ());
 	for (auto i (0), n (100000); i != n; ++i)
 	{
 		balance -= 1;
-		rai::send_block send (sprevious, key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		balance2 += 1;
+		rai::state_block send (rai::genesis_account, sprevious, 0, rai::genesis_account, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 		sprevious = send.hash ();
-		rai::receive_block receive (rprevious, send.hash (), key.prv, key.pub, 0);
+		rai::state_block receive (key.pub, rprevious, 0, key.pub, balance2, send.hash (), key.prv, key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
 		rprevious = receive.hash ();
 		if (i % 100 == 0)
@@ -168,19 +170,21 @@ TEST (node, fork_storm)
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	auto previous (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	auto balance (system.nodes[0]->balance (rai::test_genesis_key.pub));
+	auto balance2 (0);
 	ASSERT_FALSE (previous.is_zero ());
 	for (auto j (0); j != system.nodes.size (); ++j)
 	{
 		balance -= 1;
+		balance2 += 1;
 		rai::keypair key;
-		rai::send_block send (previous, key.pub, balance, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::test_genesis_key.pub, previous, 0, rai::test_genesis_key.pub, balance, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		previous = send.hash ();
 		for (auto i (0); i != system.nodes.size (); ++i)
 		{
 			auto send_result (system.nodes[i]->process (send));
 			ASSERT_EQ (rai::process_result::progress, send_result.code);
 			rai::keypair rep;
-			auto open (std::make_shared<rai::open_block> (previous, rep.pub, key.pub, key.prv, key.pub, 0));
+			auto open (std::make_shared<rai::state_block> (key.pub, 0, 0, rep.pub, balance2, previous, key.prv, key.pub, 0));
 			system.nodes[i]->work_generate_blocking (*open);
 			auto open_result (system.nodes[i]->process (*open));
 			ASSERT_EQ (rai::process_result::progress, open_result.code);
@@ -292,7 +296,7 @@ TEST (broadcast, world_broadcast_simulate)
 		}
 	}
 	auto count (heard_count (nodes));
-	printf ("");
+	std::cout << std::endl;
 }
 
 TEST (broadcast, sqrt_broadcast_simulate)
@@ -345,7 +349,7 @@ TEST (broadcast, sqrt_broadcast_simulate)
 		}
 	}
 	auto count (heard_count (nodes));
-	printf ("");
+	std::cout << std::endl;
 }
 
 TEST (peer_container, random_set)
@@ -375,7 +379,7 @@ TEST (store, unchecked_load)
 {
 	rai::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto block (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
 		rai::transaction transaction (node.store.environment, nullptr, true);
@@ -389,7 +393,7 @@ TEST (store, vote_load)
 {
 	rai::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<rai::send_block> (0, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	auto block (std::make_shared<rai::state_block> (rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.pub, 0, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
 		auto vote (std::make_shared<rai::vote> (rai::test_genesis_key.pub, rai::test_genesis_key.prv, i, block));

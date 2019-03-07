@@ -12,6 +12,8 @@ std::string nano::error_common_messages::message (int ev) const
 			return "Account not found";
 		case nano::error_common::account_not_found_wallet:
 			return "Account not found in wallet";
+		case nano::error_common::bad_account_index_number:
+			return "Bad account index number";
 		case nano::error_common::bad_account_number:
 			return "Bad account number";
 		case nano::error_common::bad_private_key:
@@ -44,6 +46,8 @@ std::string nano::error_common_messages::message (int ev) const
 			return "Invalid work";
 		case nano::error_common::numeric_conversion:
 			return "Numeric conversion error";
+		case nano::error_common::send_to_self_invalid:
+			return "Sending to self is invalid";
 		case nano::error_common::wallet_lmdb_max_dbs:
 			return "Failed to create wallet. Increase lmdb_max_dbs in node config";
 		case nano::error_common::wallet_locked:

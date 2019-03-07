@@ -27,11 +27,20 @@ add_library (rai_lib
 	work.hpp
 	work.cpp)
 
+# for std::experimental::filesystem on Linux
+if (NOT WIN32)
+	set (ADDITIONAL_LIB stdc++fs)
+else ()
+	set (ADDITIONAL_LIB "")
+endif ()
+
 target_link_libraries (rai_lib
 	xxhash
 	blake2
 	${CRYPTOPP_LIBRARY}
-	Boost::boost)
+	Boost::boost
+	${ADDITIONAL_LIB}
+	)
 
 target_compile_definitions(rai_lib
 	PUBLIC

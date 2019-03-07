@@ -506,8 +506,6 @@ public:
 	std::string callback_target;
 	int lmdb_max_dbs;
 	rai::stat_config stat_config;
-	//rai::uint256_union epoch_block_link;
-	//rai::account epoch_block_signer;
 	std::chrono::system_clock::time_point generate_hash_votes_at;
 	static std::chrono::seconds constexpr keepalive_period = std::chrono::seconds (60);
 	static std::chrono::seconds constexpr keepalive_cutoff = keepalive_period * 5;
@@ -629,6 +627,14 @@ public:
 	void block_confirm (std::shared_ptr<rai::block>);
 	void process_fork (MDB_txn *, std::shared_ptr<rai::block>);
 	rai::amount_t delta ();
+	void node_id_set (rai::raw_key &&);
+	rai::public_key & node_id_pub_get ();
+	void node_id_delete ();
+	void node_id_reset ();
+	rai::uint512_union sign_message_with_node_id (rai::uint256_union const &);
+	int set_node_id_from_wallet (std::shared_ptr<rai::wallet>, int);
+
+public:
 	boost::asio::io_service & service;
 	rai::node_config config;
 	rai::alarm & alarm;
@@ -654,13 +660,14 @@ public:
 	rai::block_arrival block_arrival;
 	rai::online_reps online_reps;
 	rai::stat stats;
-	rai::keypair node_id;
 	static double constexpr price_max = 16.0;
 	static double constexpr free_cutoff = 1024.0;
 	static std::chrono::seconds constexpr period = std::chrono::seconds (60);
 	static std::chrono::seconds constexpr cutoff = period * 5;
 	static std::chrono::seconds constexpr syn_cookie_cutoff = std::chrono::seconds (5);
 	static std::chrono::minutes constexpr backup_interval = std::chrono::minutes (5);
+private:
+	rai::keypair node_id; // private to avoid accidental node_id.prv leaking
 };
 class thread_runner
 {

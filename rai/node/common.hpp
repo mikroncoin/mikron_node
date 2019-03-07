@@ -55,7 +55,9 @@ struct endpoint_hash<8>
 {
 	size_t operator() (rai::endpoint const & endpoint_a) const
 	{
-		return endpoint_hash_raw (endpoint_a);
+		uint64_t big (endpoint_hash_raw (endpoint_a));
+		uint32_t result (static_cast<uint32_t> (big) ^ static_cast<uint32_t> (big >> 32));
+		return result;
 	}
 };
 template <>
@@ -86,7 +88,9 @@ struct ip_address_hash<8>
 {
 	size_t operator() (boost::asio::ip::address const & ip_address_a) const
 	{
-		return ip_address_hash_raw (ip_address_a);
+		uint64_t big (ip_address_hash_raw (ip_address_a));
+		uint32_t result (static_cast<uint32_t> (big) ^ static_cast<uint32_t> (big >> 32));
+		return result;
 	}
 };
 template <>

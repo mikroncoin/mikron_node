@@ -31,6 +31,7 @@ enum class error_common
 	account_not_found,
 	account_not_found_wallet,
 	account_exists,
+	bad_account_index_number,
 	bad_account_number,
 	bad_private_key,
 	bad_public_key,
@@ -47,6 +48,7 @@ enum class error_common
 	invalid_work,
 	insufficient_balance,
 	numeric_conversion,
+	send_to_self_invalid,
 	wallet_lmdb_max_dbs,
 	wallet_locked,
 	wallet_not_found

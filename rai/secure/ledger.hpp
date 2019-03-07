@@ -20,6 +20,7 @@ public:
 	ledger (rai::block_store &, rai::stat &);
 	rai::account account (MDB_txn *, rai::block_hash const &);
 	rai::amount_t amount (MDB_txn *, rai::block_hash const &);
+	rai::amount_t amount_with_sign (MDB_txn *, rai::block_hash const &, int &);
 	rai::amount_t balance (MDB_txn *, rai::block_hash const &);
 	rai::amount_t account_balance (MDB_txn *, rai::account const &);
 	rai::amount_t balance_with_manna (MDB_txn *, rai::block_hash const &, rai::timestamp_t); 
@@ -30,8 +31,8 @@ public:
 	std::unique_ptr<rai::block> forked_block (MDB_txn *, rai::block const &);
 	rai::block_hash latest (MDB_txn *, rai::account const &);
 	rai::block_hash latest_root (MDB_txn *, rai::account const &);
-	rai::block_hash representative (MDB_txn *, rai::block_hash const &);
-	rai::block_hash representative_calculated (MDB_txn *, rai::block_hash const &);
+	// return block representative
+	rai::account representative_get (MDB_txn *, rai::block_hash const &);
 	bool block_exists (rai::block_hash const &);
 	std::string block_text (char const *);
 	std::string block_text (rai::block_hash const &);
@@ -45,15 +46,13 @@ public:
 	rai::checksum checksum (MDB_txn *, rai::account const &, rai::account const &);
 	void dump_account_chain (rai::account const &);
 	bool could_fit (MDB_txn *, rai::block const &);
-	static const rai::timestamp_t time_tolearance_short = 66;  // seconds
-	static const rai::timestamp_t time_tolearance_long = 33360;  // seconds
+	static const rai::timestamp_t time_tolearance_short = 66; // seconds
+	static const rai::timestamp_t time_tolearance_long = 33360; // seconds
 	static rai::amount_t const unit;
 	rai::block_store & store;
 	rai::stat & stats;
 	std::unordered_map<rai::account, rai::amount_t> bootstrap_weights;
 	uint64_t bootstrap_weight_max_blocks;
 	std::atomic<bool> check_bootstrap_weights;
-	//rai::uint256_union epoch_link;
-	//rai::account epoch_signer;
 };
 };

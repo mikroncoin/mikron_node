@@ -89,7 +89,6 @@ public:
 	rai::store_iterator block_info_begin (MDB_txn *);
 	rai::store_iterator block_info_end ();
 	rai::amount_t block_balance (MDB_txn *, rai::block_hash const &);
-	//rai::epoch block_version (MDB_txn *, rai::block_hash const &);
 	static size_t const block_info_max = 32;
 
 	rai::amount_t representation_get (MDB_txn *, rai::account const &);
@@ -144,8 +143,10 @@ public:
 	*/
 	int upgrade_v11_to_v12 (MDB_txn *);
 
+	rai::raw_key node_id_get (MDB_txn *);
 	// Requires a write transaction
-	rai::raw_key get_node_id (MDB_txn *);
+	rai::raw_key node_id_get_or_create (MDB_txn *);
+	int node_id_set (MDB_txn *, rai::raw_key);
 
 	/** Deletes the node ID from the store */
 	void delete_node_id (MDB_txn *);
@@ -165,30 +166,6 @@ public:
 	 * rai::account -> rai::block_hash, rai::block_hash, rai::block_hash, rai::amount, uint64_t, uint64_t
 	 */
 	MDB_dbi accounts;
-
-	/**
-	 * Maps block hash to send block.
-	 * rai::block_hash -> rai::send_block
-	 */
-	MDB_dbi send_blocks;
-
-	/**
-	 * Maps block hash to receive block.
-	 * rai::block_hash -> rai::receive_block
-	 */
-	MDB_dbi receive_blocks;
-
-	/**
-	 * Maps block hash to open block.
-	 * rai::block_hash -> rai::open_block
-	 */
-	MDB_dbi open_blocks;
-
-	/**
-	 * Maps block hash to change block.
-	 * rai::block_hash -> rai::change_block
-	 */
-	MDB_dbi change_blocks;
 
 	/**
 	 * Maps block hash to state block.

@@ -29,4 +29,8 @@ public:
 	std::mutex mutex;
 	std::vector<std::function<void(T...)>> observers;
 };
+
+// Find an existing file, assuming various character encodings
+std::string find_existing_path_with_encodings (std::string);
+
 }

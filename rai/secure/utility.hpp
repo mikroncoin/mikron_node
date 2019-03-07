@@ -114,18 +114,6 @@ public:
 };
 
 /**
- * Tag for which epoch an entry belongs to
- *
-enum class epoch : uint8_t
-{
-	invalid = 0,
-	unspecified = 1,
-	epoch_0 = 2,
-	epoch_1 = 3
-};
-*/
-
-/**
  * Encapsulates MDB_val and provides uint256_union conversion of the data.
  */
 class mdb_val

@@ -8,6 +8,8 @@
 #include <rai/secure/utility.hpp>
 #include <unordered_map>
 
+#include <rai/secure/common.hpp>
+
 namespace rai
 {
 void error_response (std::function<void(boost::property_tree::ptree const &)> response_a, std::string const & message_a);
@@ -156,8 +158,12 @@ public:
 	void key_create ();
 	void key_expand ();
 	void ledger ();
+	void ledger_helper_fill (rai::transaction &, std::vector<std::pair<rai::account, rai::account_info>> const &, boost::property_tree::ptree &, bool, bool, bool);
 	void mrai_to_raw (rai::amount_t = rai::Mxrb_ratio);
 	void mrai_from_raw (rai::amount_t = rai::Mxrb_ratio);
+	void node_id_get ();
+	void node_id_reset ();
+	void node_id_set ();
 	void password_change ();
 	void password_enter ();
 	void password_valid (bool = false);

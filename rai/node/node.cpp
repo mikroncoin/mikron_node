@@ -126,7 +126,7 @@ void rai::network::send_node_id_handshake (rai::endpoint const & endpoint_a, boo
 	boost::optional<std::pair<rai::account, rai::signature>> response (boost::none);
 	if (respond_to)
 	{
-		response = std::make_pair (node.node_id.pub, rai::sign_message (node.node_id.prv, node.node_id.pub, *respond_to));
+		response = std::make_pair (node.node_id_pub_get (), node.sign_message_with_node_id (*respond_to));
 		assert (!rai::validate_message (response->first, *respond_to, response->second));
 	}
 	rai::node_id_handshake message (query, response);
@@ -137,7 +137,7 @@ void rai::network::send_node_id_handshake (rai::endpoint const & endpoint_a, boo
 	}
 	if (node.config.logging.network_node_id_handshake_logging ())
 	{
-		BOOST_LOG (node.log) << boost::str (boost::format ("Node ID handshake sent with node ID %1% to %2%: query %3%, respond_to %4% (signature %5%)") % node.node_id.pub.to_account () % endpoint_a % (query ? query->to_string () : std::string ("[none]")) % (respond_to ? respond_to->to_string () : std::string ("[none]")) % (response ? response->second.to_string () : std::string ("[none]")));
+		BOOST_LOG (node.log) << boost::str (boost::format ("Node ID handshake sent with node ID %1% to %2%: query %3%, respond_to %4% (signature %5%)") % node.node_id_pub_get ().to_account () % endpoint_a % (query ? query->to_string () : std::string ("[none]")) % (respond_to ? respond_to->to_string () : std::string ("[none]")) % (response ? response->second.to_string () : std::string ("[none]")));
 	}
 	node.stats.inc (rai::stat::type::message, rai::stat::detail::node_id_handshake, rai::stat::dir::out);
 	std::weak_ptr<rai::node> node_w (node.shared ());
@@ -469,7 +469,7 @@ public:
 			{
 				validated_response = true;
 				rai::account node_id = message_a.response->first;
-				if (node_id != node.node_id.pub)
+				if (node_id != node.node_id_pub_get ())
 				{
 					node.peers.insert (endpoint_l, message_a.header.protocol_info, node_id);
 					if (node.config.logging.network_logging () || node.config.logging.network_node_id_handshake_logging ())
@@ -514,7 +514,7 @@ void rai::network::receive_action (boost::system::error_code const & error, size
 				{
 					if (node.config.logging.insufficient_work_logging ())
 					{
-						BOOST_LOG (node.log) << "Insufficient work in message";  // << (int)buffer.data()[5];
+						BOOST_LOG (node.log) << "Insufficient work in message"; // << (int)buffer.data()[5];
 					}
 
 					// We've already increment error count, update detail only
@@ -926,28 +926,25 @@ bootstrap_connections_max (64),
 callback_port (0),
 lmdb_max_dbs (128)
 {
-	//const char * epoch_message ("epoch v1 block");
-	//strncpy ((char *)epoch_block_link.bytes.data (), epoch_message, epoch_block_link.bytes.size ());
-	//epoch_block_signer = rai::genesis_account;
 	switch (rai::rai_network)
 	{
 		case rai::rai_networks::rai_test_network:
-			preconfigured_representatives.push_back (rai::genesis_account);  // Genesis mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
+			preconfigured_representatives.push_back (rai::genesis_account); // Genesis mik_37qjexk5phhd9fin11z68dsmsmxirhm6isptm8pdb39kp6z5w8e1534tigqk
 			break;
 
 		case rai::rai_networks::rai_beta_network:
 			preconfigured_peers.push_back ("betanode.mikron.io");
 			preconfigured_peers.push_back ("betanode2.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04"));  // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
-			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65"));  // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
+			preconfigured_representatives.push_back (rai::account ("21B63636AB5498BF3B4E00015DC684EAA168E3A0246806F12F1E4AA422418E04")); // Rep1 mik_1afp8rucpo6rqwxnw113dq5abto3f5jt1b5a1urky9kcnij655i6m3yn5i6p
+			preconfigured_representatives.push_back (rai::account ("B493AFCCB89299E060B93FC65B1E370A347FA77D4877DEC74E516829E489ED65")); // Rep2 mik_3f6moz8dj6nsw3idkhy8deh5g4jnhymqtk5quu5nwnda79kamud76m3ppmi4
 			break;
 
 		case rai::rai_networks::rai_live_network:
 			preconfigured_peers.push_back ("node.mikron.io");
 			preconfigured_peers.push_back ("node2.mikron.io");
 			preconfigured_peers.push_back ("node3.mikron.io");
-			preconfigured_representatives.push_back (rai::account ("80B4D482DC848426B7FC2F3D28C78C6DFC38468B7AFB450E3DA806B546380323"));  // Rep1 mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb
-			preconfigured_representatives.push_back (rai::account ("9F93A4D16CE87CDC7D141FCB9493364317F93DA575C145627C40C9D6BA29F61F"));  // Rep2 mik_39wmnmapst5wujyja9ydkkbmeirqz6ytcxg3aoj9ri8bttx4mxiz3pn8rqfc
+			preconfigured_representatives.push_back (rai::account ("80B4D482DC848426B7FC2F3D28C78C6DFC38468B7AFB450E3DA806B546380323")); // Rep1 mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb
+			preconfigured_representatives.push_back (rai::account ("9F93A4D16CE87CDC7D141FCB9493364317F93DA575C145627C40C9D6BA29F61F")); // Rep2 mik_39wmnmapst5wujyja9ydkkbmeirqz6ytcxg3aoj9ri8bttx4mxiz3pn8rqfc
 			// 2018-09-01 UTC 00:00 in unix time
 			// Technically, time_t is never defined to be unix time, but compilers implement it as such
 			generate_hash_votes_at = std::chrono::system_clock::from_time_t (1535760000);
@@ -1889,7 +1886,8 @@ stats (config.stat_config)
 			}
 		}
 	});
-	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << ", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
+	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH <<
+		", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
 	BOOST_LOG (log) << boost::str (boost::format ("Node port: %1%") % config.peering_port);
 	BOOST_LOG (log) << boost::str (boost::format ("Work pool running %1% threads") % work.threads.size ());
 	if (!init_a.error ())
@@ -1906,8 +1904,7 @@ stats (config.stat_config)
 			genesis.initialize (transaction, store);
 			BOOST_LOG (log) << "Inserted genesis block";
 		}
-		node_id = rai::keypair (store.get_node_id (transaction));
-		BOOST_LOG (log) << "Node ID: " << node_id.pub.to_account ();
+		node_id_set (store.node_id_get_or_create (transaction));
 	}
 	peers.online_weight_minimum = config.online_weight_minimum.number ();
 	if (rai::rai_network == rai::rai_networks::rai_live_network)
@@ -2554,6 +2551,51 @@ int rai::node::price (rai::amount_t const & balance_a, int amount_a)
 	return static_cast<int> (result * 100.0);
 }
 
+void rai::node::node_id_set (rai::raw_key && node_id_prv)
+{
+	node_id = rai::keypair (std::move (node_id_prv));
+	BOOST_LOG (log) << "Node ID: " << node_id.pub.to_account ();
+}
+
+rai::public_key & rai::node::node_id_pub_get ()
+{
+	return node_id.pub;
+}
+
+void rai::node::node_id_delete ()
+{
+	rai::transaction transaction (store.environment, nullptr, true);
+	store.delete_node_id (transaction);
+}
+
+void rai::node::node_id_reset ()
+{
+	rai::transaction transaction (store.environment, nullptr, true);
+	store.delete_node_id (transaction);
+	node_id_set (store.node_id_get_or_create (transaction));
+}
+
+rai::uint512_union rai::node::sign_message_with_node_id (rai::uint256_union const & message)
+{
+	return rai::sign_message (node_id.prv, node_id.pub, message);
+}
+
+int rai::node::set_node_id_from_wallet (std::shared_ptr<rai::wallet> wallet, int account_index)
+{
+	rai::transaction transaction (store.environment, nullptr, true);
+	//node.node->store.delete_node_id (transaction);
+	rai::account account_first = rai::uint256_union (wallet->store.begin (transaction)->first.uint256 ()).to_account ();
+	//std::cerr << account_first.to_string () << std::endl;
+	rai::raw_key key_first;
+	//wallet->store.wallet_key (key, transaction);
+	wallet->store.deterministic_key (key_first, transaction, account_index);
+	// set as node_id
+	store.node_id_set (transaction, key_first);
+	node_id_set (std::move (key_first));
+
+	return 0;
+}
+
 namespace
 {
 class work_request
@@ -2910,19 +2952,6 @@ public:
 	{
 		scan_receivable (block_a.hashables.link);
 	}
-	void send_block (rai::send_block const & block_a) override
-	{
-		scan_receivable (block_a.hashables.destination);
-	}
-	void receive_block (rai::receive_block const &) override
-	{
-	}
-	void open_block (rai::open_block const &) override
-	{
-	}
-	void change_block (rai::change_block const &) override
-	{
-	}
 	MDB_txn * transaction;
 	rai::node & node;
 	std::shared_ptr<rai::block> block;
@@ -2954,10 +2983,6 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		{
 			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
 			pending_account = state->hashables.link;
-		}
-		if (auto send = dynamic_cast<rai::send_block *> (block_a.get ()))
-		{
-			pending_account = send->hashables.destination;
 		}
 		observers.blocks.notify (block_a, account, amount, is_state_send);
 		if (amount > 0)

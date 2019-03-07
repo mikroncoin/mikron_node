@@ -318,7 +318,7 @@ TEST (wallet, process_block)
 	QTest::mouseClick (wallet->show_advanced, Qt::LeftButton);
 	QTest::mouseClick (wallet->advanced.enter_block, Qt::LeftButton);
 	ASSERT_EQ (wallet->block_entry.window, wallet->main_stack->currentWidget ());
-	rai::send_block send (latest, key1.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest));
+	rai::state_block send (rai::test_genesis_key.pub, latest, 0, rai::test_genesis_key.pub, 0, key1.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest));
 	std::string previous;
 	send.hashables.previous.encode_hex (previous);
 	std::string balance;
@@ -464,22 +464,22 @@ TEST (history, short_text)
 	auto wallet (std::make_shared<rai_qt::wallet> (*test_application, processor, *system.nodes[0], system.wallet (0), account));
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	rai::genesis_legacy_with_open genesis;
+	rai::genesis genesis;
 	rai::ledger ledger (store, system.nodes[0]->stats);
 	{
 		rai::transaction transaction (store.environment, nullptr, true);
 		genesis.initialize (transaction, store);
 		rai::keypair key;
-		rai::send_block send (ledger.latest (transaction, rai::test_genesis_key.pub), rai::test_genesis_key.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::genesis_account, ledger.latest (transaction, rai::test_genesis_key.pub), 0, rai::genesis_account, rai::genesis_amount - 100, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
-		rai::receive_block receive (send.hash (), send.hash (), rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block receive (key.pub, 0, 0, rai::genesis_account, 100, send.hash (), key.prv, key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, receive).code);
-		rai::change_block change (receive.hash (), key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block change (rai::genesis_account, send.hash (), 0, key.pub, rai::genesis_amount - 100, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, change).code);
 	}
 	rai_qt::history history (ledger, rai::test_genesis_key.pub, *wallet);
 	history.refresh ();
-	ASSERT_EQ (4, history.model->rowCount ());
+	ASSERT_EQ (3, history.model->rowCount ());
 }
 
 TEST (wallet, startup_work)
@@ -582,7 +582,7 @@ TEST (wallet, republish)
 	rai::block_hash hash;
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, true);
-		rai::send_block block (system.nodes[0]->ledger.latest (transaction, rai::test_genesis_key.pub), key.pub, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block block (rai::test_genesis_key.pub, system.nodes[0]->ledger.latest (transaction, rai::test_genesis_key.pub), 0, rai::test_genesis_key.pub, 0, key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		hash = block.hash ();
 		ASSERT_EQ (rai::process_result::progress, system.nodes[0]->ledger.process (transaction, block).code);
 	}
@@ -763,7 +763,7 @@ TEST (wallet, DISABLED_synchronizing)
 	{
 		rai::transaction transaction (system1.nodes[0]->store.environment, nullptr, true);
 		auto latest (system1.nodes[0]->ledger.latest (transaction, rai::genesis_account));
-		rai::send_block send (latest, key1, 0, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system1.work.generate (latest));
+		rai::state_block send (rai::test_genesis_key.pub, latest, 0, rai::test_genesis_key.pub, 0, key1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system1.work.generate (latest));
 		system1.nodes[0]->ledger.process (transaction, send);
 	}
 	ASSERT_EQ (0, wallet->active_status.active.count (rai_qt::status_types::synchronizing));

@@ -27,7 +27,8 @@ variables:
     - ./ci/build-gitlab.sh
 
 
-Arch Linux:
+# Disabled
+.Arch Linux:
   <<: *linux_cfg
   stage: build
   image: pritunl/archlinux:latest
@@ -72,6 +73,18 @@ Ubuntu Linux Xenial:
   image: ubuntu:xenial
   variables:
     FLAVOR: xenial
+
+  before_script:
+    - ./ci/ubuntu_prep.sh
+    - ./ci/bootstrap_boost.sh
+
+Ubuntu Linux Xenial SSL:
+  <<: *linux_cfg
+  stage: build
+  image: ubuntu:xenial
+  variables:
+    FLAVOR: xenial
+    SSL: 1
 
   before_script:
     - ./ci/ubuntu_prep.sh
