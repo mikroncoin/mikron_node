@@ -272,7 +272,7 @@ void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::a
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if ((amount != 0) && (source != destination))
+	if (amount != 0) // after epoch2, send to self has to be excluded; && (source != destination))
 	{
 		auto hash (wallet (0)->send_sync (source, destination, amount));
 		assert (!hash.is_zero ());
