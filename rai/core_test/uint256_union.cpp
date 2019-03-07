@@ -142,7 +142,7 @@ TEST (uint64_t, values)
 	ASSERT_EQ (0, rai::uint64_t (0));
 	ASSERT_EQ (1, rai::uint64_t (1));
 	ASSERT_EQ (123, rai::uint64_t (123));
-	ASSERT_EQ (18446744073709551615u, rai::uint64_t (0xFFFFFFFFFFFFFFFFu));  // unsigned
+	ASSERT_EQ (18446744073709551615u, rai::uint64_t (0xFFFFFFFFFFFFFFFFu)); // unsigned
 }
 
 TEST (uint128_struct, values)
