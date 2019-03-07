@@ -1,11 +1,11 @@
 #include <rai/lib/utility.hpp>
 
 //#include <boost/filesystem.hpp>
-#include <iostream>
-#include <string>
-#include <locale>
 #include <codecvt>
 #include <experimental/filesystem>
+#include <iostream>
+#include <locale>
+#include <string>
 //#include <algorithm>
 
 // Find an existing file, assuming various character encodings
