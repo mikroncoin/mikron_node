@@ -159,8 +159,8 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 						result.code = (block_a.hashables.previous == info.head) ? rai::process_result::progress : rai::process_result::fork; // Is the previous block the account's head block? (Ambigious)
 						if (result.code == rai::process_result::progress)
 						{
-							// check for send-to-self, starting from epoch2 (but allowed for earlier blocks for legacy)
-							if (block_a.creation_time ().number () >= rai::epoch::epoch2)
+							// check for send-to-self, starting from epoch (but allowed for earlier blocks for legacy)
+							if (block_a.creation_time ().number () >= rai::epoch::next)
 							{
 								if (rai::state_block_subtype::send == subtype)
 								{
