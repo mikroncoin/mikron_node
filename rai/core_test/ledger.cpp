@@ -2474,7 +2474,14 @@ TEST (ledger, send_self_invalid)
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::genesis genesis;
 	genesis.initialize (transaction, store);
-	rai::state_block send_self (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
-	auto return1 (ledger.process (transaction, send_self));
+	int cutoff_time = 23587200; // should be epoch2
+	// A send-to-self after epoch2 is invalid
+	rai::state_block send_self1 (rai::genesis_account, genesis.hash (), cutoff_time + 100 , rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, send_self1));
 	ASSERT_EQ (rai::process_result::send_same_account, return1.code);
+	// 'Old' send-to-self is allowed
+	rai::state_block send_self2 (rai::genesis_account, genesis.hash (), cutoff_time - 1000 , rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, send_self2));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
+
 }
