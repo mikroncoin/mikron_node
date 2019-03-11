@@ -1,6 +1,6 @@
+#include <rai/lib/utility.hpp>
 #include <rai/node/node.hpp>
 #include <rai/node/rpc_secure.hpp>
-#include <rai/lib/utility.hpp>
 
 bool rai::rpc_secure::on_verify_certificate (bool preverified, boost::asio::ssl::verify_context & ctx)
 {
