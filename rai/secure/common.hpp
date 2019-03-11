@@ -25,8 +25,8 @@ struct hash<rai::uint256_union>
 }
 namespace rai
 {
-const uint8_t protocol_version = 14; // Due to comment, to prevent accidental tainting TODO
-const uint8_t protocol_version_min = 14;
+const uint8_t protocol_version = 54; // Due to comment, to prevent accidental tainting TODO
+const uint8_t protocol_version_min = 54;
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
@@ -186,7 +186,8 @@ enum class process_result
 	block_position = 11, // This block cannot follow the previous block (e.g. due to epoch)
 	invalid_state_block = 12, // a state block with undefined subtype
 	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
-	invalid_comment_block = 14, // a comment block with undefined subtype
+	invalid_comment_block = 14, // a comment block with invalid parameters
+	invalid_comment_block_legacy = 15, // Comment block is not allowed before an epoch time
 };
 class process_return
 {

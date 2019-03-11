@@ -287,9 +287,15 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	if (result.code != rai::process_result::progress)
 		return;
 	// Account already exists
+	// Check time: comment blocks are only allowed after epoch2
+	auto block_time (block_a.creation_time ().number ());
+	if (block_time < rai::epoch::epoch2)
+	{
+		result.code = rai::process_result::invalid_comment_block;
+		return;
+	}
 	auto balance (block_a.balance ().number ());
-	auto now (block_a.creation_time ().number ());
-	auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), now).number ());
+	auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), block_time).number ());
 	// The balance must remain the same,
 	result.code = (balance == prev_balance_with_manna)  ? rai::process_result::progress : rai::process_result::balance_mismatch;
 	if (result.code != rai::process_result::progress)

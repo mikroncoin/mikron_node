@@ -39,8 +39,8 @@ public:
 	// The time origin for all block information. Sept 1 2018 00:00 UTC. In Posix time.
 	static const uint32_t origin = 1535760000; // Sept 1 2018 00:00 UTC
 	// The rest of the times are relative to origin (in sec)
-	//// Start of epoch2
-	//static const uint32_t epoch2 = ...
+	// Start of epoch2 (relative to origin) -- Set to earlier for Comment testing on Beta, TODO
+	static const uint32_t epoch2 = 15638400; // Mar 1 2019 1551398400 TODO
 	// The next epoch under development, always far in the future
 	static const uint32_t next = 99929600; // 1735689600 Jan 1 2025 00:00 UTC
 };
