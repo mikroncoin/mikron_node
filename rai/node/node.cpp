@@ -1886,8 +1886,7 @@ stats (config.stat_config)
 			}
 		}
 	});
-	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH <<
-		", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
+	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH << ", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
 	BOOST_LOG (log) << boost::str (boost::format ("Node port: %1%") % config.peering_port);
 	BOOST_LOG (log) << boost::str (boost::format ("Work pool running %1% threads") % work.threads.size ());
 	if (!init_a.error ())

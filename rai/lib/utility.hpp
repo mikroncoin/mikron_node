@@ -32,5 +32,4 @@ public:
 
 // Find an existing file, assuming various character encodings
 std::string find_existing_path_with_encodings (std::string);
-
 }

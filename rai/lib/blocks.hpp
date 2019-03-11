@@ -37,7 +37,12 @@ class epoch
 {
 public:
 	// The time origin for all block information. Sept 1 2018 00:00 UTC. In Posix time.
-	static const rai::uint32_t origin = 1535760000; // Sept 1 2018 00:00 UTC
+	static const uint32_t origin = 1535760000; // Sept 1 2018 00:00 UTC
+	// The rest of the times are relative to origin (in sec)
+	//// Start of epoch2
+	//static const uint32_t epoch2 = ...
+	// The next epoch under development, always far in the future
+	static const uint32_t next = 99929600; // 1735689600 Jan 1 2025 00:00 UTC
 };
 
 class block_visitor;
@@ -60,7 +65,6 @@ using timestamp_t = uint32_t;
 class short_timestamp
 {
 public:
-	// The time origin for creation times, in Posix time, Sept 1 2018.
 	// default constructor, 0
 	short_timestamp ();
 	short_timestamp (rai::timestamp_t);

@@ -68,6 +68,7 @@ void rai::write_len (rai::stream & stream_a, size_t len, const uint8_t * value)
 }
 
 const rai::uint32_t rai::epoch::origin;
+const rai::uint32_t rai::epoch::next;
 
 rai::short_timestamp::short_timestamp ()
 	: data (0)
