@@ -630,6 +630,7 @@ TEST (system, generate_send_existing)
 		rai::transaction transaction (system.wallet (0)->store.environment, nullptr, false);
 		ASSERT_FALSE (system.nodes[0]->store.account_get (transaction, rai::test_genesis_key.pub, info2));
 	}
+	// note: can fail here due to send-to-self, see rai::system::generate_send_existing
 	ASSERT_NE (info1.head, info2.head);
 	system.deadline_set (15s);
 	while (info2.block_count < info1.block_count + 2)
@@ -2464,7 +2465,7 @@ TEST (ledger_manna, change_rep)
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time4) - 100, ledger.account_balance_with_manna (transaction, rai::manna_account, time4));
 }
 
-TEST (ledger, send_self_valid)
+TEST (ledger, send_self_invalid)
 {
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
@@ -2474,7 +2475,31 @@ TEST (ledger, send_self_valid)
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::genesis genesis;
 	genesis.initialize (transaction, store);
-	rai::state_block send_self (rai::genesis_account, genesis.hash (), 0, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	int cutoff_time = 99929600; // should be rai::epoch::epoch2
+	// A send-to-self after epoch2 is invalid
+	rai::state_block send_self (rai::genesis_account, genesis.hash (), cutoff_time + 100, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, send_self));
+	ASSERT_EQ (rai::process_result::send_same_account, return1.code);
+}
+
+TEST (ledger, send_self_valid_legacy)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	int cutoff_time = 99929600; // should be rai::epoch::epoch2
+	// 'Old' send-to-self is allowed (legacy)
+	rai::timestamp_t genesis_time = genesis.block ().creation_time ().number ();
+	rai::state_block send_self1 (rai::genesis_account, genesis.hash (), genesis_time + 1000, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, send_self1));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
+	// another send
+	rai::state_block send_self2 (rai::genesis_account, send_self1.hash (), cutoff_time - 1000, rai::genesis_account, rai::genesis_amount - 200, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, send_self2));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
 }
