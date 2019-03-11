@@ -2571,57 +2571,64 @@ void rai::rpc_handler::send ()
 					}
 					else
 					{
-						auto work (work_optional_impl ());
-						rai::amount_t balance (0);
-						if (!ec)
+						if (amount == 0)
 						{
-							rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
-							rai::account_info info;
-							if (!node.store.account_get (transaction, source, info))
+							ec = nano::error_common::send_zero_invalid;
+						}
+						else
+						{
+							auto work (work_optional_impl ());
+							rai::amount_t balance (0);
+							if (!ec)
 							{
-								balance = (info.balance).number ();
-							}
-							else
-							{
-								ec = nano::error_common::account_not_found;
-							}
-							if (!ec && work)
-							{
-								if (!rai::work_validate (info.head, work))
+								rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
+								rai::account_info info;
+								if (!node.store.account_get (transaction, source, info))
 								{
-									wallet->store.work_put (transaction, source, work);
+									balance = (info.balance).number ();
 								}
 								else
 								{
-									ec = nano::error_common::invalid_work;
+									ec = nano::error_common::account_not_found;
 								}
-							}
-						}
-						if (!ec)
-						{
-							boost::optional<std::string> send_id (request.get_optional<std::string> ("id"));
-							if (balance < amount.number ())
-							{
-								ec = nano::error_common::insufficient_balance;
-							}
-							else
-							{
-								auto rpc_l (shared_from_this ());
-								auto response_a (response);
-								wallet->send_async (source, destination, amount.number (), [response_a](std::shared_ptr<rai::block> block_a) {
-									if (block_a == nullptr)
+								if (!ec && work)
+								{
+									if (!rai::work_validate (info.head, work))
 									{
-										error_response (response_a, "Error generating block");
+										wallet->store.work_put (transaction, source, work);
 									}
 									else
 									{
-										rai::uint256_union hash (block_a->hash ());
-										boost::property_tree::ptree response_l;
-										response_l.put ("block", hash.to_string ());
-										response_a (response_l);
+										ec = nano::error_common::invalid_work;
 									}
-								},
-								work == 0, send_id);
+								}
+							}
+							if (!ec)
+							{
+								boost::optional<std::string> send_id (request.get_optional<std::string> ("id"));
+								if (balance < amount.number ())
+								{
+									ec = nano::error_common::insufficient_balance;
+								}
+								else
+								{
+									auto rpc_l (shared_from_this ());
+									auto response_a (response);
+									wallet->send_async (source, destination, amount.number (), [response_a](std::shared_ptr<rai::block> block_a) {
+										if (block_a == nullptr)
+										{
+											error_response (response_a, "Error generating block");
+										}
+										else
+										{
+											rai::uint256_union hash (block_a->hash ());
+											boost::property_tree::ptree response_l;
+											response_l.put ("block", hash.to_string ());
+											response_a (response_l);
+										}
+									},
+									work == 0, send_id);
+								}
 							}
 						}
 					}

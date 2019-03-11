@@ -356,6 +356,44 @@ TEST (rpc, send_fail)
 	thread2.join ();
 }
 
+TEST (rpc, send_zero)
+{
+	rai::system system (24000, 1);
+	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	boost::property_tree::ptree request;
+	std::string wallet;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("wallet", wallet);
+	request.put ("action", "send");
+	request.put ("source", rai::test_genesis_key.pub.to_account ());
+	rai::keypair dest;
+	request.put ("destination", dest.pub.to_account ());
+	request.put ("amount", "0");
+	std::atomic<bool> done (false);
+	std::thread thread2 ([&system, &done]() {
+		system.deadline_set (10s);
+		while (!done)
+		{
+			ASSERT_NO_ERROR (system.poll ());
+		}
+	});
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	done = true;
+	ASSERT_EQ (200, response.status);
+	boost::optional<std::string> error_text (response.json.get_optional<std::string> ("error"));
+	ASSERT_FALSE (!error_text);
+	boost::optional<std::string> block_text (response.json.get_optional<std::string> ("block"));
+	ASSERT_TRUE (!block_text);
+	ASSERT_EQ (error_text.get (), "Sending zero is invalid");
+	thread2.join ();
+}
+
 TEST (rpc, send_work)
 {
 	rai::system system (24000, 1);
