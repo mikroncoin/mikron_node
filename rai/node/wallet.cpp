@@ -1129,6 +1129,53 @@ std::shared_ptr<rai::block> rai::wallet::send_action (rai::account const & sourc
 	return block;
 }
 
+std::shared_ptr<rai::block> rai::wallet::add_comment_action (rai::account const & account_a, rai::comment_block_subtype subtype_a, std::string const & comment_a, bool generate_work_a)
+{
+	std::shared_ptr<rai::block> block;
+	bool error = false;
+	bool cached_block = false;
+	{
+		rai::transaction transaction (store.environment, nullptr, false);
+		if (store.valid_password (transaction))
+		{
+			auto existing (store.find (transaction, account_a));
+			if (existing != store.end ())
+			{
+				rai::timestamp_t now = rai::short_timestamp::now ();
+				auto balance (node.ledger.account_balance_with_manna (transaction, account_a, now));
+				rai::account_info info;
+				auto error1 (node.ledger.store.account_get (transaction, account_a, info));
+				assert (!error1);
+				rai::raw_key prv;
+				auto error2 (store.fetch (transaction, account_a, prv));
+				assert (!error2);
+				std::shared_ptr<rai::block> rep_block = node.ledger.store.block_get (transaction, info.rep_block);
+				assert (rep_block != nullptr);
+				uint64_t cached_work (0);
+				store.work_get (transaction, account_a, cached_work);
+				block.reset (new rai::comment_block (account_a, info.head, now, rep_block->representative (), balance, subtype_a, comment_a, prv, account_a, cached_work));
+			}
+		}
+	}
+	if (!error && block != nullptr && !cached_block)
+	{
+		std::cerr << "wallet add_comment" << std::endl;
+		if (rai::work_validate (*block))
+		{
+			node.work_generate_blocking (*block);
+		}
+		node.process_active (block);
+		node.block_processor.flush ();
+		std::cerr << "wallet process1" << std::endl;
+		if (generate_work_a)
+		{
+			work_ensure (account_a, block->hash ());
+		}
+		std::cerr << "wallet add_comment done" << std::endl;
+	}
+	return block;
+}
+
 bool rai::wallet::change_sync (rai::account const & source_a, rai::account const & representative_a)
 {
 	std::promise<bool> result;
@@ -1187,6 +1234,15 @@ void rai::wallet::send_async (rai::account const & source_a, rai::account const 
 {
 	this->node.wallets.queue_wallet_action (rai::wallets::high_priority, [this, source_a, account_a, amount_a, action_a, generate_work_a, id_a]() {
 		auto block (send_action (source_a, account_a, amount_a, generate_work_a, id_a));
+		// block may be nullptr
+		action_a (block);
+	});
+}
+
+void rai::wallet::add_comment_async (rai::account const & account_a, rai::comment_block_subtype subtype_a, std::string const & comment_a, std::function<void(std::shared_ptr<rai::block>)> const & action_a, bool generate_work_a)
+{
+	this->node.wallets.queue_wallet_action (rai::wallets::high_priority, [this, account_a, subtype_a, comment_a, action_a, generate_work_a]() {
+		auto block (add_comment_action (account_a, subtype_a, comment_a, generate_work_a));
 		// block may be nullptr
 		action_a (block);
 	});

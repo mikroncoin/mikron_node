@@ -811,6 +811,69 @@ void rai::rpc_handler::accounts_pending ()
 	response_errors ();
 }
 
+void rai::rpc_handler::add_comment_account ()
+{
+	rpc_control_impl ();
+	auto wallet (wallet_impl ());
+	auto account (account_impl ());
+	if (!ec)
+	{
+		if (!wallet->valid_password ())
+		{
+			ec = nano::error_common::wallet_locked;
+		}
+		else
+		{
+			std::string comment_text (request.get<std::string> ("comment"));
+			auto work (work_optional_impl ());
+			if (!ec)
+			{
+				rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
+				rai::account_info info;
+				if (node.store.account_get (transaction, account, info))
+				{
+					ec = nano::error_common::account_not_found;
+				}
+				if (!ec && work)
+				{
+					if (rai::work_validate (info.head, work))
+					{
+						ec = nano::error_common::invalid_work;
+					}
+					else
+					{
+						wallet->store.work_put (transaction, account, work);
+					}
+				}
+			}
+			if (!ec)
+			{
+				auto rpc_l (shared_from_this ());
+				auto response_a (response);
+				wallet->add_comment_async (account, rai::comment_block_subtype::account, comment_text, [response_a](std::shared_ptr<rai::block> block_a) {
+					if (block_a == nullptr)
+					{
+						error_response (response_a, "Error generating block");
+					}
+					else
+					{
+						rai::uint256_union hash (block_a->hash ());
+						boost::property_tree::ptree response_l;
+						response_l.put ("block", hash.to_string ());
+						response_a (response_l);
+					}
+				},
+				work == 0);
+			}
+		}
+	}
+	// Because of async
+	if (ec)
+	{
+		response_errors ();
+	}
+}
+
 void rai::rpc_handler::available_supply ()
 {
 	auto genesis_balance (node.balance (rai::genesis_account)); // Cold storage genesis
@@ -3669,6 +3732,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "accounts_pending")
 			{
 				accounts_pending ();
+			}
+			else if (action == "add_comment_account")
+			{
+				add_comment_account ();
 			}
 			else if (action == "available_supply")
 			{
