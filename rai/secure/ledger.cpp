@@ -164,7 +164,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 							{
 								if (rai::state_block_subtype::send == subtype)
 								{
-									result.code = (block_a.hashables.link == block_a.hashables.account) ? rai::process_result::send_same_account : rai::process_result::progress;  // send to self not allowed
+									result.code = (block_a.hashables.link == block_a.hashables.account) ? rai::process_result::send_same_account : rai::process_result::progress; // send to self not allowed
 								}
 							}
 						}
