@@ -291,7 +291,7 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	auto block_time (block_a.creation_time ().number ());
 	if (block_time < rai::epoch::epoch2)
 	{
-		result.code = rai::process_result::invalid_comment_block;
+		result.code = rai::process_result::invalid_comment_block_legacy;
 		return;
 	}
 	auto balance (block_a.balance ().number ());
