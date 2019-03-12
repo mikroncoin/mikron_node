@@ -544,7 +544,8 @@ TEST (bootstrap_processor, process_one)
 {
 	rai::system system (24000, 1);
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, rai::test_genesis_key.pub, 100));
+	rai::keypair other_acc;
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, other_acc.pub, 100));
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24001, rai::unique_path (), system.alarm, system.logging, system.work));
 	rai::block_hash hash1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
@@ -565,10 +566,11 @@ TEST (bootstrap_processor, process_two)
 {
 	rai::system system (24000, 1);
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	rai::keypair other_acc;
 	rai::block_hash hash1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, rai::test_genesis_key.pub, 50));
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, other_acc.pub, 50));
 	rai::block_hash hash2 (system.nodes[0]->latest (rai::test_genesis_key.pub));
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, rai::test_genesis_key.pub, 50));
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, other_acc.pub, 50));
 	rai::block_hash hash3 (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	ASSERT_NE (hash1, hash2);
 	ASSERT_NE (hash1, hash3);
@@ -593,16 +595,17 @@ TEST (bootstrap_processor, process_state)
 	rai::genesis genesis;
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	auto node0 (system.nodes[0]);
-	std::unique_ptr<rai::block> block1 (new rai::state_block (rai::test_genesis_key.pub, node0->latest (rai::test_genesis_key.pub), 0, rai::test_genesis_key.pub, rai::genesis_amount - 100, rai::test_genesis_key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
-	std::unique_ptr<rai::block> block2 (new rai::state_block (rai::test_genesis_key.pub, block1->hash (), 0, rai::test_genesis_key.pub, rai::genesis_amount, block1->hash (), rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	rai::keypair other_acc;
+	std::unique_ptr<rai::block> block1 (new rai::state_block (rai::test_genesis_key.pub, node0->latest (rai::test_genesis_key.pub), 0, rai::test_genesis_key.pub, rai::genesis_amount - 100, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0));
+	std::unique_ptr<rai::block> block2 (new rai::state_block (other_acc.pub, block1->hash (), 0, rai::test_genesis_key.pub, 100, block1->hash (), other_acc.prv, other_acc.pub, 0));
 	node0->work_generate_blocking (*block1);
 	node0->work_generate_blocking (*block2);
 	node0->process (*block1);
 	node0->process (*block2);
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24001, rai::unique_path (), system.alarm, system.logging, system.work));
-	ASSERT_EQ (node0->latest (rai::test_genesis_key.pub), block2->hash ());
-	ASSERT_NE (node1->latest (rai::test_genesis_key.pub), block2->hash ());
+	ASSERT_EQ (node0->latest (rai::test_genesis_key.pub), block1->hash ());
+	ASSERT_NE (node1->latest (rai::test_genesis_key.pub), block1->hash ());
 	node1->bootstrap_initiator.bootstrap (node0->network.endpoint ());
 	ASSERT_NE (node1->latest (rai::test_genesis_key.pub), node0->latest (rai::test_genesis_key.pub));
 	system.deadline_set (10s);

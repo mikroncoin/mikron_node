@@ -39,12 +39,13 @@ TEST (processor_service, bad_receive_signature)
 	genesis.initialize (transaction, store);
 	rai::account_info info1;
 	ASSERT_FALSE (store.account_get (transaction, rai::test_genesis_key.pub, info1));
-	rai::state_block send (rai::genesis_account, info1.head, 0, rai::genesis_account, 50, rai::test_genesis_key.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::keypair other_acc;
+	rai::state_block send (rai::genesis_account, info1.head, 0, rai::genesis_account, 50, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	rai::block_hash hash1 (send.hash ());
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send).code);
 	rai::account_info info2;
 	ASSERT_FALSE (store.account_get (transaction, rai::test_genesis_key.pub, info2));
-	rai::state_block receive (rai::genesis_account, hash1, 0, rai::genesis_account, rai::genesis_amount - 50, hash1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block receive (other_acc.pub, 0, 0, rai::genesis_account, rai::genesis_amount - 50, hash1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto signature (receive.signature_get ());
 	signature.bytes[32] ^= 0x1;
 	receive.signature_set (signature);
