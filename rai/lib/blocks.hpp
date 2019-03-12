@@ -52,7 +52,7 @@ protected:
 	enum class start : timestamp_t
 	{
 		epoch1 = 0,
-		epoch2 = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC 
+		epoch2 = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
 	};
 };
 

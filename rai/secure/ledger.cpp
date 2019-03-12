@@ -162,7 +162,7 @@ void ledger_processor::state_block_impl (rai::state_block const & block_a)
 							// check for send-to-self, starting from epoch (but allowed for earlier blocks for legacy)
 							if (rai::state_block_subtype::send == subtype)
 							{
-								if (rai::epoch::epoch_of_time(block_a.creation_time ().number ()) >= rai::epoch::epoch_num::epoch2)
+								if (rai::epoch::epoch_of_time (block_a.creation_time ().number ()) >= rai::epoch::epoch_num::epoch2)
 								{
 									result.code = (block_a.hashables.link == block_a.hashables.account) ? rai::process_result::send_same_account : rai::process_result::progress; // send to self not allowed
 								}
