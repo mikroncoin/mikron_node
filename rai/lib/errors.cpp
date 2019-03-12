@@ -48,6 +48,8 @@ std::string nano::error_common_messages::message (int ev) const
 			return "Numeric conversion error";
 		case nano::error_common::send_to_self_invalid:
 			return "Sending to self is invalid";
+		case nano::error_common::send_zero_invalid:
+			return "Sending zero is invalid";
 		case nano::error_common::wallet_lmdb_max_dbs:
 			return "Failed to create wallet. Increase lmdb_max_dbs in node config";
 		case nano::error_common::wallet_locked:

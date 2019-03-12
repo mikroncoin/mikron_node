@@ -186,8 +186,9 @@ enum class process_result
 	block_position = 11, // This block cannot follow the previous block (e.g. due to epoch)
 	invalid_state_block = 12, // a state block with undefined subtype
 	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
-	invalid_comment_block = 14, // a comment block with invalid parameters
-	invalid_comment_block_legacy = 15, // Comment block is not allowed before an epoch time
+	send_same_account = 14, // send to self
+	invalid_comment_block = 15, // a comment block with invalid parameters
+	invalid_comment_block_legacy = 16, // Comment block is not allowed before an epoch time
 };
 class process_return
 {
