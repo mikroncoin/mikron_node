@@ -242,14 +242,16 @@ rai::account rai::system::get_random_account (std::vector<rai::account> & accoun
 	return result;
 }
 
-rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node & node_a, rai::account const & account_a)
+rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node & node_a, rai::account const & account_a, rai::amount_t min_amount_a)
 {
 	rai::amount_t balance (node_a.ledger.account_balance (transaction_a, account_a));
-	std::string balance_text (std::to_string (balance));
-	rai::uint64_struct random_amount;
-	random_pool.GenerateBlock ((uint8_t *)&random_amount.data, sizeof (random_amount.data));
-	auto result (((rai::uint256_t{ random_amount.number () } * balance) / rai::uint256_t{ std::numeric_limits<rai::amount_t>::max () }).convert_to<rai::amount_t> ());
-	std::string text (std::to_string (result));
+	uint32_t random;
+	random_pool.GenerateBlock ((uint8_t *)&random, sizeof (random));
+	rai::amount_t result = (rai::amount_t) ((double)random / (double)std::numeric_limits<uint32_t>::max () * (double)balance);
+	if (result < min_amount_a)
+		result = min_amount_a;
+	if (result > (balance - min_amount_a))
+		result = (balance - min_amount_a);
 	return result;
 }
 
@@ -259,24 +261,32 @@ void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::a
 	rai::account destination;
 	rai::account source;
 	{
-		rai::account account;
-		random_pool.GenerateBlock (account.bytes.data (), sizeof (account.bytes));
-		rai::transaction transaction (node_a.store.environment, nullptr, false);
-		rai::store_iterator entry (node_a.store.latest_begin (transaction, account));
-		if (entry == node_a.store.latest_end ())
-		{
-			entry = node_a.store.latest_begin (transaction);
-		}
-		assert (entry != node_a.store.latest_end ());
-		destination = rai::account (entry->first.uint256 ());
 		source = get_random_account (accounts_a);
-		amount = get_random_amount (transaction, node_a, source);
+		rai::transaction transaction (node_a.store.environment, nullptr, false);
+		amount = get_random_amount (transaction, node_a, source, 1000);
+		assert (amount != 0);
+		// pick a destination -- retry until different
+		int retry_count = 100;
+		while (retry_count > 0)
+		{
+			rai::account account;
+			random_pool.GenerateBlock (account.bytes.data (), sizeof (account.bytes));
+			rai::store_iterator entry (node_a.store.latest_begin (transaction, account));
+			if (entry == node_a.store.latest_end ())
+			{
+				entry = node_a.store.latest_begin (transaction);
+			}
+			assert (entry != node_a.store.latest_end ());
+			destination = rai::account (entry->first.uint256 ());
+			if (destination != source)
+				break; // found a different destination
+			--retry_count;
+		}
+		assert (retry_count > 0);
+		assert (source != destination);
 	}
-	if (amount != 0) // send to self has to be excluded later (after rai::epoch::epoch2); && (source != destination))
-	{
-		auto hash (wallet (0)->send_sync (source, destination, amount));
-		assert (!hash.is_zero ());
-	}
+	auto hash (wallet (0)->send_sync (source, destination, amount));
+	assert (!hash.is_zero ());
 }
 
 void rai::system::generate_change_known (rai::node & node_a, std::vector<rai::account> & accounts_a)
@@ -310,15 +320,13 @@ void rai::system::generate_send_new (rai::node & node_a, std::vector<rai::accoun
 	{
 		rai::transaction transaction (node_a.store.environment, nullptr, false);
 		source = get_random_account (accounts_a);
-		amount = get_random_amount (transaction, node_a, source);
+		amount = get_random_amount (transaction, node_a, source, 1000);
 	}
-	if (amount != 0)
-	{
-		auto pub (node_a.wallets.items.begin ()->second->deterministic_insert ());
-		accounts_a.push_back (pub);
-		auto hash (wallet (0)->send_sync (source, pub, amount));
-		assert (!hash.is_zero ());
-	}
+	assert (amount != 0);
+	auto pub (node_a.wallets.items.begin ()->second->deterministic_insert ());
+	accounts_a.push_back (pub);
+	auto hash (wallet (0)->send_sync (source, pub, amount));
+	assert (!hash.is_zero ());
 }
 
 void rai::system::generate_mass_activity (uint32_t count_a, rai::node & node_a)
