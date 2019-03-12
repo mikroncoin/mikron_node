@@ -473,7 +473,6 @@ void rai::rpc_handler::account_info ()
 			response_l.put ("balance", balance);
 			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
 			response_l.put ("block_count", std::to_string (info.block_count));
-			//response_l.put ("account_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
 			if (representative)
 			{
 				auto block (node.store.block_get (transaction, info.rep_block));
@@ -1965,10 +1964,6 @@ void rai::rpc_handler::pending ()
 						{
 							pending_tree.put ("source", info.source.to_account ());
 						}
-						//if (min_version)
-						//{
-						//	  pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
-						//}
 						peers_l.add_child (key.hash.to_string (), pending_tree);
 					}
 					else
@@ -3166,10 +3161,6 @@ void rai::rpc_handler::wallet_pending ()
 								{
 									pending_tree.put ("source", info.source.to_account ());
 								}
-								//if (min_version)
-								//{
-								//	pending_tree.put ("min_version", info.epoch == rai::epoch::epoch_1 ? "1" : "0");
-								//}
 								peers_l.add_child (key.hash.to_string (), pending_tree);
 							}
 							else
