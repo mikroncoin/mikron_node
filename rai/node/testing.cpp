@@ -247,7 +247,7 @@ rai::amount_t rai::system::get_random_amount (MDB_txn * transaction_a, rai::node
 	rai::amount_t balance (node_a.ledger.account_balance (transaction_a, account_a));
 	uint32_t random;
 	random_pool.GenerateBlock ((uint8_t *)&random, sizeof (random));
-	rai::amount_t result = (rai::amount_t)((double)random / (double)std::numeric_limits<uint32_t>::max () * (double)balance);
+	rai::amount_t result = (rai::amount_t) ((double)random / (double)std::numeric_limits<uint32_t>::max () * (double)balance);
 	if (result < min_amount_a)
 		result = min_amount_a;
 	if (result > (balance - min_amount_a))
