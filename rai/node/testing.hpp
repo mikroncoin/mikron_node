@@ -22,7 +22,7 @@ public:
 	void generate_usage_traffic (uint32_t, uint32_t, size_t);
 	void generate_usage_traffic (uint32_t, uint32_t);
 	rai::account get_random_account (std::vector<rai::account> &);
-	rai::amount_t get_random_amount (MDB_txn *, rai::node &, rai::account const &);
+	rai::amount_t get_random_amount (MDB_txn *, rai::node &, rai::account const &, rai::amount_t);
 	void generate_rollback (rai::node &, std::vector<rai::account> &);
 	void generate_change_known (rai::node &, std::vector<rai::account> &);
 	void generate_change_unknown (rai::node &, std::vector<rai::account> &);
