@@ -54,7 +54,15 @@ bool rai::from_string_hex (std::string const & value_a, uint64_t & target_a)
 }
 
 const rai::uint32_t rai::epoch::origin;
-const rai::uint32_t rai::epoch::next;
+
+rai::epoch::epoch_num rai::epoch::epoch_of_time (rai::timestamp_t time_a)
+{
+	if (time_a >= (timestamp_t)start::epoch2)
+		return epoch_num::epoch2;
+	if (time_a >= (timestamp_t)start::epoch1)
+		return epoch_num::epoch1;
+	return epoch_num::pre_origin;
+}
 
 rai::short_timestamp::short_timestamp ()
 	: data (0)
