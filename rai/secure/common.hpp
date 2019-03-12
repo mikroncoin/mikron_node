@@ -171,20 +171,21 @@ enum class vote_code
 
 enum class process_result
 {
-	progress = 0,  // Hasn't been seen before, signed correctly
-	bad_signature = 1,  // Signature was bad, forged or transmission error
-	old = 2,  // Already seen and was valid
-	negative_spend = 3,  // Malicious attempt to spend a negative amount
-	fork = 4,  // Malicious fork based on previous
-	unreceivable = 5,  // Source block doesn't exist, has already been received, or requires an account upgrade (epoch blocks)
-	gap_previous = 6,  // Block marked as previous is unknown
-	gap_source = 7,  // Block marked as source is unknown
-	opened_burn_account = 8,  // The impossible happened, someone found the private key associated with the public key '0'.
-	balance_mismatch = 9,  // Balance and amount delta don't match
-	representative_mismatch = 10,  // Representative is changed when it is not allowed
-	block_position = 11,  // This block cannot follow the previous block (e.g. due to epoch)
-	invalid_state_block = 12,  // a state block with undefined subtype
-	invalid_block_creation_time = 13  // Out-of-order block, or invalid block creation time
+	progress = 0, // Hasn't been seen before, signed correctly
+	bad_signature = 1, // Signature was bad, forged or transmission error
+	old = 2, // Already seen and was valid
+	negative_spend = 3, // Malicious attempt to spend a negative amount
+	fork = 4, // Malicious fork based on previous
+	unreceivable = 5, // Source block doesn't exist, has already been received, or requires an account upgrade (epoch blocks)
+	gap_previous = 6, // Block marked as previous is unknown
+	gap_source = 7, // Block marked as source is unknown
+	opened_burn_account = 8, // The impossible happened, someone found the private key associated with the public key '0'.
+	balance_mismatch = 9, // Balance and amount delta don't match
+	representative_mismatch = 10, // Representative is changed when it is not allowed
+	block_position = 11, // This block cannot follow the previous block (e.g. due to epoch)
+	invalid_state_block = 12, // a state block with undefined subtype
+	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
+	send_same_account = 14 // send to self
 };
 class process_return
 {

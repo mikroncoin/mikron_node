@@ -20,7 +20,7 @@ TEST (block_store, construction)
 	bool init (false);
 	rai::block_store store (init, rai::unique_path ());
 	ASSERT_TRUE (!init);
-	auto now (rai::seconds_since_epoch ());
+	auto now (rai::get_posix_time ());
 	ASSERT_GT (now, 1408074640);
 }
 

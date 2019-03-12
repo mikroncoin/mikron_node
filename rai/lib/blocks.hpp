@@ -29,16 +29,31 @@ void write (rai::stream & stream_a, T const & value)
 	assert (amount_written == sizeof (value));
 }
 
+using timestamp_t = uint32_t;
+
 class epoch
 {
 public:
 	// The time origin for all block information. Sept 1 2018 00:00 UTC. In Posix time.
 	static const uint32_t origin = 1535760000; // Sept 1 2018 00:00 UTC
-	// The rest of the times are relative to origin (in sec)
-	//// Start of epoch2
-	//static const uint32_t epoch2 = ...
-	// The next epoch under development, always far in the future
-	static const uint32_t next = 99929600; // 1735689600 Jan 1 2025 00:00 UTC
+	// Different epochs
+	enum class epoch_num : uint8_t
+	{
+		pre_origin = 0, // Anything before origin is not valid
+		epoch1 = 1, // Epoch 1: First epoch after launch
+		epoch2 = 2, // Epoch 2: Under development
+		epoch_far_future = 99 // placeholder for far-in-future things, invalid
+	};
+	// Return the epoch in which the time (block creation time) belongs to, epoch1: since the beginning to epoch2, 2: since epoch2, etc.
+	static rai::epoch::epoch_num epoch_of_time (rai::timestamp_t);
+
+protected:
+	// Epoch start times, relative to origin (in sec)
+	enum class start : timestamp_t
+	{
+		epoch1 = 0,
+		epoch2 = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
+	};
 };
 
 class block_visitor;
@@ -53,8 +68,6 @@ enum class block_type : uint8_t
 	//change = 5,
 	state = 6
 };
-
-using timestamp_t = uint32_t;
 
 // Number of seconds, relative to rai::epoch::origin (Sept 1 2018), 4-byte
 class short_timestamp

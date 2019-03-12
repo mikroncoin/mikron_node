@@ -272,7 +272,7 @@ void rai::system::generate_send_existing (rai::node & node_a, std::vector<rai::a
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
-	if (amount != 0)
+	if (amount != 0) // send to self has to be excluded later (after rai::epoch::epoch2); && (source != destination))
 	{
 		auto hash (wallet (0)->send_sync (source, destination, amount));
 		assert (!hash.is_zero ());
@@ -495,7 +495,7 @@ rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 
 void rai::landing::distribute_one ()
 {
-	auto now (rai::seconds_since_epoch ());
+	auto now (rai::get_posix_time ());
 	rai::block_hash last (1);
 	while (!last.is_zero () && store.last + distribution_interval.count () < now)
 	{

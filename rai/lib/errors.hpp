@@ -49,6 +49,7 @@ enum class error_common
 	insufficient_balance,
 	numeric_conversion,
 	send_to_self_invalid,
+	send_zero_invalid,
 	wallet_lmdb_max_dbs,
 	wallet_locked,
 	wallet_not_found

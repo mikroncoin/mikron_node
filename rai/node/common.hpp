@@ -377,7 +377,7 @@ public:
 /**
  * Returns seconds passed since unix epoch (posix time)
  */
-inline uint64_t seconds_since_epoch ()
+inline uint64_t get_posix_time ()
 {
 	return std::chrono::duration_cast<std::chrono::seconds> (std::chrono::system_clock::now ().time_since_epoch ()).count ();
 }
