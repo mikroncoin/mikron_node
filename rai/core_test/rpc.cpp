@@ -2991,7 +2991,7 @@ TEST (rpc, account_info)
 	auto latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	rai::state_block send (::rpc_create_send_state_block_helper (latest, key.pub, 100, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (latest)));
 	system.nodes[0]->process (send);
-	auto time (rai::seconds_since_epoch ());
+	auto time (rai::get_posix_time ());
 
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	rpc.start ();
@@ -3187,7 +3187,7 @@ TEST (rpc, ledger)
 	system.nodes[0]->process (send);
 	rai::state_block open (::rpc_create_open_state_block_helper (send, rai::test_genesis_key.pub, key.pub, rai::genesis_amount - 100, key.prv, key.pub, node1.work_generate_blocking (key.pub)));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (open).code);
-	auto time (rai::seconds_since_epoch ());
+	auto time (rai::get_posix_time ());
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	rpc.start ();
 	boost::property_tree::ptree request;
@@ -3631,7 +3631,7 @@ TEST (rpc, wallet_ledger)
 	system.nodes[0]->process (send);
 	rai::state_block open (::rpc_create_open_state_block_helper (send, rai::test_genesis_key.pub, key.pub, rai::genesis_amount - 100, key.prv, key.pub, node1.work_generate_blocking (key.pub)));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (open).code);
-	auto time (rai::seconds_since_epoch ());
+	auto time (rai::get_posix_time ());
 	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
 	rpc.start ();
 	boost::property_tree::ptree request;

@@ -495,7 +495,7 @@ rai::amount_t rai::landing::distribution_amount (uint64_t interval)
 
 void rai::landing::distribute_one ()
 {
-	auto now (rai::seconds_since_epoch ());
+	auto now (rai::get_posix_time ());
 	rai::block_hash last (1);
 	while (!last.is_zero () && store.last + distribution_interval.count () < now)
 	{
