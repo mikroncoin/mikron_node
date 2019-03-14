@@ -4084,6 +4084,12 @@ void rai::active_transactions::erase (rai::block const & block_a)
 	}
 }
 
+bool rai::active_transactions::empty ()
+{
+	std::lock_guard<std::mutex> lock (mutex);
+	return roots.empty ();
+}
+
 rai::active_transactions::active_transactions (rai::node & node_a) :
 node (node_a),
 started (false),

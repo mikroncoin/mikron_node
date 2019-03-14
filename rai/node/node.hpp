@@ -114,6 +114,7 @@ public:
 	bool active (rai::block const &);
 	std::deque<std::shared_ptr<rai::block>> list_blocks ();
 	void erase (rai::block const &);
+	bool empty ();
 	void stop ();
 	bool publish (std::shared_ptr<rai::block> block_a);
 	boost::multi_index_container<
