@@ -48,6 +48,23 @@ public:
 std::unique_ptr<rai::block> deserialize_block (MDB_val const &);
 
 /**
+ * Legacy account info, v12, does not yet contain comment_block
+ */
+class account_info_v12
+{
+public:
+	account_info_v12 (rai::mdb_val const &);
+	size_t size_in_db () const;
+	// members, they must be all value types
+	rai::block_hash head;
+	rai::block_hash rep_block; // to deprecate, all blocks have the representative
+	rai::block_hash open_block;
+	rai::amount balance;
+	::uint64_t last_block_time_intern; // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
+	::uint64_t block_count;
+};
+
+/**
  * Latest information about an account
  */
 class account_info
@@ -56,7 +73,8 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
+	account_info (rai::account_info_v12 const &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
 	rai::amount balance_with_manna (rai::account const &, rai::timestamp_t) const;
@@ -69,6 +87,7 @@ public:
 	rai::block_hash head;
 	rai::block_hash rep_block; // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
+	rai::block_hash comment_block; // last account comment block
 	rai::amount balance;
 	::uint64_t last_block_time_intern; // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
 	::uint64_t block_count;

@@ -442,6 +442,50 @@ rai::amount_t rai::ledger::account_pending (MDB_txn * transaction_a, rai::accoun
 	return result;
 }
 
+// Comment for an account by account number
+std::string rai::ledger::account_comment (MDB_txn * transaction_a, rai::account const & account_a) const
+{
+	std::string result;
+	rai::account_info info;
+	auto error (store.account_get (transaction_a, account_a, info));
+	if (error)
+	{
+		return result;
+	}
+	if (info.comment_block.is_zero ())
+	{
+		return result;
+	}
+	return comment (transaction_a, info.comment_block);
+}
+
+// Account comment for an account by block hash
+std::string rai::ledger::comment (MDB_txn * transaction_a, rai::block_hash const & hash_a) const
+{
+	std::string result;
+	if (hash_a.is_zero ())
+	{
+		return result;
+	}
+	auto block (store.block_get (transaction_a, hash_a));
+	if (block == nullptr)
+	{
+		assert (block != nullptr);
+		return result;
+	}
+	if (block->type () != rai::block_type::comment)
+	{
+		assert (block->type () == rai::block_type::comment);
+		return result;
+	}
+	//std::shared_ptr<rai::block> block_shared (std::move(block));
+	//std::shared_ptr<rai::comment_block> comment_block = std::dynamic_pointer_cast<rai::comment_block> (block_shared);
+	rai::comment_block * comment_block = dynamic_cast<rai::comment_block *> (block.get ());
+	assert (comment_block != nullptr);
+	result = comment_block->comment ();
+	return result;
+}
+
 rai::process_return rai::ledger::process (MDB_txn * transaction_a, rai::block const & block_a)
 {
 	ledger_processor processor (*this, transaction_a);

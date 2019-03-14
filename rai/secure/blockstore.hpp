@@ -155,6 +155,12 @@ public:
 	void clear (MDB_dbi);
 
 	rai::mdb_env environment;
+	// Denotes an uninitialized DB handle
+	static const MDB_dbi invalid_db_handle = (MDB_dbi)-1;
+
+protected:
+	rai::store_iterator iterator_begin (MDB_txn *, MDB_dbi);
+	rai::store_iterator iterator_end (MDB_dbi);
 
 	/**
 	 * Maps head block to owning account
@@ -221,8 +227,5 @@ public:
 	 * rai::uint256_union (arbitrary key) -> blob
 	 */
 	MDB_dbi meta;
-
-	// Denotes an uninitialized DB handle
-	static const MDB_dbi invalid_db_handle = (MDB_dbi)-1;
 };
 }

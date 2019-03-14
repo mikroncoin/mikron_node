@@ -26,6 +26,8 @@ public:
 	rai::amount_t balance_with_manna (MDB_txn *, rai::block_hash const &, rai::timestamp_t); 
 	rai::amount_t account_pending (MDB_txn *, rai::account const &);
 	rai::amount_t account_balance_with_manna (MDB_txn *, rai::account const &, rai::timestamp_t);
+	std::string account_comment (MDB_txn *, rai::account const &) const;
+	std::string comment (MDB_txn *, rai::block_hash const &) const;
 	rai::amount_t weight (MDB_txn *, rai::account const &);
 	std::unique_ptr<rai::block> successor (MDB_txn *, rai::block_hash const &);
 	std::unique_ptr<rai::block> forked_block (MDB_txn *, rai::block const &);

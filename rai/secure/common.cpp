@@ -193,9 +193,26 @@ std::unique_ptr<rai::block> rai::deserialize_block (MDB_val const & val_a)
 	return deserialize_block (stream);
 }
 
+
+rai::account_info_v12::account_info_v12 (rai::mdb_val const & val_a)
+{
+	auto size (size_in_db ());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
+}
+
+size_t rai::account_info_v12::size_in_db () const
+{
+	// make sure class is well packed
+	assert (sizeof (rai::account_info_v12) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
+	return sizeof (rai::account_info_v12);
+}
+
 rai::account_info::account_info () :
 head (0),
 rep_block (0),
+open_block (0),
+comment_block (0),
 balance (0),
 last_block_time_intern (0),
 block_count (0)
@@ -207,19 +224,31 @@ rai::account_info::account_info (rai::mdb_val const & val_a)
 	deserialize_from_db (val_a);
 }
 
-rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a) :
+rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::block_hash const & comment_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
+comment_block (comment_block_a),
 balance (balance_a),
 last_block_time_intern (last_block_time_a),
 block_count (block_count_a)
 {
 }
 
+rai::account_info::account_info (rai::account_info_v12 const & info_v12) :
+head (info_v12.head),
+rep_block (info_v12.rep_block),
+open_block (info_v12.open_block),
+comment_block (0), // not in v12
+balance (info_v12.balance),
+last_block_time_intern (info_v12.last_block_time_intern),
+block_count (info_v12.block_count)
+{
+}
+
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance &&
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && comment_block == other_a.comment_block && balance == other_a.balance &&
 		last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
 }
 
@@ -247,7 +276,7 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 size_t rai::account_info::size_in_db () const
 {
 	// make sure class is well packed
-	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
+	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof(comment_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
 	return sizeof (rai::account_info);
 }
 
@@ -728,7 +757,7 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash (0));
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->balance (), genesis_block->creation_time ().number (), 1 });
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), 0, genesis_block->balance (), genesis_block->creation_time ().number (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, genesis_block->balance ().number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);

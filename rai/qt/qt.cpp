@@ -1731,7 +1731,8 @@ wallet (wallet_a)
 
 	ledger_model->setHorizontalHeaderItem (0, new QStandardItem ("Account"));
 	ledger_model->setHorizontalHeaderItem (1, new QStandardItem ("Balance"));
-	ledger_model->setHorizontalHeaderItem (2, new QStandardItem ("Block"));
+	ledger_model->setHorizontalHeaderItem (2, new QStandardItem ("Comment"));
+	ledger_model->setHorizontalHeaderItem (3, new QStandardItem ("Last Block"));
 	ledger_view->setModel (ledger_model);
 	ledger_view->setEditTriggers (QAbstractItemView::NoEditTriggers);
 	ledger_view->verticalHeader ()->hide ();
@@ -1904,11 +1905,14 @@ void rai_qt::advanced_actions::refresh_ledger ()
 	for (auto i (wallet.node.ledger.store.latest_begin (transaction)), j (wallet.node.ledger.store.latest_end ()); i != j; ++i)
 	{
 		QList<QStandardItem *> items;
-		items.push_back (new QStandardItem (QString (rai::block_hash (i->first.uint256 ()).to_account ().c_str ())));
+		rai::account account_l (i->first.uint256 ());
+		items.push_back (new QStandardItem (QString (account_l.to_account ().c_str ())));
 		rai::account_info info (i->second);
 		std::string balance;
 		rai::amount (info.balance.number () / wallet.rendering_ratio).encode_dec (balance);
 		items.push_back (new QStandardItem (QString (balance.c_str ())));
+		std::string comment = wallet.node.ledger.account_comment (transaction, account_l);
+		items.push_back (new QStandardItem (QString (comment.c_str ())));
 		std::string block_hash;
 		info.head.encode_hex (block_hash);
 		items.push_back (new QStandardItem (QString (block_hash.c_str ())));

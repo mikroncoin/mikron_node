@@ -245,7 +245,7 @@ meta (invalid_db_handle)
 	{
 		rai::transaction transaction (environment, nullptr, true);
 		error_a |= mdb_dbi_open (transaction, "frontiers", MDB_CREATE, &frontiers) != 0;
-		error_a |= mdb_dbi_open (transaction, "accounts", MDB_CREATE, &accounts) != 0;
+		error_a |= mdb_dbi_open (transaction, "accounts_v13", MDB_CREATE, &accounts) != 0;
 		//error_a |= mdb_dbi_open (transaction, "send", MDB_CREATE, &send_blocks) != 0;
 		//error_a |= mdb_dbi_open (transaction, "receive", MDB_CREATE, &receive_blocks) != 0;
 		//error_a |= mdb_dbi_open (transaction, "open", MDB_CREATE, &open_blocks) != 0;
@@ -623,6 +623,7 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 
 	// Version 13: 
 	// - Add comment blocks
+	// - Upgrade accounts to include comment_block field also
 
 	// DB comment_blocks is new in v13, but it has been openend already upfront.  No action needed.
 	if (comment_blocks == 0 || comment_blocks == invalid_db_handle)
@@ -631,6 +632,29 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 		return 13;
 	}
 
+	// accounts have been opened/created with v13
+	if (accounts == 0 || accounts == invalid_db_handle)
+	{
+		assert (accounts != 0 && accounts != invalid_db_handle);
+		return 13;
+	}
+	MDB_dbi accounts_v12;
+	if (0 == mdb_dbi_open (transaction_a, "accounts", 0, &accounts_v12))
+	{
+		// migrate existing accounts
+		for (auto i (iterator_begin (transaction_a, accounts_v12)), n (iterator_end (accounts_v12)); i != n; ++i)
+		{
+			rai::account account_l (i->first.uint256 ());
+			rai::account_info_v12 info_v12 (i->second);
+			// upgrade
+			rai::account_info info (info_v12);
+			std::cerr << account_l.to_account () << " " << info.balance.to_string_dec () << "\n";
+			account_put (transaction_a, account_l, info);
+		}
+
+		mdb_drop (transaction_a, accounts_v12, 1);
+	}
+	
 	return 0;
 }
 
@@ -1291,6 +1315,18 @@ rai::store_iterator rai::block_store::latest_begin (MDB_txn * transaction_a)
 }
 
 rai::store_iterator rai::block_store::latest_end ()
+{
+	rai::store_iterator result (nullptr);
+	return result;
+}
+
+rai::store_iterator rai::block_store::iterator_begin (MDB_txn * transaction_a, MDB_dbi dbi_a)
+{
+	rai::store_iterator result (transaction_a, dbi_a);
+	return result;
+}
+
+rai::store_iterator rai::block_store::iterator_end (MDB_dbi dbi_a)
 {
 	rai::store_iterator result (nullptr);
 	return result;
