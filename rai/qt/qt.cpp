@@ -1948,6 +1948,7 @@ wallet (wallet_a)
 				show_label_ok (*status);
 				this->status->setText ("");
 				this->wallet.node.process_active (std::move (block_l));
+				this->status->setText ("Block submitted for processing");
 			}
 			else
 			{
@@ -1975,6 +1976,7 @@ send (new QRadioButton ("Send")),
 receive (new QRadioButton ("Receive")),
 change (new QRadioButton ("Change")),
 open (new QRadioButton ("Open")),
+comment (new QRadioButton ("Comment")),
 account_label (new QLabel ("Account:")),
 account (new QLineEdit),
 source_label (new QLabel ("Source:")),
@@ -1985,6 +1987,8 @@ destination_label (new QLabel ("Destination:")),
 destination (new QLineEdit),
 representative_label (new QLabel ("Representative:")),
 representative (new QLineEdit),
+comment_label (new QLabel ("Comment:")),
+comment_editbox (new QLineEdit),
 block (new QPlainTextEdit),
 status (new QLabel),
 create (new QPushButton ("Create")),
@@ -1995,15 +1999,18 @@ wallet (wallet_a)
 	group->addButton (receive);
 	group->addButton (change);
 	group->addButton (open);
+	group->addButton (comment);
 	group->setId (send, 0);
 	group->setId (receive, 1);
 	group->setId (change, 2);
 	group->setId (open, 3);
+	group->setId (comment, 4);
 
 	button_layout->addWidget (send);
 	button_layout->addWidget (receive);
 	button_layout->addWidget (open);
 	button_layout->addWidget (change);
+	button_layout->addWidget (comment);
 
 	layout->addLayout (button_layout);
 	layout->addWidget (account_label);
@@ -2016,6 +2023,8 @@ wallet (wallet_a)
 	layout->addWidget (destination);
 	layout->addWidget (representative_label);
 	layout->addWidget (representative);
+	layout->addWidget (comment_label);
+	layout->addWidget (comment_editbox);
 	layout->addWidget (block);
 	layout->addWidget (status);
 	layout->addWidget (create);
@@ -2049,6 +2058,13 @@ wallet (wallet_a)
 			activate_change ();
 		}
 	});
+	QObject::connect (comment, &QRadioButton::toggled, [this]() {
+		if (comment->isChecked ())
+		{
+			deactivate_all ();
+			activate_comment ();
+		}
+	});
 	QObject::connect (create, &QPushButton::released, [this]() {
 		switch (group->checkedId ())
 		{
@@ -2063,6 +2079,9 @@ wallet (wallet_a)
 				break;
 			case 3:
 				create_open ();
+				break;
+			case 4:
+				create_comment ();
 				break;
 			default:
 				assert (false);
@@ -2113,6 +2132,8 @@ void rai_qt::block_creation::deactivate_all ()
 	destination->hide ();
 	representative_label->hide ();
 	representative->hide ();
+	comment_label->hide ();
+	comment_editbox->hide ();
 }
 
 void rai_qt::block_creation::activate_send ()
@@ -2147,6 +2168,14 @@ void rai_qt::block_creation::activate_change ()
 	representative->show ();
 }
 
+void rai_qt::block_creation::activate_comment ()
+{
+	account_label->show ();
+	account->show ();
+	comment_label->show ();
+	comment_editbox->show ();
+}
+
 void rai_qt::block_creation::create_send ()
 {
 	rai::account account_l;
@@ -2173,13 +2202,8 @@ void rai_qt::block_creation::create_send ()
 						assert (!error);
 						auto rep_block (wallet.node.store.block_get (transaction, info.rep_block));
 						assert (rep_block != nullptr);
-						rai::state_block send (account_l, info.head, 0, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0);
-						wallet.node.work_generate_blocking (send);
-						std::string block_l;
-						send.serialize_json (block_l);
-						block->setPlainText (QString (block_l.c_str ()));
-						show_label_ok (*status);
-						status->setText ("Created block");
+						std::shared_ptr<rai::block> send (new rai::state_block (account_l, info.head, 0, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0));
+						finalize_block (send);
 					}
 					else
 					{
@@ -2239,13 +2263,8 @@ void rai_qt::block_creation::create_receive ()
 						{
 							auto rep_block (wallet.node.store.block_get (transaction, info.rep_block));
 							assert (rep_block != nullptr);
-							rai::state_block receive (pending_key.account, info.head, 0, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0);
-							wallet.node.work_generate_blocking (receive);
-							std::string block_l;
-							receive.serialize_json (block_l);
-							block->setPlainText (QString (block_l.c_str ()));
-							show_label_ok (*status);
-							status->setText ("Created block");
+							std::shared_ptr<rai::block> receive (new rai::state_block (pending_key.account, info.head, 0, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0));
+							finalize_block (receive);
 						}
 						else
 						{
@@ -2303,13 +2322,8 @@ void rai_qt::block_creation::create_change ()
 				auto error (wallet.wallet_m->store.fetch (transaction, account_l, key));
 				if (!error)
 				{
-					rai::state_block change (account_l, info.head, 0, representative_l, info.balance, 0, key, account_l, 0);
-					wallet.node.work_generate_blocking (change);
-					std::string block_l;
-					change.serialize_json (block_l);
-					block->setPlainText (QString (block_l.c_str ()));
-					show_label_ok (*status);
-					status->setText ("Created block");
+					std::shared_ptr<rai::block> change (new rai::state_block (account_l, info.head, 0, representative_l, info.balance, 0, key, account_l, 0));
+					finalize_block (change);
 				}
 				else
 				{
@@ -2365,13 +2379,8 @@ void rai_qt::block_creation::create_open ()
 							auto error (wallet.wallet_m->store.fetch (transaction, pending_key.account, key));
 							if (!error)
 							{
-								rai::state_block open (pending_key.account, 0, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0);
-								wallet.node.work_generate_blocking (open);
-								std::string block_l;
-								open.serialize_json (block_l);
-								block->setPlainText (QString (block_l.c_str ()));
-								show_label_ok (*status);
-								status->setText ("Created block");
+								std::shared_ptr<rai::block> open (new rai::state_block (pending_key.account, 0, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0));
+								finalize_block (open);
 							}
 							else
 							{
@@ -2414,4 +2423,60 @@ void rai_qt::block_creation::create_open ()
 		show_label_error (*status);
 		status->setText ("Unable to decode source");
 	}
+}
+
+void rai_qt::block_creation::create_comment ()
+{
+	rai::account account_l;
+	auto error (account_l.decode_account (account->text ().toStdString ()));
+	if (error)
+	{
+		show_label_error (*status);
+		status->setText ("Unable to decode account");
+	}
+	else
+	{
+		rai::transaction transaction (wallet.node.store.environment, nullptr, false);
+		rai::account_info info;
+		auto error (wallet.node.store.account_get (transaction, account_l, info));
+		if (error)
+		{
+			show_label_error (*status);
+			status->setText ("Account not yet open");
+		}
+		else
+		{
+			rai::raw_key key;
+			auto error (wallet.wallet_m->store.fetch (transaction, account_l, key));
+			if (error)
+			{
+				show_label_error (*status);
+				status->setText ("Account is not in wallet");
+			}
+			else
+			{
+				std::string comment_text_l (comment_editbox->text ().toStdString ());
+				rai::timestamp_t now (rai::short_timestamp::now ());
+				// balance and representative do not change
+				auto balance_l (wallet.node.ledger.balance_with_manna (transaction, info.head, now));
+				auto representative_l (wallet.node.ledger.representative_get (transaction, info.head));
+				std::shared_ptr<rai::block> comment_block (new rai::comment_block (account_l, info.head, 0, representative_l, balance_l, rai::comment_block_subtype::account, comment_text_l, key, account_l, 0));
+				finalize_block (comment_block);
+			}
+		}
+	}
+}
+
+void rai_qt::block_creation::finalize_block (std::shared_ptr<rai::block> & block_a)
+{
+	// this runs blocking, UI is not updated
+	std::cerr << "Generating work for new block... ";
+	status->setText ("Generating work for new block...");
+	wallet.node.work_generate_blocking (*block_a);
+	std::string block_l;
+	block_a->serialize_json (block_l);
+	block->setPlainText (QString (block_l.c_str ()));
+	show_label_ok (*status);
+	status->setText ("Created block");	
+	std::cerr << " ... block done \n";
 }

@@ -107,6 +107,7 @@ public:
 	QPushButton * back;
 	rai_qt::wallet & wallet;
 };
+
 class block_creation
 {
 public:
@@ -116,10 +117,13 @@ public:
 	void activate_receive ();
 	void activate_change ();
 	void activate_open ();
+	void activate_comment ();
 	void create_send ();
 	void create_receive ();
 	void create_change ();
 	void create_open ();
+	void create_comment ();
+	void finalize_block (std::shared_ptr<rai::block> &);
 	QWidget * window;
 	QVBoxLayout * layout;
 	QButtonGroup * group;
@@ -128,6 +132,7 @@ public:
 	QRadioButton * receive;
 	QRadioButton * change;
 	QRadioButton * open;
+	QRadioButton * comment;
 	QLabel * account_label;
 	QLineEdit * account;
 	QLabel * source_label;
@@ -138,12 +143,15 @@ public:
 	QLineEdit * destination;
 	QLabel * representative_label;
 	QLineEdit * representative;
+	QLabel * comment_label;
+	QLineEdit * comment_editbox;
 	QPlainTextEdit * block;
 	QLabel * status;
 	QPushButton * create;
 	QPushButton * back;
 	rai_qt::wallet & wallet;
 };
+
 class self_pane
 {
 public:
