@@ -2477,6 +2477,6 @@ void rai_qt::block_creation::finalize_block (std::shared_ptr<rai::block> & block
 	block_a->serialize_json (block_l);
 	block->setPlainText (QString (block_l.c_str ()));
 	show_label_ok (*status);
-	status->setText ("Created block");	
+	status->setText ("Created block");
 	std::cerr << " ... block done \n";
 }
