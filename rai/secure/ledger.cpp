@@ -66,7 +66,7 @@ public:
 		assert (!error);
 		//auto previous_version (ledger.store.block_version (transaction, block_a.previous ()));
 		auto previous_block (ledger.store.block_get (transaction, block_a.previous ()));
-		ledger.change_latest (transaction, block_a.account (), block_a.previous (), representative, previous_balance, previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1, false);
+		ledger.change_latest (transaction, block_a.account (), block_a.previous (), representative, info.comment_block, previous_balance, previous_block == nullptr ? 0 : previous_block->creation_time ().number (), info.block_count - 1, false);
 
 		auto previous (ledger.store.block_get (transaction, block_a.previous ()));
 		if (previous != nullptr)
@@ -82,7 +82,7 @@ public:
 
 	void comment_block (rai::comment_block const & block_a) override
 	{
-		// TODO
+		// TODO !!!
 		assert (false);
 	}
 
@@ -273,7 +273,7 @@ void ledger_processor::state_block (rai::state_block const & block_a)
 		}
 	}
 
-	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
+	ledger.change_latest (transaction, block_a.account (), hash, hash, info.comment_block, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
 	if (!ledger.store.frontier_get (transaction, info.head).is_zero ())
 	{
 		ledger.store.frontier_del (transaction, info.head);
@@ -331,7 +331,7 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	// checks are OK
 	//ledger.stats.inc (rai::stat::type::ledger, rai::stat::detail::state_block);
 	ledger.store.block_put (transaction, hash, block_a, 0);
-	ledger.change_latest (transaction, block_a.account (), hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
+	ledger.change_latest (transaction, block_a.account (), hash, hash, hash, block_a.balance (), block_a.creation_time ().number (), info.block_count + 1, true);
 	if (!ledger.store.frontier_get (transaction, info.head).is_zero ())
 	{
 		ledger.store.frontier_del (transaction, info.head);
@@ -812,7 +812,7 @@ void rai::ledger::checksum_update (MDB_txn * transaction_a, rai::block_hash cons
 	store.checksum_put (transaction_a, 0, 0, value);
 }
 
-void rai::ledger::change_latest (MDB_txn * transaction_a, rai::account const & account_a, rai::block_hash const & hash_a, rai::block_hash const & rep_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a, bool is_state)
+void rai::ledger::change_latest (MDB_txn * transaction_a, rai::account const & account_a, rai::block_hash const & hash_a, rai::block_hash const & rep_block_a, rai::block_hash const & comment_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a, bool is_state)
 {
 	rai::account_info info;
 	auto exists (!store.account_get (transaction_a, account_a, info));
@@ -829,6 +829,8 @@ void rai::ledger::change_latest (MDB_txn * transaction_a, rai::account const & a
 	{
 		info.head = hash_a;
 		info.rep_block = rep_block_a;
+		// open_block does not change
+		info.comment_block = comment_block_a;
 		info.balance = balance_a;
 		info.last_block_time_set (last_block_time_a);
 		info.block_count = block_count_a;

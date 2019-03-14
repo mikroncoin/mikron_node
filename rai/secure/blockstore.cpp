@@ -648,7 +648,6 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 			rai::account_info_v12 info_v12 (i->second);
 			// upgrade
 			rai::account_info info (info_v12);
-			std::cerr << account_l.to_account () << " " << info.balance.to_string_dec () << "\n";
 			account_put (transaction_a, account_l, info);
 		}
 
