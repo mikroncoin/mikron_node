@@ -621,7 +621,7 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 {
 	version_put (transaction_a, 13);
 
-	// Version 13: 
+	// Version 13:
 	// - Add comment blocks
 	// - Upgrade accounts to include comment_block field also
 
@@ -653,7 +653,7 @@ int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
 
 		mdb_drop (transaction_a, accounts_v12, 1);
 	}
-	
+
 	return 0;
 }
 

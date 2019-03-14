@@ -193,7 +193,6 @@ std::unique_ptr<rai::block> rai::deserialize_block (MDB_val const & val_a)
 	return deserialize_block (stream);
 }
 
-
 rai::account_info_v12::account_info_v12 (rai::mdb_val const & val_a)
 {
 	auto size (size_in_db ());
@@ -248,8 +247,7 @@ block_count (info_v12.block_count)
 
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && comment_block == other_a.comment_block && balance == other_a.balance &&
-		last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && comment_block == other_a.comment_block && balance == other_a.balance && last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
 }
 
 bool rai::account_info::operator!= (rai::account_info const & other_a) const
@@ -276,7 +274,7 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 size_t rai::account_info::size_in_db () const
 {
 	// make sure class is well packed
-	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof(comment_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
+	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (comment_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
 	return sizeof (rai::account_info);
 }
 
