@@ -546,6 +546,7 @@ TEST (bootstrap_processor, process_one)
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	rai::keypair other_acc;
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, other_acc.pub, 100));
+	ASSERT_EQ (rai::genesis_amount - 100, system.nodes[0]->balance (rai::genesis_account));
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24001, rai::unique_path (), system.alarm, system.logging, system.work));
 	rai::block_hash hash1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
@@ -559,6 +560,7 @@ TEST (bootstrap_processor, process_one)
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	ASSERT_EQ (0, node1->active.roots.size ());
+	ASSERT_EQ (rai::genesis_amount - 100, node1->balance (rai::genesis_account));
 	node1->stop ();
 }
 
@@ -829,28 +831,43 @@ TEST (bulk, offline_send)
 {
 	rai::system system (24000, 1);
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	rai::amount_t amount (system.nodes[0]->config.receive_minimum.number ());
 	rai::node_init init1;
 	auto node1 (std::make_shared<rai::node> (init1, system.service, 24001, rai::unique_path (), system.alarm, system.logging, system.work));
 	ASSERT_FALSE (init1.error ());
-	node1->network.send_keepalive (system.nodes[0]->network.endpoint ());
+	rai::keypair key2;
+	auto wallet (node1->wallets.create (rai::uint256_union ()));
+	wallet->insert_adhoc (key2.prv);
+
 	node1->start ();
+	node1->network.send_keepalive (system.nodes[0]->network.endpoint ());
 	system.deadline_set (10s);
 	do
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	} while (system.nodes[0]->peers.empty () || node1->peers.empty ());
-	rai::keypair key2;
-	auto wallet (node1->wallets.create (rai::uint256_union ()));
-	wallet->insert_adhoc (key2.prv);
-	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, system.nodes[0]->config.receive_minimum.number ()));
-	ASSERT_NE (std::numeric_limits<rai::uint256_t>::max (), system.nodes[0]->balance (rai::test_genesis_key.pub));
+	ASSERT_FALSE (system.nodes[0]->peers.empty ());
+	ASSERT_FALSE (node1->peers.empty ());
+	auto send_block (system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, amount));
+	ASSERT_NE (nullptr, send_block);
+	ASSERT_EQ (rai::genesis_amount - amount, system.nodes[0]->balance (rai::test_genesis_key.pub));
+
+	// Wait to finish election background tasks (this is fix for earlier sporadic getting-stuck error)
+	system.deadline_set (10s);
+	while (!system.nodes[0]->active.empty ())
+	{
+		ASSERT_NO_ERROR (system.poll ());
+	}
+	ASSERT_TRUE (system.nodes[0]->active.empty ());
+
 	node1->bootstrap_initiator.bootstrap (system.nodes[0]->network.endpoint ());
 	system.deadline_set (20s);
-	while (node1->balance (key2.pub) != system.nodes[0]->config.receive_minimum.number ())
+	while (node1->balance (key2.pub) != amount)
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	node1->stop ();
+	ASSERT_EQ (amount, node1->balance (key2.pub));
 }
 
 TEST (network, ipv6)
