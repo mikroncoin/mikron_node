@@ -461,6 +461,7 @@ void rai::rpc_handler::account_info ()
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
+		const bool comment = request.get<bool> ("comment", false);
 		rai::transaction transaction (node.store.environment, nullptr, false);
 		rai::account_info info;
 		if (!node.store.account_get (transaction, account, info))
@@ -488,6 +489,14 @@ void rai::rpc_handler::account_info ()
 			{
 				auto account_pending (node.ledger.account_pending (transaction, account));
 				response_l.put ("pending", std::to_string (account_pending));
+			}
+			if (comment)
+			{
+				if (!info.comment_block.is_zero ())
+				{
+					auto account_comment (node.ledger.account_comment (transaction, account));
+					response_l.put ("comment", account_comment);
+				}
 			}
 		}
 		else
