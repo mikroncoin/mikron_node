@@ -242,7 +242,7 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 	{
 		now = rai::short_timestamp::now ();
 	}
-	rai::amount_t balance2 = rai::manna_control::adjust_balance_with_manna (balance1, last_block_time (), now);
+	rai::amount_t balance2 = rai::manna_control::adjust_balance_with_manna (account_a, balance1, last_block_time (), now);
 	return balance2;
 }
 
@@ -750,7 +750,8 @@ rai::block_hash rai::genesis::root () const
 	return genesis_block->root ();
 }
 
-uint32_t rai::manna_control::manna_start = rai::genesis_time;
+uint32_t rai::manna_control::manna_start_epoch1 = rai::genesis_time;
+uint32_t rai::manna_control::manna_start_epoch2 = rai::epoch::epoch_start_time (rai::epoch::epoch_num::epoch2);
 uint32_t rai::manna_control::manna_freq = 
 	rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_freq :
 	rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_freq :
@@ -762,6 +763,15 @@ rai::amount_t rai::manna_control::manna_increment =
 
 bool rai::manna_control::is_manna_account (rai::account const & account_a)
 {
+	if (is_manna_account_epoch1 (account_a))
+		return true;
+	if (is_manna_account_epoch2 (account_a))
+		return true;
+	return false;
+}
+
+bool rai::manna_control::is_manna_account_epoch1 (rai::account const & account_a)
+{
 	if (account_a == rai::manna_account)
 	{
 		return true;
@@ -769,16 +779,25 @@ bool rai::manna_control::is_manna_account (rai::account const & account_a)
 	return false;
 }
 
-rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::amount_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
+bool rai::manna_control::is_manna_account_epoch2 (rai::account const & account_a)
+{
+	if (account_a == rai::manna_account)
+	{
+		return true;
+	}
+	return false;
+}
+
+rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::account const & account_a, rai::amount_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
 {
 	if (from <= to)
 	{
-		rai::amount_t manna_increment = compute_manna_increment (from, to);
+		rai::amount_t manna_increment = compute_manna_increment_account (account_a, from, to);
 		// possible overflow in the far future
 		return orig_balance + manna_increment;
 	}
 	// reverse order (e.g. due to out-of-sync clocks)
-	rai::amount_t manna_decrement = compute_manna_increment (to, from);
+	rai::amount_t manna_decrement = compute_manna_increment_account (account_a, to, from);
 	if (manna_decrement < orig_balance)
 	{
 		return orig_balance - manna_decrement;
@@ -786,14 +805,48 @@ rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::amount_t orig_
 	return 0; // prevent underflow
 }
 
-rai::amount_t rai::manna_control::compute_manna_increment (rai::timestamp_t from, rai::timestamp_t to)
+rai::amount_t rai::manna_control::compute_manna_increment_account (rai::account const & account_a, rai::timestamp_t from, rai::timestamp_t to)
+{
+	rai::amount_t inc = 0;
+	if (is_manna_account_epoch1 (account_a))
+	{
+		inc = compute_manna_increment_epoch1 (from, to);
+	}
+	if (is_manna_account_epoch2 (account_a))
+	{
+		//rai::amount_t inc0 = inc;
+		inc += compute_manna_increment_epoch2 (from, to);
+		/*if (inc0 > 0 && (inc - inc0) > 0)
+		{
+			std::cerr << "Incs " << inc0 << " " << (inc-inc0) << "         " << from << " " << manna_start_epoch2 << " " << to << std::endl;
+		}*/
+	}
+	return inc;
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_epoch1 (rai::timestamp_t from, rai::timestamp_t to)
+{
+	return compute_manna_increment_within_period(from, to, manna_start_epoch1, manna_start_epoch2);
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_epoch2 (rai::timestamp_t from, rai::timestamp_t to)
+{
+	return compute_manna_increment_within_period(from, to, manna_start_epoch2, std::numeric_limits<uint32_t>::max ());
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_within_period (rai::timestamp_t from, rai::timestamp_t to, rai::timestamp_t manna_start_a, rai::timestamp_t manna_end_a)
 {
 	assert (from <= to);
 	if (from >= to) return 0;
-	if (from < manna_start)
+	if (from < manna_start_a)
 	{
-		from = manna_start; // no change before manna_start
+		from = manna_start_a; // no change before manna_start
 	}
+	if (to > manna_end_a)
+	{
+		to = manna_end_a; // no change after manna end
+	}
+	if (from >= to) return 0;
 	uint32_t t1 = (uint32_t) (from / manna_freq);
 	uint32_t t2 = (uint32_t) (to / manna_freq);
 	return (rai::amount_t) (t2 - t1) * (rai::amount_t) manna_increment;
