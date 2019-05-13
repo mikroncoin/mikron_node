@@ -210,13 +210,15 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
-extern rai::keypair const & test_manna_key;
+extern rai::keypair const & test_manna_ep1_key;
+extern rai::keypair const & test_manna_ep2_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::amount_t const & genesis_amount;
 extern rai::timestamp_t const genesis_time;
-extern rai::account const & manna_account;
+extern rai::account const & manna_account_epoch1;
+extern rai::account const & manna_account_epoch2;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
