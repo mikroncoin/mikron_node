@@ -140,7 +140,7 @@ TEST (ledger, process_send)
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount_with_sign (transaction, hash1, amount_sign));
 	ASSERT_EQ (-1, amount_sign);
 	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ());
-	ASSERT_TRUE (store.frontier_get (transaction, hash1).is_zero ());  // state block does not get into frontier
+	ASSERT_TRUE (store.frontier_get (transaction, hash1).is_zero ()); // state block does not get into frontier
 	ASSERT_EQ (rai::test_genesis_key.pub, return1.account);
 	ASSERT_EQ (rai::genesis_amount - 50, return1.amount.number ());
 	ASSERT_EQ (50, ledger.account_balance (transaction, rai::test_genesis_key.pub));
@@ -162,7 +162,7 @@ TEST (ledger, process_send)
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash2));
 	ASSERT_EQ (key2.pub, return2.account);
 	ASSERT_EQ (rai::genesis_amount - 50, return2.amount.number ());
-	ASSERT_TRUE (store.frontier_get (transaction, hash2).is_zero ());  // state block does not get into frontier
+	ASSERT_TRUE (store.frontier_get (transaction, hash2).is_zero ()); // state block does not get into frontier
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.account_balance (transaction, key2.pub));
 	ASSERT_EQ (0, ledger.account_pending (transaction, key2.pub));
 	ASSERT_EQ (50, ledger.weight (transaction, rai::test_genesis_key.pub));
@@ -199,7 +199,7 @@ TEST (ledger, process_send)
 	ASSERT_EQ (hash1, info6.head);
 	ledger.rollback (transaction, info6.head);
 	ASSERT_EQ (rai::genesis_amount, ledger.weight (transaction, rai::test_genesis_key.pub));
-	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ());  // state block does not get into frontier
+	ASSERT_TRUE (store.frontier_get (transaction, info1.head).is_zero ()); // state block does not get into frontier
 	ASSERT_TRUE (store.frontier_get (transaction, hash1).is_zero ());
 	rai::account_info info7;
 	ASSERT_FALSE (ledger.store.account_get (transaction, rai::test_genesis_key.pub, info7));
@@ -1354,7 +1354,7 @@ TEST (ledger, fail_receive_gap_source)
 	rai::state_block block3 (::ledger_create_open_state_block_helper (block1, 1, key1.pub, rai::genesis_amount - 1, key1));
 	auto result3 (ledger.process (transaction, block3));
 	ASSERT_EQ (rai::process_result::progress, result3.code);
-	rai::state_block block4 (key1.pub, block3.hash (), 0, 1, rai::genesis_amount, 3, key1.prv, key1.pub, 0);  // receive
+	rai::state_block block4 (key1.pub, block3.hash (), 0, 1, rai::genesis_amount, 3, key1.prv, key1.pub, 0); // receive
 	auto result4 (ledger.process (transaction, block4));
 	ASSERT_EQ (rai::process_result::gap_source, result4.code);
 }
@@ -2332,7 +2332,7 @@ TEST (ledger_manna, balance_later)
 	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
 	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
 	auto bal_at_eotw (100000000 + reference_manna_increment (time2, epoch_cutoff_time));
-	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time_eotw));  // increases
+	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time_eotw)); // increases
 }
 
 TEST (ledger_manna, epoch2)
@@ -2377,7 +2377,7 @@ TEST (ledger_manna, epoch2)
 	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
 	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
 	auto bal_at_eotw (100000000 + reference_manna_increment (epoch_cutoff_time, time_eotw));
-	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time_eotw));  // increases
+	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time_eotw)); // increases
 }
 
 TEST (ledger_manna, send)
@@ -2445,7 +2445,7 @@ TEST (ledger_manna, send)
 	// check balances at later time
 	rai::timestamp_t time10 = time1 + 2000000;
 	ASSERT_EQ (rai::genesis_amount - 100000000, ledger.account_balance_with_manna (transaction, rai::genesis_account, time10));
-	ASSERT_EQ (100000000 + reference_manna_increment (time2, time10) - 100 + 10, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time10));  // increases
+	ASSERT_EQ (100000000 + reference_manna_increment (time2, time10) - 100 + 10, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time10)); // increases
 	ASSERT_EQ (100 - 10, ledger.account_balance_with_manna (transaction, key3.pub, time10));
 }
 
