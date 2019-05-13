@@ -72,9 +72,10 @@ rai::timestamp_t rai::epoch::epoch_start_time (rai::epoch::epoch_num epoch_num)
 		case rai::epoch::epoch_num::epoch1:
 			return (timestamp_t)start::epoch1;
 		case rai::epoch::epoch_num::epoch2:
+			return (timestamp_t)start::epoch2;
 		case rai::epoch::epoch_num::epoch_far_future:
 		default:
-			return (timestamp_t)start::epoch2;
+			return (timestamp_t)start::epoch_far_future;
 	}
 }
 
