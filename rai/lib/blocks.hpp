@@ -46,6 +46,8 @@ public:
 	};
 	// Return the epoch in which the time (block creation time) belongs to, epoch1: since the beginning to epoch2, 2: since epoch2, etc.
 	static rai::epoch::epoch_num epoch_of_time (rai::timestamp_t);
+	// Return the start time of given epoch (relative to origin).  Use with care, logic should not be based on start time value, not even in tests.
+	static rai::timestamp_t epoch_start_time (rai::epoch::epoch_num);
 
 protected:
 	// Epoch start times, relative to origin (in sec)
