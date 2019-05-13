@@ -503,7 +503,7 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_b
 	if (rai::manna_control::is_manna_account (hashables.account))
 	{
 		// manna adjustment.  Note that here we want to reverse-adjust, that's why the times are in reverse order
-		cur_balance = rai::manna_control::adjust_balance_with_manna (cur_balance, creation_time ().number (), previous_block_time);
+		cur_balance = rai::manna_control::adjust_balance_with_manna (hashables.account, cur_balance, creation_time ().number (), previous_block_time);
 	}
 	if (cur_balance < previous_balance_a)
 	{

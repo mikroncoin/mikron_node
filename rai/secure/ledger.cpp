@@ -328,7 +328,7 @@ rai::amount_t rai::ledger::balance_with_manna (MDB_txn * transaction_a, rai::blo
 		return balance;
 	}
 	// manna adjustment
-	return rai::manna_control::adjust_balance_with_manna (balance, block->creation_time ().number (), now);
+	return rai::manna_control::adjust_balance_with_manna (block->account (), balance, block->creation_time ().number (), now);
 }
 
 // Balance for an account by account number
@@ -577,7 +577,7 @@ rai::amount_t rai::ledger::amount_with_sign (MDB_txn * transaction_a, rai::block
 	if (rai::manna_control::is_manna_account (prev_block->account ()))
 	{
 		// manna adjustment
-		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
+		prev_balance = rai::manna_control::adjust_balance_with_manna (prev_block->account (), prev_balance, prev_block->creation_time ().number (), block->creation_time ().number ());
 	}
 	rai::amount_t amount = 0;
 	if (prev_balance < balance)

@@ -2324,6 +2324,12 @@ TEST (ledger_manna, balance_later)
 	// no manna genesis in the past
 	rai::timestamp_t time0_before = rai::genesis_time - 1234567;
 	ASSERT_EQ (100000000 - reference_manna_increment (rai::genesis_time, time2), ledger.account_balance_with_manna (transaction, rai::manna_account, time0_before));
+
+	// check balances at end-of-the-world (sometime in year 2150)
+	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
+	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
+	auto bal_at_eotw (100000000 + reference_manna_increment (time2, time_eotw));
+	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account, time_eotw));  // increases
 }
 
 TEST (ledger_manna, send)
@@ -2393,12 +2399,6 @@ TEST (ledger_manna, send)
 	ASSERT_EQ (rai::genesis_amount - 100000000, ledger.account_balance_with_manna (transaction, rai::genesis_account, time10));
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time10) - 100 + 10, ledger.account_balance_with_manna (transaction, rai::manna_account, time10));  // increases
 	ASSERT_EQ (100 - 10, ledger.account_balance_with_manna (transaction, key3.pub, time10));
-
-	// check balances at end-of-the-world (sometime in year 2150)
-	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
-	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
-	auto bal_at_eotw (100000000 + reference_manna_increment (time2, time_eotw) - 100 + 10);
-	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account, time_eotw));  // increases
 }
 
 TEST (ledger_manna, receive_into_manna_wrong_amount)
