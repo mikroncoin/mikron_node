@@ -64,6 +64,21 @@ rai::epoch::epoch_num rai::epoch::epoch_of_time (rai::timestamp_t time_a)
 	return epoch_num::pre_origin;
 }
 
+rai::timestamp_t rai::epoch::epoch_start_time (rai::epoch::epoch_num epoch_num)
+{
+	switch (epoch_num)
+	{
+		case rai::epoch::epoch_num::pre_origin:
+		case rai::epoch::epoch_num::epoch1:
+			return (timestamp_t)start::epoch1;
+		case rai::epoch::epoch_num::epoch2:
+			return (timestamp_t)start::epoch2;
+		case rai::epoch::epoch_num::epoch_far_future:
+		default:
+			return (timestamp_t)start::epoch_far_future;
+	}
+}
+
 rai::short_timestamp::short_timestamp ()
 	: data (0)
 {
