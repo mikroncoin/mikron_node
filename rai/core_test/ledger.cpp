@@ -2485,6 +2485,8 @@ TEST (ledger_manna, change_rep)
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time4) - 100, ledger.account_balance_with_manna (transaction, rai::manna_account, time4));
 }
 
+int cutoff_time_send_self_epoch = 26179200; // should be rai::epoch::start::epoch2_beta
+
 TEST (ledger, send_self_invalid)
 {
 	bool init (false);
@@ -2495,9 +2497,8 @@ TEST (ledger, send_self_invalid)
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::genesis genesis;
 	genesis.initialize (transaction, store);
-	int cutoff_time = 99929600; // should be rai::epoch::start::epoch2
 	// A send-to-self after epoch2 is invalid
-	rai::state_block send_self (rai::genesis_account, genesis.hash (), cutoff_time + 100, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block send_self (rai::genesis_account, genesis.hash (), cutoff_time_send_self_epoch + 100, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, send_self));
 	ASSERT_EQ (rai::process_result::send_same_account, return1.code);
 }
@@ -2512,14 +2513,13 @@ TEST (ledger, send_self_valid_legacy)
 	rai::transaction transaction (store.environment, nullptr, true);
 	rai::genesis genesis;
 	genesis.initialize (transaction, store);
-	int cutoff_time = 99929600; // should be rai::epoch::start::epoch2
 	// 'Old' send-to-self is allowed (legacy)
 	rai::timestamp_t genesis_time = genesis.block ().creation_time ().number ();
 	rai::state_block send_self1 (rai::genesis_account, genesis.hash (), genesis_time + 1000, rai::genesis_account, rai::genesis_amount - 100, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, send_self1));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
 	// another send
-	rai::state_block send_self2 (rai::genesis_account, send_self1.hash (), cutoff_time - 1000, rai::genesis_account, rai::genesis_amount - 200, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block send_self2 (rai::genesis_account, send_self1.hash (), cutoff_time_send_self_epoch - 1000, rai::genesis_account, rai::genesis_amount - 200, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return2 (ledger.process (transaction, send_self2));
 	ASSERT_EQ (rai::process_result::progress, return2.code);
 }
@@ -2541,8 +2541,7 @@ TEST (ledger, send_zero_invalid)
 	auto return1 (ledger.process (transaction, send_zero_old));
 	ASSERT_EQ (rai::process_result::invalid_state_block, return1.code);
 	// Newer send with 0, disallowed because type is invalid
-	int cutoff_time = 99929600; // should be rai::epoch::start::epoch2
-	rai::state_block send_zero_new (rai::genesis_account, genesis.hash (), cutoff_time + 100, rai::genesis_account, rai::genesis_amount, dest.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block send_zero_new (rai::genesis_account, genesis.hash (), cutoff_time_send_self_epoch + 100, rai::genesis_account, rai::genesis_amount, dest.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return2 (ledger.process (transaction, send_zero_new));
 	ASSERT_EQ (rai::process_result::invalid_state_block, return2.code);
 }

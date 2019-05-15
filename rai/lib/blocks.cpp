@@ -57,8 +57,19 @@ const rai::uint32_t rai::epoch::origin;
 
 rai::epoch::epoch_num rai::epoch::epoch_of_time (rai::timestamp_t time_a)
 {
-	if (time_a >= (timestamp_t)start::epoch2)
-		return epoch_num::epoch2;
+	// Epoch2 start is different for betanet
+	if (rai::rai_network == rai::rai_networks::rai_live_network)
+	{
+		// Live network
+		if (time_a >= (timestamp_t)start::epoch2_live)
+			return epoch_num::epoch2;
+	}
+	else
+	{
+		// Beta or test network
+		if (time_a >= (timestamp_t)start::epoch2_beta)
+			return epoch_num::epoch2;
+	}
 	if (time_a >= (timestamp_t)start::epoch1)
 		return epoch_num::epoch1;
 	return epoch_num::pre_origin;
@@ -71,8 +82,18 @@ rai::timestamp_t rai::epoch::epoch_start_time (rai::epoch::epoch_num epoch_num)
 		case rai::epoch::epoch_num::pre_origin:
 		case rai::epoch::epoch_num::epoch1:
 			return (timestamp_t)start::epoch1;
+
 		case rai::epoch::epoch_num::epoch2:
-			return (timestamp_t)start::epoch2;
+			// Epoch2 start is different for betanet
+			if (rai::rai_network == rai::rai_networks::rai_live_network)
+			{
+				return (timestamp_t)start::epoch2_live;
+			}
+			else
+			{
+				return (timestamp_t)start::epoch2_beta;
+			}
+			
 		case rai::epoch::epoch_num::epoch_far_future:
 		default:
 			return (timestamp_t)start::epoch_far_future;
