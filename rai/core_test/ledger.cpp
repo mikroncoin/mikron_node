@@ -2374,7 +2374,7 @@ TEST (ledger_manna, send)
 
 	// receive to manna account
 	rai::timestamp_t time7 = time4 + 1200;
-	rai::state_block send2 (key3.pub, receive.hash(), time7, key3.pub, 100 - 10, rai::manna_account, key3.prv, key3.pub, 0);
+	rai::state_block send2 (key3.pub, receive.hash (), time7, key3.pub, 100 - 10, rai::manna_account, key3.prv, key3.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::send, ledger.state_subtype (transaction, send2));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send2).code);
 	ASSERT_EQ (10, ledger.amount (transaction, send2.hash ()));
@@ -2547,6 +2547,8 @@ TEST (ledger, send_zero_invalid)
 	ASSERT_EQ (rai::process_result::invalid_state_block, return2.code);
 }
 
+int cutoff_time_comment_epoch = 15638400; // should be rai::epoch::start::epoch2_beta
+
 TEST (ledger, comment_genesis_process)
 {
 	bool init (false);
@@ -2558,9 +2560,8 @@ TEST (ledger, comment_genesis_process)
 	rai::genesis genesis;
 	genesis.initialize (transaction, store);
 	// Place a comment right after the genesis block
-	int cutoff_time = 15638400; // should be rai::epoch::start::epoch2
 	std::string comment1_str ("COMMENT1 genesis");
-	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, comment_block1));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
 	std::string comment2_str ("COMMENT2 genesis Trickier ÁÉÍÓÖŐÚÜŰ");
@@ -2581,8 +2582,7 @@ TEST (ledger, comment_invalid_legacy)
 	genesis.initialize (transaction, store);
 	// Place a comment right after the genesis block
 	std::string comment1_str ("COMMENT1 genesis");
-	int cutoff_time = 15638400; // should be rai::epoch::start::epoch2
-	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time - 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, comment_block1));
 	ASSERT_EQ (rai::process_result::invalid_comment_block_legacy, return1.code);
 }
@@ -2599,8 +2599,7 @@ TEST (ledger, comment_second_process)
 	genesis.initialize (transaction, store);
 	// Create a second account and transfer to it
 	rai::keypair key2;
-	int cutoff_time = 15638400; // should be rai::epoch::start::epoch2
-	rai::state_block send_block (rai::genesis_account, genesis.hash (), cutoff_time + 1000, rai::genesis_account, rai::genesis_amount - 10, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block send_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount - 10, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, send_block));
 	ASSERT_EQ (rai::process_result::progress, return1.code);
 	rai::state_block receive_block (key2.pub, 0, send_block.creation_time ().number () + 1, key2.pub, 10, send_block.hash (), key2.prv, key2.pub, 0);
@@ -2625,13 +2624,12 @@ TEST (ledger, comment_process_error)
 	genesis.initialize (transaction, store);
 	std::string comment1_str ("COMMENT1 error");
 	rai::keypair key2;
-	int cutoff_time = 15638400; // should be rai::epoch::start::epoch2
 	// Amount mismatch
-	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time + 1000, rai::genesis_account, rai::genesis_amount - 1000000, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount - 1000000, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return1 (ledger.process (transaction, comment_block1));
 	ASSERT_EQ (rai::process_result::balance_mismatch, return1.code);
 	// Representative mismatch
-	rai::comment_block comment_block2 (rai::genesis_account, genesis.hash (), cutoff_time + 1000, key2.pub, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::comment_block comment_block2 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, key2.pub, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return2 (ledger.process (transaction, comment_block2));
 	ASSERT_EQ (rai::process_result::representative_mismatch, return2.code);
 	// Creation time too early
@@ -2639,7 +2637,7 @@ TEST (ledger, comment_process_error)
 	auto return3 (ledger.process (transaction, comment_block3));
 	ASSERT_EQ (rai::process_result::invalid_block_creation_time, return3.code);
 	// Invalid subtype
-	rai::comment_block comment_block4 (rai::genesis_account, genesis.hash (), cutoff_time + 1000, rai::genesis_account, rai::genesis_amount, (rai::comment_block_subtype)89, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::comment_block comment_block4 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, (rai::comment_block_subtype)89, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return4 (ledger.process (transaction, comment_block4));
 	ASSERT_EQ (rai::process_result::invalid_comment_block, return4.code);
 }
