@@ -213,13 +213,15 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
-extern rai::keypair const & test_manna_key;
+extern rai::keypair const & test_manna_ep1_key;
+extern rai::keypair const & test_manna_ep2_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::amount_t const & genesis_amount;
 extern rai::timestamp_t const genesis_time;
-extern rai::account const & manna_account;
+extern rai::account const & manna_account_epoch1;
+extern rai::account const & manna_account_epoch2;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
@@ -239,13 +241,26 @@ public:
 class manna_control
 {
 public:
-	static uint32_t manna_start;
+	static uint32_t manna_start_epoch1;
+	static uint32_t manna_start_epoch2;
 	static uint32_t manna_freq;
 	static rai::amount_t manna_increment;
 
+	// Check if this account is a manna account
 	static bool is_manna_account (rai::account const &);
-	static rai::amount_t adjust_balance_with_manna (rai::amount_t, rai::timestamp_t, rai::timestamp_t);
-	static rai::amount_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
+	static rai::amount_t adjust_balance_with_manna (rai::account const &, rai::amount_t, rai::timestamp_t, rai::timestamp_t);
+
+private:
+	static bool is_manna_account_epoch1 (rai::account const &);
+	static bool is_manna_account_epoch2 (rai::account const &);
+	// Compute the manna increment between time points.  Account is needed as it may influence the epoch.
+	static rai::amount_t compute_manna_increment_account (rai::account const &, rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment, within epoch1 (starting from genesis, and ending with epoch2 start)
+	static rai::amount_t compute_manna_increment_epoch1 (rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment, within epoch2 (starting with epoch2 start)
+	static rai::amount_t compute_manna_increment_epoch2 (rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment between time points, bounded by the manna epoch period between manna_start and manna_end
+	static rai::amount_t compute_manna_increment_within_period (rai::timestamp_t, rai::timestamp_t, rai::timestamp_t, rai::timestamp_t);
 };
 
 }
