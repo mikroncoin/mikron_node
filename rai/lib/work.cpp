@@ -12,7 +12,7 @@ bool rai::work_validate (rai::block_hash const & root_a, uint64_t work_a)
 
 bool rai::work_validate (rai::block const & block_a)
 {
-	return work_validate (block_a.root (), block_a.block_work ());
+	return work_validate (block_a.root (), block_a.work_get ());
 }
 
 uint64_t rai::work_value (rai::block_hash const & root_a, uint64_t work_a)

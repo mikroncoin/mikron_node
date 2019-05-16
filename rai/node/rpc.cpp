@@ -461,6 +461,7 @@ void rai::rpc_handler::account_info ()
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
+		const bool comment = request.get<bool> ("comment", false);
 		rai::transaction transaction (node.store.environment, nullptr, false);
 		rai::account_info info;
 		if (!node.store.account_get (transaction, account, info))
@@ -488,6 +489,14 @@ void rai::rpc_handler::account_info ()
 			{
 				auto account_pending (node.ledger.account_pending (transaction, account));
 				response_l.put ("pending", std::to_string (account_pending));
+			}
+			if (comment)
+			{
+				if (!info.comment_block.is_zero ())
+				{
+					auto account_comment (node.ledger.account_comment (transaction, account));
+					response_l.put ("comment", account_comment);
+				}
 			}
 		}
 		else
@@ -808,6 +817,69 @@ void rai::rpc_handler::accounts_pending ()
 	}
 	response_l.add_child ("blocks", pending);
 	response_errors ();
+}
+
+void rai::rpc_handler::add_comment_account ()
+{
+	rpc_control_impl ();
+	auto wallet (wallet_impl ());
+	auto account (account_impl ());
+	if (!ec)
+	{
+		if (!wallet->valid_password ())
+		{
+			ec = nano::error_common::wallet_locked;
+		}
+		else
+		{
+			std::string comment_text (request.get<std::string> ("comment"));
+			auto work (work_optional_impl ());
+			if (!ec)
+			{
+				rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
+				rai::account_info info;
+				if (node.store.account_get (transaction, account, info))
+				{
+					ec = nano::error_common::account_not_found;
+				}
+				if (!ec && work)
+				{
+					if (rai::work_validate (info.head, work))
+					{
+						ec = nano::error_common::invalid_work;
+					}
+					else
+					{
+						wallet->store.work_put (transaction, account, work);
+					}
+				}
+			}
+			if (!ec)
+			{
+				auto rpc_l (shared_from_this ());
+				auto response_a (response);
+				wallet->add_comment_async (account, rai::comment_block_subtype::account, comment_text, [response_a](std::shared_ptr<rai::block> block_a) {
+					if (block_a == nullptr)
+					{
+						error_response (response_a, "Error generating block");
+					}
+					else
+					{
+						rai::uint256_union hash (block_a->hash ());
+						boost::property_tree::ptree response_l;
+						response_l.put ("block", hash.to_string ());
+						response_a (response_l);
+					}
+				},
+				work == 0);
+			}
+		}
+	}
+	// Because of async
+	if (ec)
+	{
+		response_errors ();
+	}
 }
 
 void rai::rpc_handler::available_supply ()
@@ -1135,23 +1207,6 @@ void rai::rpc_handler::block_create ()
 				ec = nano::error_rpc::invalid_balance;
 			}
 		}
-		rai::uint256_union link (0);
-		boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
-		if (!ec && link_text.is_initialized ())
-		{
-			if (link.decode_account (link_text.get ()))
-			{
-				if (link.decode_hex (link_text.get ()))
-				{
-					ec = nano::error_rpc::bad_link;
-				}
-			}
-		}
-		else
-		{
-			// Retrieve link from source or destination
-			link = source.is_zero () ? destination : source;
-		}
 		if (prv.data != 0)
 		{
 			rai::uint256_union pub (rai::pub_key (prv.data));
@@ -1181,7 +1236,28 @@ void rai::rpc_handler::block_create ()
 			}
 			if (type == "state")
 			{
-				if (previous_text.is_initialized () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
+				rai::uint256_union link (0);
+				boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
+				if (!ec && link_text.is_initialized ())
+				{
+					if (link.decode_account (link_text.get ()))
+					{
+						if (link.decode_hex (link_text.get ()))
+						{
+							ec = nano::error_rpc::bad_link;
+						}
+					}
+				}
+				else
+				{
+					// Retrieve link from source or destination
+					link = source.is_zero () ? destination : source;
+				}
+				if (!previous_text.is_initialized () || representative.is_zero () || (link.is_zero () && !link_text.is_initialized ()))
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
+				}
+				else
 				{
 					if (creation_time.is_zero ())
 					{
@@ -1191,15 +1267,40 @@ void rai::rpc_handler::block_create ()
 					{
 						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
 					}
-					rai::state_block state (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
-					response_l.put ("hash", state.hash ().to_string ());
+					rai::state_block state_block (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
+					response_l.put ("hash", state_block.hash ().to_string ());
 					std::string contents;
-					state.serialize_json (contents);
+					state_block.serialize_json (contents);
 					response_l.put ("block", contents);
+				}
+			}
+			else if (type == "comment")
+			{
+				std::string comment;
+				boost::optional<std::string> comment_text (request.get_optional<std::string> ("comment"));
+				if (comment_text.is_initialized ())
+				{
+					comment = comment_text.get ();
+				}
+				if (!previous_text.is_initialized () || representative.is_zero () || comment.length () == 0)
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
 				}
 				else
 				{
-					ec = nano::error_rpc::block_create_requirements_state;
+					if (creation_time.is_zero ())
+					{
+						creation_time.set_time_now ();
+					}
+					if (work == 0)
+					{
+						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
+					}
+					rai::comment_block comment_block (pub, previous, creation_time.number (), representative, balance, rai::comment_block_subtype::account, comment, prv, pub, work);
+					response_l.put ("hash", comment_block.hash ().to_string ());
+					std::string contents;
+					comment_block.serialize_json (contents);
+					response_l.put ("block", contents);
 				}
 			}
 			else
@@ -1432,12 +1533,12 @@ public:
 		if (raw)
 		{
 			tree.put ("type", "state");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("link", block_a.hashables.link.to_string ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("link", block_a.link ().to_string ());
+			tree.put ("previous", block_a.previous ().to_string ());
 		}
-		auto cur_balance (block_a.hashables.balance.number ());
-		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		auto cur_balance (block_a.balance ().number ());
+		auto previous_balance = handler.node.ledger.balance (transaction, block_a.previous ());
 		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
 		switch (subtype)
@@ -1451,9 +1552,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("amount", block_a.balance ().to_string_dec ());
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::open_genesis:
@@ -1465,9 +1566,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", block_a.hashables.account.to_account ()); // self
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("amount", block_a.balance ().to_string_dec ());
+			tree.put ("account", block_a.account ().to_account ()); // self
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::send:
@@ -1479,9 +1580,9 @@ public:
 			{
 				tree.put ("type", "send");
 			}
-			tree.put ("account", block_a.hashables.link.to_account ());
+			tree.put ("account", block_a.link ().to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		case rai::state_block_subtype::receive:
@@ -1493,9 +1594,9 @@ public:
 			{
 				tree.put ("type", "receive");
 			}
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+			tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
 			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			break;
 
 		// epoch and undefined not handled
@@ -1504,6 +1605,17 @@ public:
 			break;
 		}
 	}
+	void comment_block (rai::comment_block const & block_a)
+	{
+		tree.put ("type", "comment");
+		tree.put ("comment", block_a.comment ());
+		tree.put ("balance", block_a.balance ().to_string_dec ());
+		if (raw)
+		{
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("previous", block_a.previous ().to_string ());
+		}		
+	}	
 	rai::rpc_handler & handler;
 	bool raw;
 	rai::transaction & transaction;
@@ -1566,8 +1678,8 @@ void rai::rpc_handler::account_history ()
 						if (output_raw)
 						{
 							entry.put ("block_time_utc", block->creation_time ().to_date_string_utc ());
-							entry.put ("work", rai::to_string_hex (block->block_work ()));
-							entry.put ("signature", block->block_signature ().to_string ());
+							entry.put ("work", rai::to_string_hex (block->work_get ()));
+							entry.put ("signature", block->signature_get ().to_string ());
 						}
 						history.push_back (std::make_pair ("", entry));
 					}
@@ -3627,6 +3739,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "accounts_pending")
 			{
 				accounts_pending ();
+			}
+			else if (action == "add_comment_account")
+			{
+				add_comment_account ();
 			}
 			else if (action == "available_supply")
 			{

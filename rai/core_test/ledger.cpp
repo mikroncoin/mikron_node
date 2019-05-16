@@ -10,12 +10,12 @@ using namespace std::chrono_literals;
 // Helper methods introduced when switched from legacy block types to state block, to reduce the effort of test updates
 rai::state_block ledger_create_send_state_block_helper (rai::state_block const & prev_block_a, rai::account const & destination_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, prev_block_a.hashables.representative, balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, prev_block_a.representative (), balance_a, destination_a, keys_a.prv, keys_a.pub, 0);
 }
 
 rai::state_block ledger_create_receive_state_block_helper (rai::state_block const & prev_block_a, rai::state_block const & source_send_a, rai::amount const & balance_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, prev_block_a.hashables.representative, balance_a, source_send_a.hash (), keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, prev_block_a.representative (), balance_a, source_send_a.hash (), keys_a.prv, keys_a.pub, 0);
 }
 
 rai::state_block ledger_create_open_state_block_helper (rai::state_block const & source_a, rai::account const & representative_a, rai::account const & account_a, rai::amount const & balance_a, rai::keypair const & keys_a)
@@ -25,7 +25,7 @@ rai::state_block ledger_create_open_state_block_helper (rai::state_block const &
 
 rai::state_block ledger_create_change_state_block_helper (rai::state_block const & prev_block_a, rai::account const & representative_a, rai::keypair const & keys_a)
 {
-	return rai::state_block (prev_block_a.hashables.account, prev_block_a.hash (), 0, representative_a, prev_block_a.hashables.balance, 0, keys_a.prv, keys_a.pub, 0);
+	return rai::state_block (prev_block_a.account (), prev_block_a.hash (), 0, representative_a, prev_block_a.balance (), 0, keys_a.prv, keys_a.pub, 0);
 }
 
 // Init returns an error if it can't open files at the path
@@ -1269,7 +1269,7 @@ TEST (ledger, fail_open_bad_signature)
 	rai::state_block block1 (::ledger_create_send_state_block_helper (genesis.block (), key1.pub, 1, rai::test_genesis_key));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, block1).code);
 	rai::state_block block2 (::ledger_create_open_state_block_helper (block1, 1, key1.pub, rai::genesis_amount - 1, key1));
-	block2.signature.clear ();
+	block2.signature_set (rai::uint512_union ());
 	ASSERT_EQ (rai::process_result::bad_signature, ledger.process (transaction, block2).code);
 }
 
@@ -2428,7 +2428,7 @@ TEST (ledger_manna, send)
 
 	// receive to manna account
 	rai::timestamp_t time7 = time4 + 1200;
-	rai::state_block send2 (key3.pub, receive.hash(), time7, key3.pub, 100 - 10, rai::manna_account_epoch1, key3.prv, key3.pub, 0);
+	rai::state_block send2 (key3.pub, receive.hash (), time7, key3.pub, 100 - 10, rai::manna_account_epoch1, key3.prv, key3.pub, 0);
 	ASSERT_EQ (rai::state_block_subtype::send, ledger.state_subtype (transaction, send2));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send2).code);
 	ASSERT_EQ (10, ledger.amount (transaction, send2.hash ()));
@@ -2592,4 +2592,99 @@ TEST (ledger, send_zero_invalid)
 	rai::state_block send_zero_new (rai::genesis_account, genesis.hash (), cutoff_time_send_self_epoch + 100, rai::genesis_account, rai::genesis_amount, dest.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	auto return2 (ledger.process (transaction, send_zero_new));
 	ASSERT_EQ (rai::process_result::invalid_state_block, return2.code);
+}
+
+int cutoff_time_comment_epoch = 26179200; // should be rai::epoch::start::epoch2_beta
+
+TEST (ledger, comment_genesis_process)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Place a comment right after the genesis block
+	std::string comment1_str ("COMMENT1 genesis");
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::progress, return1.code);
+	std::string comment2_str ("COMMENT2 genesis Trickier ÁÉÍÓÖŐÚÜŰ");
+	rai::comment_block comment_block2 (rai::genesis_account, comment_block1.hash (), comment_block1.creation_time ().number () + 1, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment2_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, comment_block2));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
+}
+
+TEST (ledger, comment_invalid_legacy)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Place a comment right after the genesis block
+	std::string comment1_str ("COMMENT1 genesis");
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::invalid_comment_block_legacy, return1.code);
+}
+
+TEST (ledger, comment_second_process)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Create a second account and transfer to it
+	rai::keypair key2;
+	rai::state_block send_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount - 10, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, send_block));
+	ASSERT_EQ (rai::process_result::progress, return1.code);
+	rai::state_block receive_block (key2.pub, 0, send_block.creation_time ().number () + 1, key2.pub, 10, send_block.hash (), key2.prv, key2.pub, 0);
+	auto return2 (ledger.process (transaction, receive_block));
+	ASSERT_EQ (rai::process_result::progress, return2.code);
+	// Place a comment block
+	std::string comment1_str ("COMMENT1");
+	rai::comment_block comment_block1 (key2.pub, receive_block.hash (), receive_block.creation_time ().number () + 1, key2.pub, 10, rai::comment_block_subtype::account, comment1_str, key2.prv, key2.pub, 0);
+	auto return3 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::progress, return3.code);
+}
+
+TEST (ledger, comment_process_error)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	std::string comment1_str ("COMMENT1 error");
+	rai::keypair key2;
+	// Amount mismatch
+	rai::comment_block comment_block1 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount - 1000000, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return1 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::balance_mismatch, return1.code);
+	// Representative mismatch
+	rai::comment_block comment_block2 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, key2.pub, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return2 (ledger.process (transaction, comment_block2));
+	ASSERT_EQ (rai::process_result::representative_mismatch, return2.code);
+	// Creation time too early
+	rai::comment_block comment_block3 (rai::genesis_account, genesis.hash (), genesis.genesis_block->creation_time ().number () - 1234567, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return3 (ledger.process (transaction, comment_block3));
+	ASSERT_EQ (rai::process_result::invalid_block_creation_time, return3.code);
+	// Invalid subtype
+	rai::comment_block comment_block4 (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, (rai::comment_block_subtype)89, comment1_str, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	auto return4 (ledger.process (transaction, comment_block4));
+	ASSERT_EQ (rai::process_result::invalid_comment_block, return4.code);
 }

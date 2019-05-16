@@ -30,9 +30,11 @@ TEST (transaction_block, empty)
 	rai::keypair key1;
 	rai::state_block block (key1.pub, 0, 0, rai::genesis_account, 13, 1, key1.prv, key1.pub, 2);
 	rai::uint256_union hash (block.hash ());
-	ASSERT_FALSE (rai::validate_message (key1.pub, hash, block.signature));
-	block.signature.bytes[32] ^= 0x1;
-	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature));
+	ASSERT_FALSE (rai::validate_message (key1.pub, hash, block.signature_get ()));
+	auto signature (block.signature_get ());
+	signature.bytes[32] ^= 0x1;
+	block.signature_set (signature);
+	ASSERT_TRUE (rai::validate_message (key1.pub, hash, block.signature_get ()));
 }
 
 TEST (uint512_union, parse_zero)
@@ -165,15 +167,16 @@ TEST (block, confirm_req_serialization)
 
 TEST (state_block, serialization)
 {
+	ASSERT_EQ (212, rai::state_block::size);
 	rai::keypair key1;
 	rai::keypair key2;
 	rai::state_block block1 (key1.pub, 1, 12345, key2.pub, 2, 4, key1.prv, key1.pub, 5);
-	ASSERT_EQ (key1.pub, block1.hashables.account);
+	ASSERT_EQ (key1.pub, block1.account ());
 	ASSERT_EQ (rai::block_hash (1), block1.previous ());
 	ASSERT_EQ (rai::short_timestamp (12345).data.number (), block1.creation_time ().data.number ());
-	ASSERT_EQ (key2.pub, block1.hashables.representative);
-	ASSERT_EQ (rai::amount (2), block1.hashables.balance);
-	ASSERT_EQ (rai::uint256_union (4), block1.hashables.link);
+	ASSERT_EQ (key2.pub, block1.representative ());
+	ASSERT_EQ (rai::amount (2), block1.balance ());
+	ASSERT_EQ (rai::uint256_union (4), block1.link ());
 	std::vector<uint8_t> bytes;
 	{
 		rai::vectorstream stream (bytes);
@@ -192,21 +195,21 @@ TEST (state_block, serialization)
 	rai::bufferstream stream (bytes.data (), bytes.size ());
 	rai::state_block block2 (error1, stream);
 	ASSERT_FALSE (error1);
-	ASSERT_EQ (key1.pub, block2.hashables.account);
+	ASSERT_EQ (key1.pub, block2.account ());
 	ASSERT_EQ (rai::block_hash (1), block2.previous ());
 	ASSERT_EQ (rai::short_timestamp (12345).data.number (), block2.creation_time ().data.number ());
-	ASSERT_EQ (key2.pub, block2.hashables.representative);
-	ASSERT_EQ (rai::amount (2), block2.hashables.balance);
-	ASSERT_EQ (rai::uint256_union (4), block2.hashables.link);
+	ASSERT_EQ (key2.pub, block2.representative ());
+	ASSERT_EQ (rai::amount (2), block2.balance ());
+	ASSERT_EQ (rai::uint256_union (4), block2.link ());
 	ASSERT_EQ (block1, block2);
-	block2.hashables.account.clear ();
-	block2.hashables.previous.clear ();
-	block2.hashables.creation_time.data.decode_dec ("0");
-	block2.hashables.representative.clear ();
-	block2.hashables.balance.clear ();
+	block2.account_set (rai::account ());
+	block2.previous_set (rai::block_hash ());
+	block2.creation_time ().data.decode_dec ("0");
+	block2.representative_set (rai::account ());
+	block2.balance_set (rai::amount ());
 	block2.hashables.link.clear ();
-	block2.signature.clear ();
-	block2.work = 0;
+	block2.signature_set (rai::uint512_union (0));
+	block2.work_set (0);
 	rai::bufferstream stream2 (bytes.data (), bytes.size ());
 	ASSERT_FALSE (block2.deserialize (stream2));
 	ASSERT_EQ (block1, block2);
@@ -219,14 +222,14 @@ TEST (state_block, serialization)
 	rai::state_block block3 (error2, tree);
 	ASSERT_FALSE (error2);
 	ASSERT_EQ (block1, block3);
-	block3.hashables.account.clear ();
-	block3.hashables.previous.clear ();
-	block2.hashables.creation_time.data.decode_dec ("0");
-	block3.hashables.representative.clear ();
-	block3.hashables.balance.clear ();
+	block3.account_set (rai::account ());
+	block3.previous_set (rai::account ());
+	block2.creation_time ().data.decode_dec ("0");
+	block3.representative_set (rai::account ());
+	block3.balance_set (rai::amount ());
 	block3.hashables.link.clear ();
-	block3.signature.clear ();
-	block3.work = 0;
+	block3.signature_set (rai::uint512_union (0));
+	block3.work_set (0);
 	ASSERT_FALSE (block3.deserialize_json (tree));
 	ASSERT_EQ (block1, block3);
 }
@@ -236,21 +239,33 @@ TEST (state_block, hashing)
 	rai::keypair key;
 	rai::state_block block (key.pub, 0, 12345, key.pub, 0, 0, key.prv, key.pub, 0);
 	auto hash (block.hash ());
-	block.hashables.account.bytes[0] ^= 0x1;
+	auto account (block.account ());
+	account.bytes[0] ^= 0x1;
+	block.account_set (account);
 	ASSERT_NE (hash, block.hash ());
-	block.hashables.account.bytes[0] ^= 0x1;
+	account.bytes[0] ^= 0x1;
+	block.account_set (account);
 	ASSERT_EQ (hash, block.hash ());
-	block.hashables.previous.bytes[0] ^= 0x1;
+	auto previous (block.previous ());
+	previous.bytes[0] ^= 0x1;
+	block.previous_set (previous);
 	ASSERT_NE (hash, block.hash ());
-	block.hashables.previous.bytes[0] ^= 0x1;
+	previous.bytes[0] ^= 0x1;
+	block.previous_set (previous);
 	ASSERT_EQ (hash, block.hash ());
-	block.hashables.representative.bytes[0] ^= 0x1;
+	auto representative (block.representative ());
+	representative.bytes[0] ^= 0x1;
+	block.representative_set (representative);
 	ASSERT_NE (hash, block.hash ());
-	block.hashables.representative.bytes[0] ^= 0x1;
+	representative.bytes[0] ^= 0x1;
+	block.representative_set (representative);
 	ASSERT_EQ (hash, block.hash ());
-	((uint8_t *)&block.hashables.balance.data)[0] ^= 0x1;
+	auto balance (block.balance ());
+	((uint8_t *)&balance.data)[0] ^= 0x1;
+	block.balance_set (balance);
 	ASSERT_NE (hash, block.hash ());
-	((uint8_t *)&block.hashables.balance.data)[0] ^= 0x1;
+	((uint8_t *)&balance.data)[0] ^= 0x1;
+	block.balance_set (balance);
 	ASSERT_EQ (hash, block.hash ());
 	block.hashables.link.bytes[0] ^= 0x1;
 	ASSERT_NE (hash, block.hash ());
@@ -307,5 +322,112 @@ TEST (state_block, subtype)
 	ASSERT_FALSE (invalid.is_valid_open_subtype ());
 	ASSERT_TRUE (invalid.is_valid_send_or_receive_subtype ());
 	ASSERT_FALSE (invalid.is_valid_change_subtype ());
-	ASSERT_EQ(rai::process_result::invalid_state_block, ledger.process (transaction, invalid).code);
+	ASSERT_EQ (rai::process_result::invalid_state_block, ledger.process (transaction, invalid).code);
+}
+
+TEST (comment_block, create)
+{
+	rai::keypair key;
+	auto comment (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, "COMMENT1", key.prv, key.pub, 0));
+	ASSERT_EQ (rai::comment_block_subtype::account, comment.subtype ());
+	ASSERT_EQ ("COMMENT1", comment.comment ());
+}
+
+TEST (comment_block, raw_comment)
+{
+	auto comment1 ("COMMENT1");
+	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
+	ASSERT_EQ (8, comment_raw1.length ());
+	ASSERT_EQ ('C', comment_raw1.value ()[0]);
+	ASSERT_EQ ('O', comment_raw1.value ()[1]);
+	ASSERT_EQ ('M', comment_raw1.value ()[2]);
+	ASSERT_EQ ('1', comment_raw1.value ()[7]);
+	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
+	ASSERT_EQ (comment1, comment2);
+
+	rai::keypair key;
+	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	ASSERT_EQ (comment1, comment5.comment ());
+	ASSERT_EQ ('O', comment5.comment_raw ().value ()[1]);
+}
+
+TEST (comment_block, long_comment)
+{
+	int maxlen = 160;
+	ASSERT_EQ (maxlen, rai::comment_block::max_comment_length);
+	std::string max_comment;
+	for (auto i (0); i < maxlen; ++i)
+	{
+		max_comment.append (std::to_string (i % 10));
+	}
+	std::string toolong_comment (max_comment);
+	toolong_comment.append ("EXTRA");
+
+	rai::keypair key;
+	// comment truncated
+	auto comment5 (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, toolong_comment, key.prv, key.pub, 0));
+	ASSERT_EQ (max_comment, comment5.comment ());
+	ASSERT_EQ (maxlen, comment5.comment ().length ());
+}
+
+TEST (comment_block, utf_comment)
+{
+	// TODO UTF-8 conversion
+	std::string comment1 ("MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (23, comment1.length ()); // longer, UTF
+	auto comment_raw1 (rai::comment_block::comment_string_to_raw (comment1));
+	ASSERT_EQ (23, comment_raw1.length ());
+	ASSERT_EQ ('M', comment_raw1.value ()[0]);
+	ASSERT_EQ (195, comment_raw1.value ()[1]);
+	ASSERT_EQ ('X', comment_raw1.value ()[22]);
+	auto comment2 (rai::comment_block::comment_raw_to_string (comment_raw1));
+	ASSERT_EQ (comment1, comment2);
+	ASSERT_EQ (23, comment2.length ());
+}
+
+TEST (comment_block, serialization)
+{
+	ASSERT_EQ (186, rai::comment_block::size_base);
+	std::string comment1 ("COMMENT_serialization_MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (45, comment1.length ()); // longer, UTF
+	rai::keypair key;
+	auto comment_block (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	// serialize
+	std::vector<uint8_t> bytes;
+	{
+		rai::vectorstream stream (bytes);
+		comment_block.serialize (stream);
+	}
+	ASSERT_EQ (186 + 45, bytes.size ());
+	// deserialize
+	rai::bufferstream stream (bytes.data (), bytes.size ());
+	auto error (false);
+	rai::comment_block comment_block2 (error, stream);
+	ASSERT_FALSE (error);
+	// compare
+	ASSERT_EQ ("COMMENT_serialization_MÍKRÓ+ÁÉÍÓŐÚŰX", comment_block2.comment ());
+	ASSERT_EQ (rai::comment_block_subtype::account, comment_block2.subtype ());
+	ASSERT_EQ (comment_block.hash (), comment_block2.hash ());
+}
+
+TEST (comment_block, serialization_json)
+{
+	std::string comment1 ("COMMENT_serialization_json_MÍKRÓ+ÁÉÍÓŐÚŰX");
+	ASSERT_EQ (50, comment1.length ()); // longer, UTF
+	rai::keypair key;
+	auto comment_block (rai::comment_block (1, 2, 0, 5, 6, rai::comment_block_subtype::account, comment1, key.prv, key.pub, 0));
+	// serialize
+	std::string json;
+	comment_block.serialize_json (json);
+	// deserialize
+	std::stringstream body (json);
+	boost::property_tree::ptree tree;
+	boost::property_tree::read_json (body, tree);
+	auto error (false);
+	rai::comment_block comment_block2 (error, tree);
+	ASSERT_FALSE (error);
+	// compare
+	ASSERT_EQ ("COMMENT_serialization_json_MÍKRÓ+ÁÉÍÓŐÚŰX", comment_block2.comment ());
+	ASSERT_EQ (rai::comment_block_subtype::account, comment_block2.subtype ());
+	ASSERT_EQ (comment_block.hash (), comment_block2.hash ());
 }

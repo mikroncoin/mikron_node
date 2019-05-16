@@ -53,6 +53,20 @@ bool rai::from_string_hex (std::string const & value_a, uint64_t & target_a)
 	return error;
 }
 
+// Read a a number of bytes
+bool rai::read_len (rai::stream & stream_a, size_t len, uint8_t * value)
+{
+	auto amount_read (stream_a.sgetn (value, len));
+	return amount_read != len;
+}
+
+// Write a number of bytes
+void rai::write_len (rai::stream & stream_a, size_t len, const uint8_t * value)
+{
+	auto amount_written (stream_a.sputn (value, len));
+	assert (amount_written == len);
+}
+
 const rai::uint32_t rai::epoch::origin;
 
 rai::epoch::epoch_num rai::epoch::epoch_of_time (rai::timestamp_t time_a)
@@ -194,14 +208,55 @@ std::string rai::short_timestamp::to_date_string_local () const
 	return ss.str ();
 }
 
-std::string rai::block::to_json ()
+rai::base_hashables::base_hashables () :
+account (),
+creation_time (),
+previous (),
+representative (),
+balance ()
 {
-	std::string result;
-	serialize_json (result);
-	return result;
 }
 
-rai::block_hash rai::block::hash () const
+// if time is 0, current time is taken
+rai::base_hashables::base_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a) :
+account (account_a),
+creation_time (creation_time_a),
+previous (previous_a),
+representative (representative_a),
+balance (balance_a)
+{
+	if (creation_time_a == 0)
+	{
+		creation_time.set_time_now ();
+	}
+}
+
+void rai::base_hashables::hash (blake2b_state & hash_a) const
+{
+	blake2b_update (&hash_a, account.bytes.data (), sizeof (account.bytes));
+	uint32_t creation_time_big_endian (creation_time.data.number_big_endian ());
+	blake2b_update (&hash_a, &creation_time_big_endian, sizeof (creation_time_big_endian));
+	blake2b_update (&hash_a, previous.bytes.data (), sizeof (previous.bytes));
+	blake2b_update (&hash_a, representative.bytes.data (), sizeof (representative.bytes));
+	uint64_t balance_big_endian (balance.number_big_endian ());
+	blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
+}
+
+rai::base_block::base_block () :
+base_hashables (),
+signature (),
+work ()
+{
+}
+
+rai::base_block::base_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::signature const & signature_a, uint64_t work_a) :
+base_hashables (account_a, previous_a, creation_time_a, representative_a, balance_a),
+signature (signature_a),
+work (work_a)
+{
+}
+
+rai::block_hash rai::base_block::hash () const
 {
 	rai::uint256_union result;
 	blake2b_state hash_l;
@@ -213,158 +268,161 @@ rai::block_hash rai::block::hash () const
 	return result;
 }
 
-// if time is 0, current time is taken
-rai::state_hashables::state_hashables (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a) :
-account (account_a),
-creation_time (creation_time_a),
-previous (previous_a),
-representative (representative_a),
-balance (balance_a),
+rai::short_timestamp rai::base_block::creation_time () const
+{
+	return base_hashables.creation_time;
+}
+
+rai::block_hash rai::base_block::previous () const
+{
+	return base_hashables.previous;
+}
+
+rai::block_hash rai::base_block::root () const
+{
+	return !base_hashables.previous.is_zero () ? base_hashables.previous : base_hashables.account;
+}
+
+rai::account rai::base_block::account () const
+{
+	return base_hashables.account;
+}
+
+rai::account rai::base_block::representative () const
+{
+	return base_hashables.representative;
+}
+
+rai::amount rai::base_block::balance () const
+{
+	return base_hashables.balance;
+}
+
+rai::block_hash rai::base_block::source () const
+{
+	return 0;
+}
+
+bool rai::base_block::has_previous () const
+{
+	return !base_hashables.previous.is_zero ();
+}
+
+bool rai::base_block::has_representative () const
+{
+	return !base_hashables.representative.is_zero ();
+}
+
+void rai::base_block::previous_set (rai::block_hash const & previous_a)
+{
+	base_hashables.previous = previous_a;
+}
+
+void rai::base_block::account_set (rai::account const & account_a)
+{
+	base_hashables.account = account_a;
+}
+
+void rai::base_block::representative_set (rai::account const & representative_a)
+{
+	base_hashables.representative = representative_a;
+}
+
+void rai::base_block::balance_set (rai::amount const & balance_a)
+{
+	base_hashables.balance = balance_a;
+}
+
+std::string rai::base_block::to_json () const
+{
+	std::string result;
+	serialize_json (result);
+	return result;
+}
+
+rai::signature const & rai::base_block::signature_get () const
+{
+	return signature;
+}
+
+void rai::base_block::signature_set (rai::uint512_union const & signature_a)
+{
+	signature = signature_a;
+}
+
+uint64_t rai::base_block::work_get () const
+{
+	return work.number ();
+}
+
+void rai::base_block::work_set (uint64_t work_a)
+{
+	work = work_a;
+}
+
+rai::state_hashables::state_hashables () :
+link ()
+{
+}
+
+rai::state_hashables::state_hashables (rai::uint256_union const & link_a) :
 link (link_a)
 {
-	if (creation_time_a == 0)
-	{
-		creation_time.set_time_now ();
-	}
-}
-
-rai::state_hashables::state_hashables (bool & error_a, rai::stream & stream_a)
-{
-	error_a = rai::read (stream_a, account);
-	if (error_a) return;
-	error_a = creation_time.data.deserialize (stream_a);
-	if (error_a) return;
-	error_a = rai::read (stream_a, previous);
-	if (error_a) return;
-	error_a = rai::read (stream_a, representative);
-	if (error_a) return;
-	error_a = balance.deserialize (stream_a);
-	if (error_a) return;
-	error_a = rai::read (stream_a, link);
-}
-
-rai::state_hashables::state_hashables (bool & error_a, boost::property_tree::ptree const & tree_a)
-{
-	try
-	{
-		auto account_l (tree_a.get<std::string> ("account"));
-		auto creation_time_l (tree_a.get<std::string> ("creation_time"));
-		auto previous_l (tree_a.get<std::string> ("previous"));
-		auto representative_l (tree_a.get<std::string> ("representative"));
-		auto balance_l (tree_a.get<std::string> ("balance"));
-		auto link_l (tree_a.get<std::string> ("link"));
-		error_a = account.decode_account (account_l);
-		if (error_a) return;
-		error_a = creation_time.data.decode_dec (creation_time_l);
-		if (error_a) return;
-		error_a = previous.decode_hex (previous_l);
-		if (error_a) return;
-		error_a = representative.decode_account (representative_l);
-		if (error_a) return;
-		error_a = balance.decode_dec (balance_l);
-		if (error_a) return;
-		error_a = link.decode_account (link_l) && link.decode_hex (link_l);
-	}
-	catch (std::runtime_error const &)
-	{
-		error_a = true;
-	}
 }
 
 void rai::state_hashables::hash (blake2b_state & hash_a) const
 {
-	blake2b_update (&hash_a, account.bytes.data (), sizeof (account.bytes));
-	uint32_t creation_time_big_endian (creation_time.data.number_big_endian ());
-	blake2b_update (&hash_a, &creation_time_big_endian, sizeof (creation_time_big_endian));
-	blake2b_update (&hash_a, previous.bytes.data (), sizeof (previous.bytes));
-	blake2b_update (&hash_a, representative.bytes.data (), sizeof (representative.bytes));
-	uint64_t balance_big_endian (balance.number_big_endian ());
-	blake2b_update (&hash_a, &balance_big_endian, sizeof (balance_big_endian));
 	blake2b_update (&hash_a, link.bytes.data (), sizeof (link.bytes));
 }
 
+size_t constexpr rai::state_block::size;
+
 // if time is 0, current time is taken
 rai::state_block::state_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::uint256_union const & link_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
-hashables (account_a, previous_a, creation_time_a, representative_a, balance_a, link_a),
-signature (rai::sign_message (prv_a, pub_a, hash ())),
-work (work_a)
+base_block (account_a, previous_a, creation_time_a, representative_a, balance_a, uint512_union (), work_a),
+hashables (link_a)
 {
+	signature_set (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()));
 }
 
 rai::state_block::state_block (bool & error_a, rai::stream & stream_a) :
-hashables (error_a, stream_a)
+base_block (),
+hashables ()
 {
-	if (!error_a)
-	{
-		error_a = rai::read (stream_a, signature);
-		if (!error_a)
-		{
-			error_a = work.deserialize (stream_a);
-		}
-	}
+	if (error_a)
+		return;
+	error_a = deserialize (stream_a);
 }
 
 rai::state_block::state_block (bool & error_a, boost::property_tree::ptree const & tree_a) :
-hashables (error_a, tree_a)
+base_block (),
+hashables ()
 {
-	if (!error_a)
-	{
-		try
-		{
-			auto type_l (tree_a.get<std::string> ("type"));
-			auto signature_l (tree_a.get<std::string> ("signature"));
-			auto work_l (tree_a.get<std::string> ("work"));
-			error_a = type_l != "state";
-			if (!error_a)
-			{
-				error_a = work.decode_hex (work_l);
-				if (!error_a)
-				{
-					error_a = signature.decode_hex (signature_l);
-				}
-			}
-		}
-		catch (std::runtime_error const &)
-		{
-			error_a = true;
-		}
-	}
+	if (error_a)
+		return;
+	error_a = deserialize_json (tree_a);
 }
 
 void rai::state_block::hash (blake2b_state & hash_a) const
 {
 	rai::uint256_union preamble (static_cast<uint64_t> (rai::block_type::state));
 	blake2b_update (&hash_a, preamble.bytes.data (), preamble.bytes.size ());
+	base_hashables.hash (hash_a);
 	hashables.hash (hash_a);
 }
 
-uint64_t rai::state_block::block_work () const
+rai::uint256_union rai::state_block::link () const
 {
-	return work.number ();
-}
-
-void rai::state_block::block_work_set (uint64_t work_a)
-{
-	work = work_a;
-}
-
-rai::short_timestamp rai::state_block::creation_time () const
-{
-	return hashables.creation_time;
-}
-
-rai::block_hash rai::state_block::previous () const
-{
-	return hashables.previous;
+	return hashables.link;
 }
 
 void rai::state_block::serialize (rai::stream & stream_a) const
 {
-	write (stream_a, hashables.account);
-	hashables.creation_time.data.serialize (stream_a);
-	write (stream_a, hashables.previous);
-	write (stream_a, hashables.representative);
-	hashables.balance.serialize (stream_a);
+	write (stream_a, base_hashables.account);
+	base_hashables.creation_time.data.serialize (stream_a);
+	write (stream_a, base_hashables.previous);
+	write (stream_a, base_hashables.representative);
+	base_hashables.balance.serialize (stream_a);
 	write (stream_a, hashables.link);
 	write (stream_a, signature);
 	work.serialize (stream_a);
@@ -374,12 +432,12 @@ void rai::state_block::serialize_json (std::string & string_a) const
 {
 	boost::property_tree::ptree tree;
 	tree.put ("type", "state");
-	tree.put ("account", hashables.account.to_account ());
-	tree.put ("creation_time", hashables.creation_time.data.to_string_dec ());
-	tree.put ("creation_time_as_date", hashables.creation_time.to_date_string_utc ());
-	tree.put ("previous", hashables.previous.to_string ());
-	tree.put ("representative", representative ().to_account ());
-	tree.put ("balance", hashables.balance.to_string_dec ());
+	tree.put ("account", base_hashables.account.to_account ());
+	tree.put ("creation_time", base_hashables.creation_time.data.to_string_dec ());
+	tree.put ("creation_time_as_date", base_hashables.creation_time.to_date_string_utc ());
+	tree.put ("previous", base_hashables.previous.to_string ());
+	tree.put ("representative", base_hashables.representative.to_account ());
+	tree.put ("balance", base_hashables.balance.to_string_dec ());
 	tree.put ("link", hashables.link.to_string ());
 	tree.put ("link_as_account", hashables.link.to_account ());
 	std::string signature_l;
@@ -393,15 +451,15 @@ void rai::state_block::serialize_json (std::string & string_a) const
 
 bool rai::state_block::deserialize (rai::stream & stream_a)
 {
-	auto error (read (stream_a, hashables.account));
+	auto error (read (stream_a, base_hashables.account));
 	if (error) return error;
-	error = hashables.creation_time.data.deserialize (stream_a);
+	error = base_hashables.creation_time.data.deserialize (stream_a);
 	if (error) return error;
-	error = read (stream_a, hashables.previous);
+	error = read (stream_a, base_hashables.previous);
 	if (error) return error;
-	error = read (stream_a, hashables.representative);
+	error = read (stream_a, base_hashables.representative);
 	if (error) return error;
-	error = hashables.balance.deserialize (stream_a);
+	error = base_hashables.balance.deserialize (stream_a);
 	if (error) return error;
 	error = read (stream_a, hashables.link);
 	if (error) return error;
@@ -425,15 +483,15 @@ bool rai::state_block::deserialize_json (boost::property_tree::ptree const & tre
 		auto link_l (tree_a.get<std::string> ("link"));
 		auto work_l (tree_a.get<std::string> ("work"));
 		auto signature_l (tree_a.get<std::string> ("signature"));
-		error = hashables.account.decode_account (account_l);
+		error = base_hashables.account.decode_account (account_l);
 		if (error) return error;
-		error = hashables.creation_time.data.decode_dec (creation_time_l);
+		error = base_hashables.creation_time.data.decode_dec (creation_time_l);
 		if (error) return error;
-		error = hashables.previous.decode_hex (previous_l);
+		error = base_hashables.previous.decode_hex (previous_l);
 		if (error) return error;
-		error = hashables.representative.decode_account (representative_l);
+		error = base_hashables.representative.decode_account (representative_l);
 		if (error) return error;
-		error = hashables.balance.decode_dec (balance_l);
+		error = base_hashables.balance.decode_dec (balance_l);
 		if (error) return error;
 		error = hashables.link.decode_account (link_l) && hashables.link.decode_hex (link_l);
 		if (error) return error;
@@ -465,42 +523,7 @@ bool rai::state_block::operator== (rai::block const & other_a) const
 
 bool rai::state_block::operator== (rai::state_block const & other_a) const
 {
-	return hashables.account == other_a.hashables.account && hashables.previous == other_a.hashables.previous && hashables.representative == other_a.hashables.representative && hashables.balance == other_a.hashables.balance && hashables.link == other_a.hashables.link && signature == other_a.signature && work == other_a.work;
-}
-
-rai::block_hash rai::state_block::source () const
-{
-	return 0;
-}
-
-rai::block_hash rai::state_block::root () const
-{
-	return !hashables.previous.is_zero () ? hashables.previous : hashables.account;
-}
-
-rai::account rai::state_block::account () const
-{
-	return hashables.account;
-}
-
-rai::account rai::state_block::representative () const
-{
-	return hashables.representative;
-}
-
-rai::amount rai::state_block::balance () const
-{
-	return hashables.balance;
-}
-
-rai::signature rai::state_block::block_signature () const
-{
-	return signature;
-}
-
-void rai::state_block::signature_set (rai::uint512_union const & signature_a)
-{
-	signature = signature_a;
+	return base_hashables.account == other_a.base_hashables.account && base_hashables.previous == other_a.base_hashables.previous && base_hashables.representative == other_a.base_hashables.representative && base_hashables.balance == other_a.base_hashables.balance && hashables.link == other_a.hashables.link && signature == other_a.signature && work == other_a.work;
 }
 
 rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_balance_a, rai::timestamp_t previous_block_time) const
@@ -521,11 +544,11 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_b
 	}
 	// has previous, has previous balance
 	// check balances: if decreasing: send
-	auto cur_balance (hashables.balance.number ());
-	if (rai::manna_control::is_manna_account (hashables.account))
+	auto cur_balance (base_hashables.balance.number ());
+	if (rai::manna_control::is_manna_account (base_hashables.account))
 	{
 		// manna adjustment.  Note that here we want to reverse-adjust, that's why the times are in reverse order
-		cur_balance = rai::manna_control::adjust_balance_with_manna (hashables.account, cur_balance, creation_time ().number (), previous_block_time);
+		cur_balance = rai::manna_control::adjust_balance_with_manna (base_hashables.account, cur_balance, creation_time ().number (), previous_block_time);
 	}
 	if (cur_balance < previous_balance_a)
 	{
@@ -547,9 +570,10 @@ rai::state_block_subtype rai::state_block::get_subtype (rai::amount_t previous_b
 
 bool rai::state_block::is_valid_open_subtype () const
 {
-	if (hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (has_previous ()) return false;
-	if (hashables.account != rai::genesis_account)
+	if (base_hashables.account != rai::genesis_account)
 	{
 		// normal accounts have link (to a send)
 		if (!has_link ()) return false;
@@ -565,7 +589,8 @@ bool rai::state_block::is_valid_open_subtype () const
 bool rai::state_block::is_valid_send_or_receive_subtype () const
 {
 	// balance change is not known
-	if (hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (!has_previous ()) return false;
 	if (!has_link ()) return false;
 	return true;
@@ -573,16 +598,12 @@ bool rai::state_block::is_valid_send_or_receive_subtype () const
 
 bool rai::state_block::is_valid_change_subtype () const
 {
-	if (hashables.account.is_zero ()) return false;
+	if (base_hashables.account.is_zero ())
+		return false;
 	if (!has_representative ()) return false;
 	if (!has_previous ()) return false;
 	if (has_link ()) return false;
 	return true;
-}
-
-bool rai::state_block::has_previous () const
-{
-	return !hashables.previous.is_zero ();
 }
 
 bool rai::state_block::has_link () const
@@ -590,9 +611,226 @@ bool rai::state_block::has_link () const
 	return !hashables.link.is_zero ();
 }
 
-bool rai::state_block::has_representative () const
+rai::comment_hashables::comment_hashables () :
+subtype (),
+comment ()
 {
-	return !hashables.representative.is_zero ();
+}
+
+rai::comment_hashables::comment_hashables (rai::uint32_t subtype_a, rai::var_len_string const & comment_a) :
+subtype (subtype_a),
+comment (comment_a)
+{
+}
+
+void rai::comment_hashables::hash (blake2b_state & hash_a) const
+{
+	blake2b_update (&hash_a, &subtype, sizeof (subtype));
+	blake2b_update (&hash_a, comment.value ().data (), comment.value ().size ());
+}
+
+size_t constexpr rai::comment_block::max_comment_length;
+size_t constexpr rai::comment_block::size_base;
+
+// if time is 0, current time is taken
+rai::comment_block::comment_block (rai::account const & account_a, rai::block_hash const & previous_a, rai::timestamp_t creation_time_a, rai::account const & representative_a, rai::amount const & balance_a, rai::comment_block_subtype subtype_a, std::string const & comment_a, rai::raw_key const & prv_a, rai::public_key const & pub_a, uint64_t work_a) :
+base_block (account_a, previous_a, creation_time_a, representative_a, balance_a, uint512_union (), work_a),
+hashables ((uint32_t)subtype_a, comment_string_to_raw (comment_a))
+{
+	signature_set (rai::sign_message (prv_a, pub_a, rai::base_block::hash ()));
+	assert (comment_raw ().length () <= max_comment_length);
+}
+
+rai::comment_block::comment_block (bool & error_a, rai::stream & stream_a) :
+base_block (),
+hashables ()
+{
+	if (error_a)
+		return;
+	error_a = deserialize (stream_a);
+	assert (comment_raw ().length () <= max_comment_length);
+}
+
+rai::comment_block::comment_block (bool & error_a, boost::property_tree::ptree const & tree_a) :
+base_block (),
+hashables ()
+{
+	if (error_a)
+		return;
+	error_a = deserialize_json (tree_a);
+	assert (comment_raw ().length () <= max_comment_length);
+}
+
+void rai::comment_block::hash (blake2b_state & hash_a) const
+{
+	rai::uint256_union preamble (static_cast<uint64_t> (rai::block_type::comment));
+	blake2b_update (&hash_a, preamble.bytes.data (), preamble.bytes.size ());
+	base_hashables.hash (hash_a);
+	hashables.hash (hash_a);
+}
+
+rai::comment_block_subtype rai::comment_block::subtype () const
+{
+	return (rai::comment_block_subtype)hashables.subtype;
+}
+
+rai::var_len_string rai::comment_block::comment_string_to_raw (std::string const & comment_a)
+{
+	return rai::var_len_string (comment_a, max_comment_length);
+}
+
+std::string rai::comment_block::comment_raw_to_string (rai::var_len_string const & comment_raw_a)
+{
+	return comment_raw_a.value_string ();
+}
+
+rai::var_len_string const & rai::comment_block::comment_raw () const
+{
+	return hashables.comment;
+}
+
+std::string rai::comment_block::comment () const
+{
+	return comment_raw_to_string (hashables.comment);
+}
+
+bool rai::comment_block::deserialize (rai::stream & stream_a)
+{
+	auto error (read (stream_a, base_hashables.account));
+	if (error)
+		return error;
+	error = base_hashables.creation_time.data.deserialize (stream_a);
+	if (error)
+		return error;
+	error = read (stream_a, base_hashables.previous);
+	if (error)
+		return error;
+	error = read (stream_a, base_hashables.representative);
+	if (error)
+		return error;
+	error = base_hashables.balance.deserialize (stream_a);
+	if (error)
+		return error;
+	error = read (stream_a, hashables.subtype);
+	if (error)
+		return error;
+	error = hashables.comment.deserialize (stream_a);
+	if (error)
+		return error;
+	error = read (stream_a, signature);
+	if (error)
+		return error;
+	error = work.deserialize (stream_a);
+	return error;
+}
+
+bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & tree_a)
+{
+	auto error (false);
+	try
+	{
+		assert (tree_a.get<std::string> ("type") == "comment");
+		auto account_l (tree_a.get<std::string> ("account"));
+		error = base_hashables.account.decode_account (account_l);
+		if (error)
+			return error;
+		auto creation_time_l (tree_a.get<std::string> ("creation_time"));
+		error = base_hashables.creation_time.data.decode_dec (creation_time_l);
+		if (error)
+			return error;
+		auto previous_l (tree_a.get<std::string> ("previous"));
+		error = base_hashables.previous.decode_hex (previous_l);
+		if (error)
+			return error;
+		auto representative_l (tree_a.get<std::string> ("representative"));
+		error = base_hashables.representative.decode_account (representative_l);
+		if (error)
+			return error;
+		auto balance_l (tree_a.get<std::string> ("balance"));
+		error = base_hashables.balance.decode_dec (balance_l);
+		if (error)
+			return error;
+		hashables.subtype = (uint32_t)rai::comment_block_subtype::account; // TODO
+		auto comment_hex_l (tree_a.get_optional<std::string> ("comment_as_hex"));
+		if (comment_hex_l)
+		{
+			error = hashables.comment.decode_hex (comment_hex_l.get ());
+			if (error)
+				return error;
+		}
+		else
+		{
+			// no hex representation, take from string
+			auto comment_l (tree_a.get<std::string> ("comment"));
+			hashables.comment = comment_string_to_raw (comment_l);
+		}
+		auto work_l (tree_a.get<std::string> ("work"));
+		error = work.decode_hex (work_l);
+		if (error)
+			return error;
+		auto signature_l (tree_a.get<std::string> ("signature"));
+		error = signature.decode_hex (signature_l);
+	}
+	catch (std::runtime_error const &)
+	{
+		error = true;
+	}
+	return error;
+}
+
+void rai::comment_block::serialize (rai::stream & stream_a) const
+{
+	write (stream_a, base_hashables.account);
+	base_hashables.creation_time.data.serialize (stream_a);
+	write (stream_a, base_hashables.previous);
+	write (stream_a, base_hashables.representative);
+	base_hashables.balance.serialize (stream_a);
+	write (stream_a, hashables.subtype);
+	hashables.comment.serialize (stream_a);
+	write (stream_a, signature);
+	work.serialize (stream_a);
+}
+
+void rai::comment_block::serialize_json (std::string & string_a) const
+{
+	boost::property_tree::ptree tree;
+	tree.put ("type", "comment");
+	tree.put ("account", base_hashables.account.to_account ());
+	tree.put ("creation_time", base_hashables.creation_time.data.to_string_dec ());
+	tree.put ("creation_time_as_date", base_hashables.creation_time.to_date_string_utc ());
+	tree.put ("previous", base_hashables.previous.to_string ());
+	tree.put ("representative", base_hashables.representative.to_account ());
+	tree.put ("balance", base_hashables.balance.to_string_dec ());
+	tree.put ("subtype", std::to_string (hashables.subtype));
+	tree.put ("comment", comment ());
+	tree.put ("comment_as_hex", comment_raw ().to_string ());
+	std::string signature_l;
+	signature.encode_hex (signature_l);
+	tree.put ("signature", signature_l);
+	tree.put ("work", work.to_string ());
+	std::stringstream ostream;
+	boost::property_tree::write_json (ostream, tree);
+	string_a = ostream.str ();
+}
+
+void rai::comment_block::visit (rai::block_visitor & visitor_a) const
+{
+	visitor_a.comment_block (*this);
+}
+
+rai::block_type rai::comment_block::type () const
+{
+	return rai::block_type::comment;
+}
+
+bool rai::comment_block::operator== (rai::block const & other_a) const
+{
+	return blocks_equal (*this, other_a);
+}
+
+bool rai::comment_block::operator== (rai::comment_block const & other_a) const
+{
+	return base_hashables.account == other_a.base_hashables.account && base_hashables.previous == other_a.base_hashables.previous && base_hashables.representative == other_a.base_hashables.representative && base_hashables.balance == other_a.base_hashables.balance && hashables.subtype == other_a.hashables.subtype && hashables.comment == other_a.hashables.comment && signature == other_a.signature && work == other_a.work;
 }
 
 std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::ptree const & tree_a)
@@ -605,6 +843,15 @@ std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::p
 		{
 			bool error (false);
 			std::unique_ptr<rai::state_block> obj (new rai::state_block (error, tree_a));
+			if (!error)
+			{
+				result = std::move (obj);
+			}
+		}
+		else if (type == "comment")
+		{
+			bool error (false);
+			std::unique_ptr<rai::comment_block> obj (new rai::comment_block (error, tree_a));
 			if (!error)
 			{
 				result = std::move (obj);
@@ -638,6 +885,16 @@ std::unique_ptr<rai::block> rai::deserialize_block (rai::stream & stream_a, rai:
 		{
 			bool error (false);
 			std::unique_ptr<rai::state_block> obj (new rai::state_block (error, stream_a));
+			if (!error)
+			{
+				result = std::move (obj);
+			}
+			break;
+		}
+		case rai::block_type::comment:
+		{
+			bool error (false);
+			std::unique_ptr<rai::comment_block> obj (new rai::comment_block (error, stream_a));
 			if (!error)
 			{
 				result = std::move (obj);

@@ -446,7 +446,7 @@ TEST (bulk_pull, end_not_owned)
 	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, key2.pub, 100));
 	rai::block_hash latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	rai::state_block open (::network_create_open_state_block_helper (latest, key2.pub, key2.pub, 100, key2.prv, key2.pub, 5));
-	open.signature = rai::sign_message (key2.prv, key2.pub, open.hash ());
+	open.signature_set (rai::sign_message (key2.prv, key2.pub, open.hash ()));
 	ASSERT_EQ (rai::process_result::progress, system.nodes[0]->process (open).code);
 	auto connection (std::make_shared<rai::bootstrap_server> (nullptr, system.nodes[0]));
 	rai::genesis genesis;

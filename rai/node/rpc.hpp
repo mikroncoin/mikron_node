@@ -135,6 +135,7 @@ public:
 	void accounts_create ();
 	void accounts_frontiers ();
 	void accounts_pending ();
+	void add_comment_account ();
 	void available_supply ();
 	void block ();
 	void block_confirm ();
