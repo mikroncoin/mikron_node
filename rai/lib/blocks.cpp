@@ -93,7 +93,7 @@ rai::timestamp_t rai::epoch::epoch_start_time (rai::epoch::epoch_num epoch_num)
 			{
 				return (timestamp_t)start::epoch2_beta;
 			}
-			
+
 		case rai::epoch::epoch_num::epoch_far_future:
 		default:
 			return (timestamp_t)start::epoch_far_future;

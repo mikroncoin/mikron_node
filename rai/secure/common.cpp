@@ -160,6 +160,16 @@ rai::block_hash const & rai::not_a_block (globals.not_a_block);
 rai::block_hash const & rai::not_an_account (globals.not_an_account);
 rai::account const & rai::burn_account (globals.burn_account);
 
+uint8_t rai::protocol_version_min_get ()
+{
+	if (rai::short_timestamp::now () >= rai::epoch::epoch_start_time (rai::epoch::epoch_num::epoch2))
+	{
+		// epoch2 has started
+		return rai::protocol_version_min_epoch_new;
+	}
+	return rai::protocol_version_min_epoch_old;
+}
+
 // Create a new random keypair
 rai::keypair::keypair ()
 {

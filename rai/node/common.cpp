@@ -20,7 +20,7 @@ extensions (extensions_a)
 
 rai::protocol_information::protocol_information () :
 version (rai::protocol_version),
-version_min (rai::protocol_version_min),
+version_min (rai::protocol_version_min_get ()),
 version_max (rai::protocol_version)
 {
 }
@@ -46,7 +46,7 @@ void rai::protocol_information::validating_node_set (bool value_a)
 }
 
 rai::message_header::message_header (rai::message_type message_type_a) :
-protocol_info (rai::protocol_version, rai::protocol_version_min, rai::protocol_version, std::bitset<16> ()),
+protocol_info (rai::protocol_version, rai::protocol_version_min_get (), rai::protocol_version, std::bitset<16> ()),
 message_type (message_type_a)
 {
 	protocol_info.full_node_set (true);

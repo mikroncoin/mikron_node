@@ -26,7 +26,10 @@ struct hash<rai::uint256_union>
 namespace rai
 {
 const uint8_t protocol_version = 4;
-const uint8_t protocol_version_min = 3;
+// Accepted minimum protocol version, may be epoch-dependent, access it through rai::protocol_version_min_get()
+uint8_t protocol_version_min_get ();
+const uint8_t protocol_version_min_epoch_old = 3;
+const uint8_t protocol_version_min_epoch_new = 3;
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
