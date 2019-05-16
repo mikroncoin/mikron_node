@@ -2290,6 +2290,8 @@ rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_
 	return (rai::amount_t) (t2 - t1) * (rai::amount_t)rai::manna_control::manna_increment;
 }
 
+int cutoff_time_manna_epoch = 99929600; // should be rai::epoch::start::epoch2_beta
+
 TEST (ledger_manna, balance_later)
 {
 	bool init (false);
@@ -2321,9 +2323,8 @@ TEST (ledger_manna, balance_later)
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time3), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time3));
 	rai::timestamp_t time4 = time3 + 5000;
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time4), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time4));
-	int epoch_cutoff_time = 99929600; // should be rai::epoch::start::epoch2
-	rai::timestamp_t time5 = epoch_cutoff_time + 100000000; // manna only until epoch2
-	ASSERT_EQ (100000000 + reference_manna_increment (time2, epoch_cutoff_time), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time5));
+	rai::timestamp_t time5 = cutoff_time_manna_epoch + 100000000; // manna only until epoch2
+	ASSERT_EQ (100000000 + reference_manna_increment (time2, cutoff_time_manna_epoch), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time5));
 	// no manna genesis in the past
 	rai::timestamp_t time0_before = rai::genesis_time - 1234567;
 	ASSERT_EQ (100000000 - reference_manna_increment (rai::genesis_time, time2), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time0_before));
@@ -2331,7 +2332,7 @@ TEST (ledger_manna, balance_later)
 	// Check balances at end-of-the-world (sometime in year 2150).  Manna only till epoch2
 	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
 	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
-	auto bal_at_eotw (100000000 + reference_manna_increment (time2, epoch_cutoff_time));
+	auto bal_at_eotw (100000000 + reference_manna_increment (time2, cutoff_time_manna_epoch));
 	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time_eotw)); // increases
 }
 
@@ -2366,9 +2367,8 @@ TEST (ledger_manna, epoch2)
 	ASSERT_EQ (100000000 + 0, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time3));
 	rai::timestamp_t time4 = time3 + 5000;
 	ASSERT_EQ (100000000 + 0, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time4));
-	int epoch_cutoff_time = 99929600; // should be rai::epoch::start::epoch2
-	rai::timestamp_t time5 = epoch_cutoff_time + 100000000; // manna only until epoch2
-	ASSERT_EQ (100000000 + reference_manna_increment (epoch_cutoff_time, time5), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time5));
+	rai::timestamp_t time5 = cutoff_time_manna_epoch + 100000000; // manna only until epoch2
+	ASSERT_EQ (100000000 + reference_manna_increment (cutoff_time_manna_epoch, time5), ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time5));
 	// no manna genesis in the past
 	rai::timestamp_t time0_before = rai::genesis_time - 1234567;
 	ASSERT_EQ (100000000, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time0_before));
@@ -2376,7 +2376,7 @@ TEST (ledger_manna, epoch2)
 	// Check balances at end-of-the-world (sometime in year 2150).  Manna only till epoch2
 	rai::timestamp_t time_eotw = std::numeric_limits<rai::timestamp_t>::max () - 11;
 	std::string time_eotw_string = rai::short_timestamp (time_eotw).to_date_string_utc ();
-	auto bal_at_eotw (100000000 + reference_manna_increment (epoch_cutoff_time, time_eotw));
+	auto bal_at_eotw (100000000 + reference_manna_increment (cutoff_time_manna_epoch, time_eotw));
 	ASSERT_EQ (bal_at_eotw, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch2, time_eotw)); // increases
 }
 
