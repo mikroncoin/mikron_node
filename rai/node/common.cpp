@@ -120,44 +120,38 @@ void rai::message_parser::deserialize_buffer (uint8_t const * buffer_a, size_t s
 		rai::message_header header (error, stream);
 		if (!error)
 		{
-			if (rai::rai_network == rai::rai_networks::rai_beta_network && header.protocol_info.version < rai::protocol_version)
+			// No-outdated-versions on betanet rule disabled
+			switch (header.message_type)
 			{
-				status = parse_status::outdated_version;
-			}
-			else
-			{
-				switch (header.message_type)
+				case rai::message_type::keepalive:
 				{
-					case rai::message_type::keepalive:
-					{
-						deserialize_keepalive (stream, header);
-						break;
-					}
-					case rai::message_type::publish:
-					{
-						deserialize_publish (stream, header);
-						break;
-					}
-					case rai::message_type::confirm_req:
-					{
-						deserialize_confirm_req (stream, header);
-						break;
-					}
-					case rai::message_type::confirm_ack:
-					{
-						deserialize_confirm_ack (stream, header);
-						break;
-					}
-					case rai::message_type::node_id_handshake:
-					{
-						deserialize_node_id_handshake (stream, header);
-						break;
-					}
-					default:
-					{
-						status = parse_status::invalid_message_type;
-						break;
-					}
+					deserialize_keepalive (stream, header);
+					break;
+				}
+				case rai::message_type::publish:
+				{
+					deserialize_publish (stream, header);
+					break;
+				}
+				case rai::message_type::confirm_req:
+				{
+					deserialize_confirm_req (stream, header);
+					break;
+				}
+				case rai::message_type::confirm_ack:
+				{
+					deserialize_confirm_ack (stream, header);
+					break;
+				}
+				case rai::message_type::node_id_handshake:
+				{
+					deserialize_node_id_handshake (stream, header);
+					break;
+				}
+				default:
+				{
+					status = parse_status::invalid_message_type;
+					break;
 				}
 			}
 		}
