@@ -3064,6 +3064,57 @@ TEST (rpc, account_info)
 	ASSERT_EQ (rai::test_genesis_key.pub.to_account (), representative2);
 }
 
+TEST (rpc, accounts_infos)
+{
+	rai::system system (24000, 1);
+	rai::keypair key;
+	rai::genesis genesis;
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	system.wallet (0)->insert_adhoc (key.prv);
+	auto & node1 (*system.nodes[0]);
+	auto latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
+	rai::state_block send (::rpc_create_send_state_block_helper (latest, key.pub, 100, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (latest)));
+	system.nodes[0]->process (send);
+	auto time (rai::get_posix_time ());
+
+	rai::rpc rpc (system.service, *system.nodes[0], rai::rpc_config (true));
+	rpc.start ();
+	boost::property_tree::ptree request;
+	request.put ("action", "accounts_infos");
+
+	boost::property_tree::ptree accounts_l;
+	boost::property_tree::ptree entry1;
+	entry1.put ("", rai::test_genesis_key.pub.to_account ());
+	accounts_l.push_back (std::make_pair ("", entry1));
+	//boost::property_tree::ptree entry2;
+	//entry2.put ("", key.pub.to_account ());
+	//accounts_l.push_back (std::make_pair ("", entry2));
+	request.add_child ("accounts", accounts_l);
+
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+
+	for (auto & infos : response.json.get_child ("infos"))
+	{
+		std::string account_text (infos.first);
+		ASSERT_EQ (rai::test_genesis_key.pub.to_account (), account_text);
+		std::string balance (infos.second.get<std::string> ("balance"));
+		ASSERT_EQ ("100", balance);
+		std::string frontier (infos.second.get<std::string> ("frontier"));
+		ASSERT_EQ (send.hash ().to_string (), frontier);
+		std::string block_count (infos.second.get<std::string> ("block_count"));
+		ASSERT_EQ ("2", block_count);
+		boost::optional<std::string> pending (infos.second.get_optional<std::string> ("pending"));
+		ASSERT_FALSE (pending.is_initialized ());
+		boost::optional<std::string> representative (infos.second.get_optional<std::string> ("representative"));
+		ASSERT_FALSE (representative.is_initialized ());
+	}
+}
+
 TEST (rpc, blocks_info)
 {
 	rai::system system (24000, 1);

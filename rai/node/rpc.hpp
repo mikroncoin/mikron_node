@@ -135,6 +135,7 @@ public:
 	void accounts_balances ();
 	void accounts_create ();
 	void accounts_frontiers ();
+	void accounts_infos ();
 	void accounts_pending ();
 	void available_supply ();
 	void block ();

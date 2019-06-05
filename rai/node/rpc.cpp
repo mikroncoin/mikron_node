@@ -502,6 +502,30 @@ void rai::rpc_handler::account_info ()
 	response_errors ();
 }
 
+void rai::rpc_handler::accounts_infos ()
+{
+	boost::property_tree::ptree infos_ptree;
+	for (auto & accounts : request.get_child ("accounts"))
+	{
+		auto account (account_impl (accounts.second.data ()));
+		if (!ec)
+		{
+			const bool representative = request.get<bool> ("representative", false);
+			const bool weight = request.get<bool> ("weight", false);
+			const bool pending = request.get<bool> ("pending", false);
+			rai::transaction transaction (node.store.environment, nullptr, false);
+			boost::property_tree::ptree info_ptree;
+			account_info_intern (transaction, account, info_ptree, representative, weight, pending);
+			if (!ec)
+			{
+				infos_ptree.push_back (std::make_pair (account.to_account (), info_ptree));
+			}
+		}
+	}
+	response_l.add_child ("infos", infos_ptree);
+	response_errors ();
+}
+
 void rai::rpc_handler::account_key ()
 {
 	auto account (account_impl ());
@@ -3627,6 +3651,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "accounts_frontiers")
 			{
 				accounts_frontiers ();
+			}
+			else if (action == "accounts_infos")
+			{
+				accounts_infos ();
 			}
 			else if (action == "accounts_pending")
 			{
