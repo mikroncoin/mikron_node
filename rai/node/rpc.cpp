@@ -453,6 +453,42 @@ void rai::rpc_handler::account_get ()
 	response_errors ();
 }
 
+void rai::rpc_handler::account_info_intern (rai::transaction & transaction_in, const rai::account & account_in, boost::property_tree::ptree & ptree_inout, bool representative_in, bool weight_in, bool pending_in)
+{
+	if (ec)
+		return;
+	rai::account_info info;
+	if (node.store.account_get (transaction_in, account_in, info))
+	{
+		ec = nano::error_common::account_not_found;
+		return;
+	}
+	ptree_inout.put ("frontier", info.head.to_string ());
+	ptree_inout.put ("open_block", info.open_block.to_string ());
+	ptree_inout.put ("representative_block", info.rep_block.to_string ());
+	std::string balance;
+	rai::amount (info.balance).encode_dec (balance);
+	ptree_inout.put ("balance", balance);
+	ptree_inout.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
+	ptree_inout.put ("block_count", std::to_string (info.block_count));
+	if (representative_in)
+	{
+		auto block (node.store.block_get (transaction_in, info.rep_block));
+		assert (block != nullptr);
+		ptree_inout.put ("representative", block->representative ().to_account ());
+	}
+	if (weight_in)
+	{
+		auto account_weight (node.ledger.weight (transaction_in, account_in));
+		ptree_inout.put ("weight", std::to_string (account_weight));
+	}
+	if (pending_in)
+	{
+		auto account_pending (node.ledger.account_pending (transaction_in, account_in));
+		ptree_inout.put ("pending", std::to_string (account_pending));
+	}
+}
+
 void rai::rpc_handler::account_info ()
 {
 	auto account (account_impl ());
@@ -462,39 +498,32 @@ void rai::rpc_handler::account_info ()
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
 		rai::transaction transaction (node.store.environment, nullptr, false);
-		rai::account_info info;
-		if (!node.store.account_get (transaction, account, info))
+		account_info_intern (transaction, account, response_l, representative, weight, pending);
+	}
+	response_errors ();
+}
+
+void rai::rpc_handler::accounts_infos ()
+{
+	boost::property_tree::ptree infos_ptree;
+	for (auto & accounts : request.get_child ("accounts"))
+	{
+		auto account (account_impl (accounts.second.data ()));
+		if (!ec)
 		{
-			response_l.put ("frontier", info.head.to_string ());
-			response_l.put ("open_block", info.open_block.to_string ());
-			response_l.put ("representative_block", info.rep_block.to_string ());
-			std::string balance;
-			rai::amount (info.balance).encode_dec (balance);
-			response_l.put ("balance", balance);
-			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
-			response_l.put ("block_count", std::to_string (info.block_count));
-			if (representative)
+			const bool representative = request.get<bool> ("representative", false);
+			const bool weight = request.get<bool> ("weight", false);
+			const bool pending = request.get<bool> ("pending", false);
+			rai::transaction transaction (node.store.environment, nullptr, false);
+			boost::property_tree::ptree info_ptree;
+			account_info_intern (transaction, account, info_ptree, representative, weight, pending);
+			if (!ec)
 			{
-				auto block (node.store.block_get (transaction, info.rep_block));
-				assert (block != nullptr);
-				response_l.put ("representative", block->representative ().to_account ());
+				infos_ptree.push_back (std::make_pair (account.to_account (), info_ptree));
 			}
-			if (weight)
-			{
-				auto account_weight (node.ledger.weight (transaction, account));
-				response_l.put ("weight", std::to_string (account_weight));
-			}
-			if (pending)
-			{
-				auto account_pending (node.ledger.account_pending (transaction, account));
-				response_l.put ("pending", std::to_string (account_pending));
-			}
-		}
-		else
-		{
-			ec = nano::error_common::account_not_found;
 		}
 	}
+	response_l.add_child ("infos", infos_ptree);
 	response_errors ();
 }
 
@@ -1328,7 +1357,7 @@ void rai::rpc_handler::delegators ()
 			if (block->representative () == account)
 			{
 				std::string balance;
-				rai::amount(info.balance).encode_dec (balance);
+				rai::amount (info.balance).encode_dec (balance);
 				delegators.put (rai::account (i->first.uint256 ()).to_account (), balance);
 			}
 		}
@@ -1442,66 +1471,66 @@ public:
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
 		switch (subtype)
 		{
-		case rai::state_block_subtype::open_receive:
-			if (raw)
-			{
-				tree.put ("subtype", "open_receive");
-			}
-			else
-			{
-				tree.put ("type", "receive");
-			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
+			case rai::state_block_subtype::open_receive:
+				if (raw)
+				{
+					tree.put ("subtype", "open_receive");
+				}
+				else
+				{
+					tree.put ("type", "receive");
+				}
+				tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				break;
 
-		case rai::state_block_subtype::open_genesis:
-			if (raw)
-			{
-				tree.put ("subtype", "open_genesis");
-			}
-			else
-			{
-				tree.put ("type", "receive");
-			}
-			tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-			tree.put ("account", block_a.hashables.account.to_account ()); // self
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
+			case rai::state_block_subtype::open_genesis:
+				if (raw)
+				{
+					tree.put ("subtype", "open_genesis");
+				}
+				else
+				{
+					tree.put ("type", "receive");
+				}
+				tree.put ("amount", block_a.hashables.balance.to_string_dec ());
+				tree.put ("account", block_a.hashables.account.to_account ()); // self
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				break;
 
-		case rai::state_block_subtype::send:
-			if (raw)
-			{
-				tree.put ("subtype", "send");
-			}
-			else
-			{
-				tree.put ("type", "send");
-			}
-			tree.put ("account", block_a.hashables.link.to_account ());
-			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
+			case rai::state_block_subtype::send:
+				if (raw)
+				{
+					tree.put ("subtype", "send");
+				}
+				else
+				{
+					tree.put ("type", "send");
+				}
+				tree.put ("account", block_a.hashables.link.to_account ());
+				tree.put ("amount", std::to_string (amount_manna));
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				break;
 
-		case rai::state_block_subtype::receive:
-			if (raw)
-			{
-				tree.put ("subtype", "receive");
-			}
-			else
-			{
-				tree.put ("type", "receive");
-			}
-			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-			tree.put ("amount", std::to_string (amount_manna));
-			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
-			break;
+			case rai::state_block_subtype::receive:
+				if (raw)
+				{
+					tree.put ("subtype", "receive");
+				}
+				else
+				{
+					tree.put ("type", "receive");
+				}
+				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+				tree.put ("amount", std::to_string (amount_manna));
+				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				break;
 
-		// epoch and undefined not handled
-		case rai::state_block_subtype::undefined:
-		default:
-			break;
+			// epoch and undefined not handled
+			case rai::state_block_subtype::undefined:
+			default:
+				break;
 		}
 	}
 	rai::rpc_handler & handler;
@@ -3075,7 +3104,7 @@ void rai::rpc_handler::wallet_ledger ()
 					entry.put ("open_block", info.open_block.to_string ());
 					entry.put ("representative_block", info.rep_block.to_string ());
 					std::string balance;
-					rai::amount(info.balance).encode_dec (balance);
+					rai::amount (info.balance).encode_dec (balance);
 					entry.put ("balance", balance);
 					entry.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
 					entry.put ("block_count", std::to_string (info.block_count));
@@ -3623,6 +3652,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "accounts_frontiers")
 			{
 				accounts_frontiers ();
+			}
+			else if (action == "accounts_infos")
+			{
+				accounts_infos ();
 			}
 			else if (action == "accounts_pending")
 			{
