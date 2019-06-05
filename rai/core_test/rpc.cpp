@@ -1043,8 +1043,8 @@ TEST (rpc, history)
 	auto & history_node (response.json.get_child ("history"));
 	for (auto i (history_node.begin ()), n (history_node.end ()); i != n; ++i)
 	{
-		history_l.push_back (std::make_tuple (i->second.get<std::string> ("type"), i->second.get_optional<std::string> ("account"), i->second.get<std::string> ("amount"), 
-			i->second.get<std::string> ("hash"), i->second.get<std::string> ("balance"), i->second.get<std::string> ("block_time")));
+		history_l.push_back (std::make_tuple (i->second.get<std::string> ("type"), i->second.get_optional<std::string> ("account"), i->second.get<std::string> ("amount"),
+		i->second.get<std::string> ("hash"), i->second.get<std::string> ("balance"), i->second.get<std::string> ("block_time")));
 	}
 	ASSERT_EQ (5, history_l.size ());
 	ASSERT_EQ ("receive", std::get<0> (history_l[0]));
@@ -3399,7 +3399,7 @@ TEST (rpc, block_create)
 	request1.put ("previous", "0000000000000000000000000000000000000000000000000000000000000000");
 	request1.put ("creation_time", std::to_string (creation_time));
 	request1.put ("representative", rai::test_genesis_key.pub.to_account ());
-	request1.put ("balance", rai::amount (rai::genesis_amount - 100).to_string_dec() );
+	request1.put ("balance", rai::amount (rai::genesis_amount - 100).to_string_dec ());
 	request1.put ("link", send.hash ().to_string ());
 	std::string key_text;
 	key.prv.data.encode_hex (key_text);
@@ -3537,7 +3537,7 @@ TEST (rpc, block_create_state_open)
 	request.put ("key", key.prv.data.to_string ());
 	request.put ("account", key.pub.to_account ());
 	request.put ("previous", 0);
-	request.put ("creation_time", "0");  // now, has to be after the send node
+	request.put ("creation_time", "0"); // now, has to be after the send node
 	request.put ("representative", rai::test_genesis_key.pub.to_account ());
 	request.put ("balance", std::to_string (rai::Gxrb_ratio));
 	request.put ("link", send_block->hash ().to_string ());
