@@ -453,6 +453,41 @@ void rai::rpc_handler::account_get ()
 	response_errors ();
 }
 
+void rai::rpc_handler::account_info_intern (rai::transaction & transaction_in, const rai::account & account_in, boost::property_tree::ptree & ptree_inout, bool representative_in, bool weight_in, bool pending_in)
+{
+	if (ec) return;
+	rai::account_info info;
+	if (node.store.account_get (transaction_in, account_in, info))
+	{
+		ec = nano::error_common::account_not_found;
+		return;
+	}
+	ptree_inout.put ("frontier", info.head.to_string ());
+	ptree_inout.put ("open_block", info.open_block.to_string ());
+	ptree_inout.put ("representative_block", info.rep_block.to_string ());
+	std::string balance;
+	rai::amount (info.balance).encode_dec (balance);
+	ptree_inout.put ("balance", balance);
+	ptree_inout.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
+	ptree_inout.put ("block_count", std::to_string (info.block_count));
+	if (representative_in)
+	{
+		auto block (node.store.block_get (transaction_in, info.rep_block));
+		assert (block != nullptr);
+		ptree_inout.put ("representative", block->representative ().to_account ());
+	}
+	if (weight_in)
+	{
+		auto account_weight (node.ledger.weight (transaction_in, account_in));
+		ptree_inout.put ("weight", std::to_string (account_weight));
+	}
+	if (pending_in)
+	{
+		auto account_pending (node.ledger.account_pending (transaction_in, account_in));
+		ptree_inout.put ("pending", std::to_string (account_pending));
+	}
+}
+
 void rai::rpc_handler::account_info ()
 {
 	auto account (account_impl ());
@@ -462,38 +497,7 @@ void rai::rpc_handler::account_info ()
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
 		rai::transaction transaction (node.store.environment, nullptr, false);
-		rai::account_info info;
-		if (!node.store.account_get (transaction, account, info))
-		{
-			response_l.put ("frontier", info.head.to_string ());
-			response_l.put ("open_block", info.open_block.to_string ());
-			response_l.put ("representative_block", info.rep_block.to_string ());
-			std::string balance;
-			rai::amount (info.balance).encode_dec (balance);
-			response_l.put ("balance", balance);
-			response_l.put ("last_block_time", std::to_string (rai::short_timestamp::convert_to_posix_time (info.last_block_time ())));
-			response_l.put ("block_count", std::to_string (info.block_count));
-			if (representative)
-			{
-				auto block (node.store.block_get (transaction, info.rep_block));
-				assert (block != nullptr);
-				response_l.put ("representative", block->representative ().to_account ());
-			}
-			if (weight)
-			{
-				auto account_weight (node.ledger.weight (transaction, account));
-				response_l.put ("weight", std::to_string (account_weight));
-			}
-			if (pending)
-			{
-				auto account_pending (node.ledger.account_pending (transaction, account));
-				response_l.put ("pending", std::to_string (account_pending));
-			}
-		}
-		else
-		{
-			ec = nano::error_common::account_not_found;
-		}
+		account_info_intern (transaction, account, response_l, representative, weight, pending);
 	}
 	response_errors ();
 }
