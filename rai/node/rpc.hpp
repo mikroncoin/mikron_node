@@ -112,6 +112,7 @@ public:
 	std::function<void(boost::property_tree::ptree const &)> response;
 	std::atomic_flag completed;
 };
+
 class rpc_handler : public std::enable_shared_from_this<rai::rpc_handler>
 {
 public:
@@ -134,6 +135,7 @@ public:
 	void accounts_balances ();
 	void accounts_create ();
 	void accounts_frontiers ();
+	void accounts_infos ();
 	void accounts_pending ();
 	void add_comment_account ();
 	void available_supply ();
@@ -237,7 +239,11 @@ public:
 	uint64_t count_impl ();
 	uint64_t count_optional_impl (uint64_t = std::numeric_limits<uint64_t>::max ());
 	bool rpc_control_impl ();
+
+private:
+	void account_info_intern (rai::transaction &, const rai::account &, boost::property_tree::ptree &, bool, bool, bool, bool);
 };
+
 /** Returns the correct RPC implementation based on TLS configuration */
 std::unique_ptr<rai::rpc> get_rpc (boost::asio::io_service & service_a, rai::node & node_a, rai::rpc_config const & config_a);
 }
