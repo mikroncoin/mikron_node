@@ -317,7 +317,7 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	if (result.code != rai::process_result::progress)
 		return;
 	// Check subtype
-	if (block_a.hashables.subtype != (rai::uint32_t)rai::comment_block_subtype::account)
+	if (block_a.hashables.subtype.number () != (rai::uint32_t)rai::comment_block_subtype::account)
 	{
 		result.code = rai::process_result::invalid_comment_block;
 		return;

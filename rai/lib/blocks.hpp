@@ -254,7 +254,7 @@ public:
 	comment_hashables ();
 	comment_hashables (rai::uint32_t, rai::var_len_string const &);
 	void hash (blake2b_state &) const;
-	rai::uint32_t subtype;
+	rai::uint32_struct subtype;
 	// Comment string, var len, UTF-8
 	rai::var_len_string comment;
 };

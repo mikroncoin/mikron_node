@@ -618,14 +618,18 @@ comment ()
 }
 
 rai::comment_hashables::comment_hashables (rai::uint32_t subtype_a, rai::var_len_string const & comment_a) :
-subtype (subtype_a),
+subtype (rai::uint32_struct (subtype_a)),
 comment (comment_a)
 {
 }
 
 void rai::comment_hashables::hash (blake2b_state & hash_a) const
 {
-	blake2b_update (&hash_a, &subtype, sizeof (subtype));
+	uint32_t subtype_big_endian (subtype.number_big_endian ());
+	// include length explicitly
+	blake2b_update (&hash_a, &subtype_big_endian, sizeof (subtype_big_endian));
+	uint16_t comment_len (comment.length ());
+	blake2b_update (&hash_a, &comment_len, sizeof (comment_len));
 	blake2b_update (&hash_a, comment.value ().data (), comment.value ().size ());
 }
 
@@ -671,7 +675,7 @@ void rai::comment_block::hash (blake2b_state & hash_a) const
 
 rai::comment_block_subtype rai::comment_block::subtype () const
 {
-	return (rai::comment_block_subtype)hashables.subtype;
+	return (rai::comment_block_subtype)hashables.subtype.data;
 }
 
 rai::var_len_string rai::comment_block::comment_string_to_raw (std::string const & comment_a)
@@ -711,7 +715,7 @@ bool rai::comment_block::deserialize (rai::stream & stream_a)
 	error = base_hashables.balance.deserialize (stream_a);
 	if (error)
 		return error;
-	error = read (stream_a, hashables.subtype);
+	error = hashables.subtype.deserialize (stream_a);
 	if (error)
 		return error;
 	error = hashables.comment.deserialize (stream_a);
@@ -750,7 +754,10 @@ bool rai::comment_block::deserialize_json (boost::property_tree::ptree const & t
 		error = base_hashables.balance.decode_dec (balance_l);
 		if (error)
 			return error;
-		hashables.subtype = (uint32_t)rai::comment_block_subtype::account; // TODO
+		auto subtype_l (tree_a.get<std::string> ("subtype"));
+		error = hashables.subtype.decode_dec (subtype_l);
+		if (error)
+			return error;
 		auto comment_hex_l (tree_a.get_optional<std::string> ("comment_as_hex"));
 		if (comment_hex_l)
 		{
@@ -785,7 +792,7 @@ void rai::comment_block::serialize (rai::stream & stream_a) const
 	write (stream_a, base_hashables.previous);
 	write (stream_a, base_hashables.representative);
 	base_hashables.balance.serialize (stream_a);
-	write (stream_a, hashables.subtype);
+	hashables.subtype.serialize (stream_a);
 	hashables.comment.serialize (stream_a);
 	write (stream_a, signature);
 	work.serialize (stream_a);
@@ -801,7 +808,7 @@ void rai::comment_block::serialize_json (std::string & string_a) const
 	tree.put ("previous", base_hashables.previous.to_string ());
 	tree.put ("representative", base_hashables.representative.to_account ());
 	tree.put ("balance", base_hashables.balance.to_string_dec ());
-	tree.put ("subtype", std::to_string (hashables.subtype));
+	tree.put ("subtype", std::to_string (hashables.subtype.number ()));
 	tree.put ("comment", comment ());
 	tree.put ("comment_as_hex", comment_raw ().to_string ());
 	std::string signature_l;
@@ -830,7 +837,7 @@ bool rai::comment_block::operator== (rai::block const & other_a) const
 
 bool rai::comment_block::operator== (rai::comment_block const & other_a) const
 {
-	return base_hashables.account == other_a.base_hashables.account && base_hashables.previous == other_a.base_hashables.previous && base_hashables.representative == other_a.base_hashables.representative && base_hashables.balance == other_a.base_hashables.balance && hashables.subtype == other_a.hashables.subtype && hashables.comment == other_a.hashables.comment && signature == other_a.signature && work == other_a.work;
+	return base_hashables.account == other_a.base_hashables.account && base_hashables.previous == other_a.base_hashables.previous && base_hashables.representative == other_a.base_hashables.representative && base_hashables.balance == other_a.base_hashables.balance && hashables.subtype.number () == other_a.hashables.subtype.number () && hashables.comment == other_a.hashables.comment && signature == other_a.signature && work == other_a.work;
 }
 
 std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::ptree const & tree_a)
