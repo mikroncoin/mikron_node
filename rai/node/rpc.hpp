@@ -151,6 +151,7 @@ public:
 	void bootstrap ();
 	void bootstrap_any ();
 	void chain (bool = false);
+	void comment_search ();
 	void confirmation_history ();
 	void delegators ();
 	void delegators_count ();

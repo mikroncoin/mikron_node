@@ -84,8 +84,14 @@ public:
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
 	size_t size_in_db () const;
-	rai::timestamp_t last_block_time () const { return static_cast<rai::timestamp_t> (last_block_time_intern); }
-	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
+	rai::timestamp_t last_block_time () const
+	{
+		return static_cast<rai::timestamp_t> (last_block_time_intern);
+	}
+	void last_block_time_set (rai::timestamp_t t)
+	{
+		last_block_time_intern = t;
+	}
 	// members, they must be all value types
 	rai::block_hash head;
 	rai::block_hash rep_block; // to deprecate, all blocks have the representative
@@ -210,7 +216,7 @@ enum class process_result
 	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
 	send_same_account = 14, // send to self
 	invalid_comment_block = 15, // a comment block with invalid parameters
-	invalid_comment_block_legacy = 16, // Comment block is not allowed before an epoch time
+	invalid_comment_block_legacy = 16, // 0x10 Comment block is not allowed before an epoch time
 };
 class process_return
 {
@@ -284,5 +290,4 @@ private:
 	// Compute the manna increment between time points, bounded by the manna epoch period between manna_start and manna_end
 	static rai::amount_t compute_manna_increment_within_period (rai::timestamp_t, rai::timestamp_t, rai::timestamp_t, rai::timestamp_t);
 };
-
 }

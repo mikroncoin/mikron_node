@@ -4095,3 +4095,105 @@ TEST (rpc, node_id)
 		ASSERT_EQ (account, node_id10);
 	}
 }
+
+extern int cutoff_time_comment_epoch; // = 26179200; // should be rai::epoch::start::epoch2_beta
+
+TEST (rpc, comment_search_one)
+{
+	// Search for a single comment, exact match
+	rai::system system (24000, 1);
+	rai::keypair key;
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	// create new comment
+	rai::comment_block comment_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment_str1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	ASSERT_EQ (rai::process_result::progress, node1.process (comment_block).code);
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+
+	{
+		// search for the comment on the genesis account
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", comment_str1);
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		// check contents
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+
+	{
+		// search for a susbstring of the comment on the genesis account
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "men");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		// check contents (full)
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+
+	{
+		// search for a non-existing comment
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "_NO_SUCH_COMMENT_");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (0, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (0, accounts_node.size ());
+	}
+
+	{
+		// search for a non-existing comment substring
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "mon");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (0, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (0, accounts_node.size ());
+	}
+
+	{
+		// search for a substring, case insensitive
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "OMMenT");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+}

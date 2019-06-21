@@ -1427,6 +1427,34 @@ void rai::rpc_handler::chain (bool successors)
 	response_errors ();
 }
 
+void rai::rpc_handler::comment_search ()
+{
+	std::string search_pattern (request.get<std::string> ("comment"));
+	if (search_pattern.length () < 3)
+	{
+		// missing pattern or too short
+		ec = nano::error_rpc::invalid_comment_search;
+	}
+	if (!ec)
+	{
+		unsigned int max_count = 100; // max count, default
+		if (request.get_optional<unsigned int> ("max_count"))
+		{
+			max_count = request.get<unsigned int> ("max_count");
+		}
+		rai::transaction transaction (node.store.environment, nullptr, false);
+		std::vector<std::pair<rai::account, std::string>> res = node.ledger.comment_search (transaction, search_pattern, max_count);
+		boost::property_tree::ptree accounts;
+		for (auto i (res.begin ()), n (res.end ()); i != n; ++i)
+		{
+			accounts.add (i->first.to_account (), i->second);
+		}
+		response_l.add_child ("accounts", accounts);
+		response_l.add ("count", res.size ());
+	}
+	response_errors ();
+}
+
 void rai::rpc_handler::confirmation_history ()
 {
 	boost::property_tree::ptree elections;
@@ -3845,6 +3873,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "deterministic_key")
 			{
 				deterministic_key ();
+			}
+			else if (action == "comment_search")
+			{
+				comment_search ();
 			}
 			else if (action == "confirmation_history")
 			{

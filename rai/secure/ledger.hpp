@@ -23,7 +23,7 @@ public:
 	rai::amount_t amount_with_sign (MDB_txn *, rai::block_hash const &, int &);
 	rai::amount_t balance (MDB_txn *, rai::block_hash const &);
 	rai::amount_t account_balance (MDB_txn *, rai::account const &);
-	rai::amount_t balance_with_manna (MDB_txn *, rai::block_hash const &, rai::timestamp_t); 
+	rai::amount_t balance_with_manna (MDB_txn *, rai::block_hash const &, rai::timestamp_t);
 	rai::amount_t account_pending (MDB_txn *, rai::account const &);
 	rai::amount_t account_balance_with_manna (MDB_txn *, rai::account const &, rai::timestamp_t);
 	std::string account_comment (MDB_txn *, rai::account const &) const;
@@ -39,6 +39,7 @@ public:
 	std::string block_text (char const *);
 	std::string block_text (rai::block_hash const &);
 	rai::state_block_subtype state_subtype (MDB_txn *, rai::state_block const &);
+	std::vector<std::pair<rai::account, std::string>> comment_search (MDB_txn *, std::string, unsigned int) const;
 	rai::block_hash block_destination (MDB_txn *, rai::block const &);
 	rai::block_hash block_source (MDB_txn *, rai::block const &);
 	rai::process_return process (MDB_txn *, rai::block const &);
@@ -50,6 +51,7 @@ public:
 	bool could_fit (MDB_txn *, rai::block const &);
 	static const rai::timestamp_t time_tolearance_short = 66; // seconds
 	static const rai::timestamp_t time_tolearance_long = 33360; // seconds
+	static const unsigned int comment_search_max_count = 100; // hard limit
 	static rai::amount_t const unit;
 	rai::block_store & store;
 	rai::stat & stats;
