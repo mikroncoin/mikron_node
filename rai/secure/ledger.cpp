@@ -3,6 +3,8 @@
 #include <rai/secure/blockstore.hpp>
 #include <rai/secure/ledger.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 namespace
 {
 /**
@@ -307,13 +309,13 @@ void ledger_processor::comment_block (rai::comment_block const & block_a)
 	auto balance (block_a.balance ().number ());
 	auto prev_balance_with_manna (info.balance_with_manna (block_a.account (), block_time).number ());
 	// The balance must remain the same,
-	result.code = (balance == prev_balance_with_manna)  ? rai::process_result::progress : rai::process_result::balance_mismatch;
+	result.code = (balance == prev_balance_with_manna) ? rai::process_result::progress : rai::process_result::balance_mismatch;
 	if (result.code != rai::process_result::progress)
 		return;
 	auto representative (block_a.representative ());
 	auto prev_representative (ledger.representative_get (transaction, block_a.previous ()));
 	// The representative must remain the same,
-	result.code = (representative == prev_representative)  ? rai::process_result::progress : rai::process_result::representative_mismatch;
+	result.code = (representative == prev_representative) ? rai::process_result::progress : rai::process_result::representative_mismatch;
 	if (result.code != rai::process_result::progress)
 		return;
 	// Check subtype
@@ -347,7 +349,8 @@ bool ledger_processor::check_time_sequence (rai::timestamp_t new_time, rai::time
 
 bool ledger_processor::check_time_sequence (rai::block const & new_block, std::unique_ptr<rai::block> & prev_block, rai::timestamp_t tolerance)
 {
-	if (prev_block == nullptr) return false;
+	if (prev_block == nullptr)
+		return false;
 	return check_time_sequence (new_block.creation_time ().number (), prev_block->creation_time ().number (), tolerance);
 }
 
@@ -369,6 +372,8 @@ bool rai::shared_ptr_block_hash::operator() (std::shared_ptr<rai::block> const &
 {
 	return lhs->hash () == rhs->hash ();
 }
+
+const unsigned int rai::ledger::comment_search_max_count;
 
 rai::ledger::ledger (rai::block_store & store_a, rai::stat & stat_a) :
 store (store_a),
@@ -541,9 +546,51 @@ rai::state_block_subtype rai::ledger::state_subtype (MDB_txn * transaction_a, ra
 	}
 	auto previous_block (store.block_get (transaction_a, previous_hash));
 	assert (previous_block != nullptr);
-	if (previous_block == nullptr) return rai::state_block_subtype::undefined;
+	if (previous_block == nullptr)
+		return rai::state_block_subtype::undefined;
 	auto previous_balance = balance (transaction_a, previous_hash); // could be retrieved directly from the block
 	return block_a.get_subtype (previous_balance, previous_block->creation_time ().number ());
+}
+
+std::vector<std::pair<rai::account, std::string>> rai::ledger::comment_search (MDB_txn * transaction_in, std::string comment_pattern_in, unsigned int max_count_in) const
+{
+	// Searches accounts by comment
+	// Note that this linear search (linear with no of accounts) is not very efficient, it would be better to use a special store for this (indexed by comment)
+	std::vector<std::pair<rai::account, std::string>> res;
+	auto max (std::max (std::min (max_count_in, rai::ledger::comment_search_max_count), (unsigned int)1));
+	int res_count = 0;
+	boost::to_upper (comment_pattern_in);
+	auto pattern_len (comment_pattern_in.length ());
+	// iterate through accounts
+	for (auto i (store.latest_begin (transaction_in)), n (store.latest_end ()); i != n; ++i)
+	{
+		rai::account_info info (i->second);
+		if (info.comment_block.is_zero ())
+		{
+			continue; // no comment
+		}
+		auto comment (this->comment (transaction_in, info.comment_block));
+		if (comment.length () < pattern_len)
+		{
+			continue; // no comment or too short
+		}
+		// check for pattern match, case insensitive
+		auto comment_upper (comment);
+		boost::to_upper (comment_upper);
+		if (comment_upper.find (comment_pattern_in) == std::string::npos)
+		{
+			continue; // no match
+		}
+		auto account (rai::account (i->first.uint256 ()));
+		res.push_back (std::pair<rai::account, std::string> (account, comment));
+		++res_count;
+		if (res_count >= max)
+		{
+			// enough, stop searching for more
+			break;
+		}
+	}
+	return res;
 }
 
 rai::block_hash rai::ledger::block_destination (MDB_txn * transaction_a, rai::block const & block_a)
@@ -619,7 +666,7 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 	if (block == nullptr)
 	{
 		// block not found
-		assert (!result.is_zero());
+		assert (!result.is_zero ());
 		return result;
 	}
 	while (!successor.is_zero () && block->type () != rai::block_type::state && block->type () != rai::block_type::comment && store.block_info_get (transaction_a, successor, block_info))
@@ -646,7 +693,7 @@ rai::account rai::ledger::account (MDB_txn * transaction_a, rai::block_hash cons
 		result = block_info.account;
 	}
 	*/
-	result = block->account (); 
+	result = block->account ();
 	assert (!result.is_zero ());
 	return result;
 }
@@ -785,7 +832,7 @@ public:
 			result &= ledger.store.block_exists (transaction, block_a.link ());
 		}
 	}
-	
+
 	void comment_block (rai::comment_block const & block_a) override
 	{
 		result = block_a.previous ().is_zero () || ledger.store.block_exists (transaction, block_a.previous ());

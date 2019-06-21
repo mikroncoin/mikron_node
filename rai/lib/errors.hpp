@@ -88,6 +88,7 @@ enum class error_rpc
 	block_create_requirements_change,
 	block_create_requirements_send,
 	invalid_balance,
+	invalid_comment_search,
 	invalid_destinations,
 	invalid_offset,
 	invalid_missing_type,
