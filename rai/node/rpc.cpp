@@ -1325,6 +1325,15 @@ void rai::rpc_handler::chain (bool successors)
 	response_errors ();
 }
 
+void rai::rpc_handler::comment_search ()
+{
+	// No real implementation, always return empty
+	boost::property_tree::ptree accounts;
+	response_l.add_child ("accounts", accounts);
+	response_l.add ("count", 0);
+	response_l.add ("error", "NotImeplemented");
+}
+
 void rai::rpc_handler::confirmation_history ()
 {
 	boost::property_tree::ptree elections;
@@ -3728,6 +3737,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "deterministic_key")
 			{
 				deterministic_key ();
+			}
+			else if (action == "comment_search")
+			{
+				comment_search ();
 			}
 			else if (action == "confirmation_history")
 			{
