@@ -1659,8 +1659,11 @@ public:
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
-			// change ignored
 			case rai::state_block_subtype::change:
+				if (raw)
+				{
+					tree.put ("subtype", "change");
+				}
 				break;
 
 			// epoch and undefined not handled
@@ -1683,11 +1686,12 @@ public:
 	}
 	void comment_block (rai::comment_block const & block_a)
 	{
-		tree.put ("type", "comment");
-		tree.put ("comment", block_a.comment ());
-		tree.put ("balance", block_a.balance ().to_string_dec ());
+		// include only in raw mode
 		if (raw)
 		{
+			tree.put ("type", "comment");
+			tree.put ("comment", block_a.comment ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
 			tree.put ("representative", block_a.representative ().to_account ());
 			tree.put ("previous", block_a.previous ().to_string ());
 		}
