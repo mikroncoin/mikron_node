@@ -1577,9 +1577,10 @@ namespace
 class history_visitor : public rai::block_visitor
 {
 public:
-	history_visitor (rai::rpc_handler & handler_a, bool raw_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
+	history_visitor (rai::rpc_handler & handler_a, bool raw_a, bool include_account_comment_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
 	handler (handler_a),
 	raw (raw_a),
+	include_account_comment (include_account_comment_a),
 	transaction (transaction_a),
 	tree (tree_a),
 	hash (hash_a)
@@ -1599,6 +1600,7 @@ public:
 		auto previous_balance = handler.node.ledger.balance (transaction, block_a.previous ());
 		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
+		rai::account history_account (0);
 		switch (subtype)
 		{
 			case rai::state_block_subtype::open_receive:
@@ -1610,8 +1612,8 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
 				tree.put ("amount", block_a.balance ().to_string_dec ());
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
@@ -1624,8 +1626,8 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
+				history_account = block_a.account (); // self
 				tree.put ("amount", block_a.balance ().to_string_dec ());
-				tree.put ("account", block_a.account ().to_account ()); // self
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
@@ -1638,7 +1640,7 @@ public:
 				{
 					tree.put ("type", "send");
 				}
-				tree.put ("account", block_a.link ().to_account ());
+				history_account = block_a.link ();
 				tree.put ("amount", std::to_string (amount_manna));
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
@@ -1652,15 +1654,31 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
 				tree.put ("amount", std::to_string (amount_manna));
 				tree.put ("balance", block_a.balance ().to_string_dec ());
+				break;
+
+			// change ignored
+			case rai::state_block_subtype::change:
 				break;
 
 			// epoch and undefined not handled
 			case rai::state_block_subtype::undefined:
 			default:
 				break;
+		}
+		if (!history_account.is_zero ())
+		{
+			tree.put ("account", history_account.to_account ());
+			if (include_account_comment)
+			{
+				auto account_comment (handler.node.ledger.account_comment (transaction, history_account));
+				if (account_comment.length () > 0)
+				{
+					tree.put ("account_comment", account_comment);
+				}
+			}
 		}
 	}
 	void comment_block (rai::comment_block const & block_a)
@@ -1676,6 +1694,7 @@ public:
 	}
 	rai::rpc_handler & handler;
 	bool raw;
+	bool include_account_comment;
 	rai::transaction & transaction;
 	boost::property_tree::ptree & tree;
 	rai::block_hash const & hash;
@@ -1686,6 +1705,7 @@ void rai::rpc_handler::account_history ()
 {
 	rai::account account;
 	bool output_raw (request.get_optional<bool> ("raw") == true);
+	bool output_comment (request.get_optional<bool> ("include_comment") == true);
 	rai::block_hash hash;
 	auto head_str (request.get_optional<std::string> ("head"));
 	rai::transaction transaction (node.store.environment, nullptr, false);
@@ -1727,7 +1747,7 @@ void rai::rpc_handler::account_history ()
 				else
 				{
 					boost::property_tree::ptree entry;
-					history_visitor visitor (*this, output_raw, transaction, entry, hash);
+					history_visitor visitor (*this, output_raw, output_comment, transaction, entry, hash);
 					block->visit (visitor);
 					if (!entry.empty ())
 					{

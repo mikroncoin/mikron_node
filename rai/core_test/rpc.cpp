@@ -4126,6 +4126,56 @@ TEST (rpc, comment_account_info)
 	ASSERT_EQ (comment_str1, comment);
 }
 
+TEST (rpc, comment_history)
+{
+	// Check for comment in account history
+	rai::system system (24000, 1);
+	auto unit (system.nodes[0]->config.receive_minimum);
+	rai::keypair other_acc;
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	system.wallet (0)->insert_adhoc (other_acc.prv);
+
+	auto node0 (system.nodes[0]);
+	rai::state_block usend (rai::genesis_account, node0->latest (rai::genesis_account), 0, rai::genesis_account, rai::genesis_amount - rai::Gxrb_ratio, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block ureceive (other_acc.pub, node0->latest (other_acc.pub), 0, rai::genesis_account, rai::Gxrb_ratio, usend.hash (), other_acc.prv, other_acc.pub, 0);
+	std::string comment_str1 ("Comment String 1");
+	rai::comment_block ucomment (other_acc.pub, ureceive.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::Gxrb_ratio, rai::comment_block_subtype::account, comment_str1, other_acc.prv, other_acc.pub, 0);
+	{
+		rai::transaction transaction (node0->store.environment, nullptr, true);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, usend).code);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, ureceive).code);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, ucomment).code);
+	}
+	rai::rpc rpc (system.service, *node0, rai::rpc_config (true));
+	rpc.start ();
+	boost::property_tree::ptree request;
+	request.put ("action", "history");
+	request.put ("hash", usend.hash ().to_string ());
+	request.put ("count", 100);
+	request.put ("include_comment", 1);
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::vector<boost::property_tree::ptree> history_l;
+	auto & history_node (response.json.get_child ("history"));
+	for (auto i (history_node.begin ()), n (history_node.end ()); i != n; ++i)
+	{
+		history_l.push_back (i->second);
+	}
+	ASSERT_EQ (2, history_l.size ());
+	ASSERT_EQ ("send", history_l[0].get<std::string> ("type"));
+	ASSERT_EQ (other_acc.pub.to_account (), history_l[0].get<std::string> ("account"));
+	// check the account comment of the account (other_acc)
+	ASSERT_EQ (comment_str1, history_l[0].get<std::string> ("account_comment"));
+	ASSERT_EQ (std::to_string (rai::Gxrb_ratio), history_l[0].get<std::string> ("amount"));
+	ASSERT_EQ ("receive", history_l[1].get<std::string> ("type"));
+	ASSERT_EQ (rai::genesis_account.to_account (), history_l[1].get<std::string> ("account"));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), history_l[1].get<std::string> ("amount"));
+}
+
 TEST (rpc, comment_search_one)
 {
 	// Search for a single comment, exact match
