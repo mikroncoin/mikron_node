@@ -4098,6 +4098,34 @@ TEST (rpc, node_id)
 
 extern int cutoff_time_comment_epoch; // = 26179200; // should be rai::epoch::start::epoch2_beta
 
+TEST (rpc, comment_account_info)
+{
+	// Check for comment in account_info
+	rai::system system (24000, 1);
+	rai::keypair key;
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	// create new comment
+	rai::comment_block comment_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment_str1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	ASSERT_EQ (rai::process_result::progress, node1.process (comment_block).code);
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+
+	boost::property_tree::ptree request;
+	request.put ("action", "account_info");
+	request.put ("account", rai::genesis_account.to_account ());
+	request.put ("comment", "1");
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string comment (response.json.get<std::string> ("comment"));
+	ASSERT_EQ (comment_str1, comment);
+}
+
 TEST (rpc, comment_search_one)
 {
 	// Search for a single comment, exact match
