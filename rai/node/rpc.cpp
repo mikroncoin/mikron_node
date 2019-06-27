@@ -1599,6 +1599,7 @@ public:
 		auto previous_balance = handler.node.ledger.balance (transaction, block_a.previous ());
 		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
+		rai::account history_account (0);
 		switch (subtype)
 		{
 			case rai::state_block_subtype::open_receive:
@@ -1610,8 +1611,8 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
 				tree.put ("amount", block_a.balance ().to_string_dec ());
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
@@ -1624,8 +1625,8 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
+				history_account = block_a.account (); // self
 				tree.put ("amount", block_a.balance ().to_string_dec ());
-				tree.put ("account", block_a.account ().to_account ()); // self
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
@@ -1638,7 +1639,7 @@ public:
 				{
 					tree.put ("type", "send");
 				}
-				tree.put ("account", block_a.link ().to_account ());
+				history_account = block_a.link ();
 				tree.put ("amount", std::to_string (amount_manna));
 				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
@@ -1652,15 +1653,23 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.link ()).to_account ());
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
 				tree.put ("amount", std::to_string (amount_manna));
 				tree.put ("balance", block_a.balance ().to_string_dec ());
+				break;
+
+			// change ignored
+			case rai::state_block_subtype::change:
 				break;
 
 			// epoch and undefined not handled
 			case rai::state_block_subtype::undefined:
 			default:
 				break;
+		}
+		if (!history_account.is_zero ())
+		{
+		  tree.put ("account", history_account.to_account ());
 		}
 	}
 	void comment_block (rai::comment_block const & block_a)
