@@ -1577,9 +1577,10 @@ namespace
 class history_visitor : public rai::block_visitor
 {
 public:
-	history_visitor (rai::rpc_handler & handler_a, bool raw_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
+	history_visitor (rai::rpc_handler & handler_a, bool raw_a, bool include_account_comment_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
 	handler (handler_a),
 	raw (raw_a),
+	include_account_comment (include_account_comment_a),
 	transaction (transaction_a),
 	tree (tree_a),
 	hash (hash_a)
@@ -1669,7 +1670,15 @@ public:
 		}
 		if (!history_account.is_zero ())
 		{
-		  tree.put ("account", history_account.to_account ());
+			tree.put ("account", history_account.to_account ());
+			if (include_account_comment)
+			{
+				auto account_comment (handler.node.ledger.account_comment (transaction, history_account));
+				if (account_comment.length () > 0)
+				{
+					tree.put ("account_comment", account_comment);
+				}
+			}
 		}
 	}
 	void comment_block (rai::comment_block const & block_a)
@@ -1685,6 +1694,7 @@ public:
 	}
 	rai::rpc_handler & handler;
 	bool raw;
+	bool include_account_comment;
 	rai::transaction & transaction;
 	boost::property_tree::ptree & tree;
 	rai::block_hash const & hash;
@@ -1695,6 +1705,7 @@ void rai::rpc_handler::account_history ()
 {
 	rai::account account;
 	bool output_raw (request.get_optional<bool> ("raw") == true);
+	bool output_comment (request.get_optional<bool> ("include_comment") == true);
 	rai::block_hash hash;
 	auto head_str (request.get_optional<std::string> ("head"));
 	rai::transaction transaction (node.store.environment, nullptr, false);
@@ -1736,7 +1747,7 @@ void rai::rpc_handler::account_history ()
 				else
 				{
 					boost::property_tree::ptree entry;
-					history_visitor visitor (*this, output_raw, transaction, entry, hash);
+					history_visitor visitor (*this, output_raw, output_comment, transaction, entry, hash);
 					block->visit (visitor);
 					if (!entry.empty ())
 					{
