@@ -2290,7 +2290,7 @@ rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_
 	return (rai::amount_t) (t2 - t1) * (rai::amount_t)rai::manna_control::manna_increment;
 }
 
-int cutoff_time_manna_epoch = 26179200; // should be rai::epoch::start::epoch2_beta
+int cutoff_time_manna_epoch = 26870400; // should be rai::epoch::start::epoch2_beta
 
 TEST (ledger_manna, balance_later)
 {
@@ -2533,7 +2533,7 @@ TEST (ledger_manna, change_rep)
 	ASSERT_EQ (100000000 + reference_manna_increment (time2, time4) - 100, ledger.account_balance_with_manna (transaction, rai::manna_account_epoch1, time4));
 }
 
-int cutoff_time_send_self_epoch = 26179200; // should be rai::epoch::start::epoch2_beta
+int cutoff_time_send_self_epoch = 26870400; // should be rai::epoch::start::epoch2_beta
 
 TEST (ledger, send_self_invalid)
 {
@@ -2594,7 +2594,7 @@ TEST (ledger, send_zero_invalid)
 	ASSERT_EQ (rai::process_result::invalid_state_block, return2.code);
 }
 
-int cutoff_time_comment_epoch = 26179200; // should be rai::epoch::start::epoch2_beta
+int cutoff_time_comment_epoch = 26870400; // should be rai::epoch::start::epoch2_beta
 
 TEST (ledger, comment_genesis_process)
 {

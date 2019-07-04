@@ -4096,7 +4096,7 @@ TEST (rpc, node_id)
 	}
 }
 
-extern int cutoff_time_comment_epoch; // = 26179200; // should be rai::epoch::start::epoch2_beta
+extern int cutoff_time_comment_epoch; // = 26870400; // should be rai::epoch::start::epoch2_beta
 
 TEST (rpc, comment_account_info)
 {
