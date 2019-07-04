@@ -59,7 +59,7 @@ protected:
 	{
 		epoch1 = 0,
 		epoch2_live = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
-		epoch2_beta = 26179200, // 1561939200 July 1 2019 00:00 UTC
+		epoch2_beta = 26870400, // 1562630400 July 9 2019 00:00 UTC
 		epoch_far_future = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
 	};
 };
