@@ -134,7 +134,7 @@ TEST (ledger, process_send)
 	ASSERT_EQ (1, info1.block_count);
 	// This was a valid block, it should progress.
 	auto return1 (ledger.process (transaction, send));
-	ASSERT_EQ(rai::process_result::progress, return1.code);
+	ASSERT_EQ (rai::process_result::progress, return1.code);
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash1));
 	int amount_sign;
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount_with_sign (transaction, hash1, amount_sign));
@@ -158,7 +158,7 @@ TEST (ledger, process_send)
 	rai::block_hash hash2 (open.hash ());
 	// This was a valid block, it should progress.
 	auto return2 (ledger.process (transaction, open));
-	ASSERT_EQ(rai::process_result::progress, return2.code);
+	ASSERT_EQ (rai::process_result::progress, return2.code);
 	ASSERT_EQ (rai::genesis_amount - 50, ledger.amount (transaction, hash2));
 	ASSERT_EQ (key2.pub, return2.account);
 	ASSERT_EQ (rai::genesis_amount - 50, return2.amount.number ());
@@ -688,7 +688,7 @@ TEST (system, generate_send_new)
 	auto send_block (system.wallet (0)->send_action (rai::genesis_account, stake_preserver.pub, amount, true));
 	{
 		rai::transaction transaction (system.nodes[0]->store.environment, nullptr, true);
-		auto open_block (std::make_shared<rai::state_block> (::ledger_create_open_state_block_helper (*(dynamic_cast<rai::state_block*>(send_block.get ())), rai::genesis_account, stake_preserver.pub, amount, stake_preserver)));
+		auto open_block (std::make_shared<rai::state_block> (::ledger_create_open_state_block_helper (*(dynamic_cast<rai::state_block *> (send_block.get ())), rai::genesis_account, stake_preserver.pub, amount, stake_preserver)));
 		system.nodes[0]->work_generate_blocking (*open_block);
 		ASSERT_EQ (rai::process_result::progress, system.nodes[0]->ledger.process (transaction, *open_block).code);
 	}
@@ -811,7 +811,7 @@ TEST (ledger, double_open)
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, send1).code);
 	rai::state_block open1 (::ledger_create_open_state_block_helper (send1, key2.pub, key2.pub, rai::genesis_amount - 1, key2));
 	ASSERT_EQ (rai::process_result::progress, ledger.process (transaction, open1).code);
-	rai::state_block open2 (::ledger_create_open_state_block_helper ( send1, rai::test_genesis_key.pub, key2.pub, rai::genesis_amount - 1, key2));
+	rai::state_block open2 (::ledger_create_open_state_block_helper (send1, rai::test_genesis_key.pub, key2.pub, rai::genesis_amount - 1, key2));
 	ASSERT_EQ (rai::process_result::fork, ledger.process (transaction, open2).code);
 }
 
@@ -1663,7 +1663,7 @@ TEST (ledger, bootstrap_rep_weight)
 	}
 	{
 		rai::transaction transaction (store.environment, nullptr, true);
-		rai::state_block send (rai::genesis_account, send1_hash, 0, rai::genesis_account, std::numeric_limits<rai::amount_t>::max() - 100, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+		rai::state_block send (rai::genesis_account, send1_hash, 0, rai::genesis_account, std::numeric_limits<rai::amount_t>::max () - 100, key2.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 		ledger.process (transaction, send);
 	}
 	{
@@ -2285,8 +2285,8 @@ TEST (ledger, state_receive_change_rollback)
 
 rai::amount_t reference_manna_increment (rai::timestamp_t time1, rai::timestamp_t time2)
 {
-	uint32_t t1 = (uint32_t)(time1 / rai::manna_control::manna_freq);
-	uint32_t t2 = (uint32_t)(time2 / rai::manna_control::manna_freq);
+	uint32_t t1 = (uint32_t) (time1 / rai::manna_control::manna_freq);
+	uint32_t t2 = (uint32_t) (time2 / rai::manna_control::manna_freq);
 	return (rai::amount_t) (t2 - t1) * (rai::amount_t)rai::manna_control::manna_increment;
 }
 
