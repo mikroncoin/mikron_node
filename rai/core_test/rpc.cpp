@@ -4295,6 +4295,8 @@ TEST (rpc, add_comment_account)
 	request.put ("wallet", wallet);
 	request.put ("account", rai::genesis_account.to_account ());
 	request.put ("comment", comment_str1);
+	// optional creation_time, to ensure controlled block time for test consistency
+	request.put ("creation_time", std::to_string (cutoff_time_comment_epoch + 1000));
 
 	test_response response (request, rpc, system.service);
 	while (response.status == 0)
@@ -4329,6 +4331,8 @@ TEST (rpc, add_comment_account_on_acc_fails)
 	request.put ("wallet", wallet);
 	request.put ("account", key.pub.to_account ());
 	request.put ("comment", comment_str1);
+	// optional creation_time, to ensure controlled block time for test consistency
+	request.put ("creation_time", std::to_string (cutoff_time_comment_epoch + 1000));
 
 	test_response response (request, rpc, system.service);
 	while (response.status == 0)

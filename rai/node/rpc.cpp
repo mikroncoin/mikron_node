@@ -884,6 +884,16 @@ void rai::rpc_handler::add_comment_account ()
 					}
 				}
 			}
+			// optional creation_time
+			rai::timestamp_t now = rai::short_timestamp::now ();
+			if (!ec)
+			{
+				auto time_text (request.get_optional<std::string> ("creation_time"));
+				if (time_text)
+				{
+					now = std::stoi (time_text.get ());
+				}
+			}
 			if (!ec)
 			{
 				auto rpc_l (shared_from_this ());
@@ -901,7 +911,7 @@ void rai::rpc_handler::add_comment_account ()
 						response_a (response_l);
 					}
 				},
-				work == 0);
+				now, work == 0);
 			}
 		}
 	}
