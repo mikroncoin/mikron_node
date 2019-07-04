@@ -210,12 +210,12 @@ enum class process_result
 	gap_source = 7, // Block marked as source is unknown
 	opened_burn_account = 8, // The impossible happened, someone found the private key associated with the public key '0'.
 	balance_mismatch = 9, // Balance and amount delta don't match
-	representative_mismatch = 10, // Representative is changed when it is not allowed
-	block_position = 11, // This block cannot follow the previous block (e.g. due to epoch)
-	invalid_state_block = 12, // a state block with undefined subtype
-	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
-	send_same_account = 14, // send to self
-	invalid_comment_block = 15, // a comment block with invalid parameters
+	representative_mismatch = 10, // 0x0A Representative is changed when it is not allowed
+	block_position = 11, // 0x0B This block cannot follow the previous block (e.g. due to epoch)
+	invalid_state_block = 12, // 0x0C a state block with undefined subtype
+	invalid_block_creation_time = 13, // 0x0D Out-of-order block, or invalid block creation time
+	send_same_account = 14, // 0x0E send to self
+	invalid_comment_block = 15, // 0x0F a comment block with invalid parameters
 	invalid_comment_block_legacy = 16, // 0x10 Comment block is not allowed before an epoch time
 };
 class process_return

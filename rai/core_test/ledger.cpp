@@ -2688,3 +2688,22 @@ TEST (ledger, comment_process_error)
 	auto return4 (ledger.process (transaction, comment_block4));
 	ASSERT_EQ (rai::process_result::invalid_comment_block, return4.code);
 }
+
+TEST (ledger, comment_on_new_account_fails)
+{
+	bool init (false);
+	rai::block_store store (init, rai::unique_path ());
+	ASSERT_TRUE (!init);
+	rai::stat stats;
+	rai::ledger ledger (store, stats);
+	rai::transaction transaction (store.environment, nullptr, true);
+	rai::genesis genesis;
+	genesis.initialize (transaction, store);
+	// Second account, but no blocks on it (no open block, no block chain)
+	rai::keypair key2;
+	// Place a comment block
+	std::string comment1_str ("COMMENT1");
+	rai::comment_block comment_block1 (key2.pub, 0, cutoff_time_comment_epoch + 1000, key2.pub, 10, rai::comment_block_subtype::account, comment1_str, key2.prv, key2.pub, 0);
+	auto return3 (ledger.process (transaction, comment_block1));
+	ASSERT_EQ (rai::process_result::block_position, return3.code);
+}
