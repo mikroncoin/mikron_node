@@ -4275,3 +4275,67 @@ TEST (rpc, comment_search_one)
 		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
 	}
 }
+
+TEST (rpc, add_comment_account)
+{
+	// Create comment block through add_comment_account RPC
+	rai::system system (24000, 1);
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+
+	// add_comment_account
+	boost::property_tree::ptree request;
+	std::string wallet;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("action", "add_comment_account");
+	request.put ("wallet", wallet);
+	request.put ("account", rai::genesis_account.to_account ());
+	request.put ("comment", comment_str1);
+
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string block_text (response.json.get<std::string> ("block"));
+	rai::block_hash block;
+	ASSERT_FALSE (block.decode_hex (block_text));
+	ASSERT_TRUE (system.nodes[0]->ledger.block_exists (block));
+	ASSERT_EQ (system.nodes[0]->latest (rai::test_genesis_key.pub), block);
+}
+
+TEST (rpc, add_comment_account_on_acc_fails)
+{
+	// Try to create comment block through add_comment_account RPC, on a new, non-existing block chain
+	rai::system system (24000, 1);
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+
+	// add_comment_account
+	boost::property_tree::ptree request;
+	std::string wallet;
+	rai::keypair key;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("action", "add_comment_account");
+	request.put ("wallet", wallet);
+	request.put ("account", key.pub.to_account ());
+	request.put ("comment", comment_str1);
+
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string error (response.json.get<std::string> ("error"));
+	ASSERT_EQ ("Account not found", error);
+}

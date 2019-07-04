@@ -1159,19 +1159,16 @@ std::shared_ptr<rai::block> rai::wallet::add_comment_action (rai::account const 
 	}
 	if (!error && block != nullptr && !cached_block)
 	{
-		std::cerr << "wallet add_comment" << std::endl;
 		if (rai::work_validate (*block))
 		{
 			node.work_generate_blocking (*block);
 		}
 		node.process_active (block);
 		node.block_processor.flush ();
-		std::cerr << "wallet process1" << std::endl;
 		if (generate_work_a)
 		{
 			work_ensure (account_a, block->hash ());
 		}
-		std::cerr << "wallet add_comment done" << std::endl;
 	}
 	return block;
 }
