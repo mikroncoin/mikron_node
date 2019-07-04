@@ -4136,8 +4136,8 @@ TEST (rpc, comment_history)
 	system.wallet (0)->insert_adhoc (other_acc.prv);
 
 	auto node0 (system.nodes[0]);
-	rai::state_block usend (rai::genesis_account, node0->latest (rai::genesis_account), 0, rai::genesis_account, rai::genesis_amount - rai::Gxrb_ratio, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
-	rai::state_block ureceive (other_acc.pub, node0->latest (other_acc.pub), 0, rai::genesis_account, rai::Gxrb_ratio, usend.hash (), other_acc.prv, other_acc.pub, 0);
+	rai::state_block usend (rai::genesis_account, node0->latest (rai::genesis_account), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::genesis_amount - rai::Gxrb_ratio, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block ureceive (other_acc.pub, node0->latest (other_acc.pub), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::Gxrb_ratio, usend.hash (), other_acc.prv, other_acc.pub, 0);
 	std::string comment_str1 ("Comment String 1");
 	rai::comment_block ucomment (other_acc.pub, ureceive.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::Gxrb_ratio, rai::comment_block_subtype::account, comment_str1, other_acc.prv, other_acc.pub, 0);
 	{
