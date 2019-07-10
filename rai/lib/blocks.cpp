@@ -627,8 +627,8 @@ void rai::comment_hashables::hash (blake2b_state & hash_a) const
 {
 	uint32_t subtype_big_endian (subtype.number_big_endian ());
 	blake2b_update (&hash_a, &subtype_big_endian, sizeof (subtype_big_endian));
-	// include length explicitly
-	uint16_t comment_len_big_endian (boost::endian::native_to_big (comment.length ()));
+	// Include length explicitly, on 2 bytes
+	uint16_t comment_len_big_endian ((uint16_t)boost::endian::native_to_big ((uint16_t)comment.length ()));
 	blake2b_update (&hash_a, &comment_len_big_endian, sizeof (comment_len_big_endian));
 	blake2b_update (&hash_a, comment.value ().data (), comment.value ().size ());
 }
