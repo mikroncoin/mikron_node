@@ -8,10 +8,11 @@ configuration: Release
 platform: x86
 environment:
   matrix:
-    - network: rai_live_network
-  openssl_version: 1_1_0i
+    - network: rai_beta_network
+  openssl_version: 1_1_0k
   #openssl_sha256sum: 10a797bccaa9c749e77b9cc03bf6ce25a9cf7f03d2fb46d9d3098d1d30bd7051   # 1_1_0i 64bit
-  openssl_sha256sum: 6C60F159174B0C996528766326097E5CD97CBEAF2E866696C7630960ABA97E8C   # 1_1_0i 32bit
+  #openssl_sha256sum: 6C60F159174B0C996528766326097E5CD97CBEAF2E866696C7630960ABA97E8C   # 1_1_0i 32bit
+  openssl_sha256sum: a0a3ef0c8c7723ef4a5393dec7ac7a1dc59fe9b05485ad9630acb6166daeb56a  # 1_1_0k 32 bit
 cache:
 - '%TEMP%\Win32OpenSSL-%openssl_version%.exe'
 clone_folder: C:\projects\myproject
