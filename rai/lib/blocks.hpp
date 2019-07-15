@@ -58,7 +58,7 @@ protected:
 	enum class start : timestamp_t
 	{
 		epoch1 = 0,
-		epoch2_live = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
+		epoch2_live = 29836800, // 1565596800 Aug 12 2019 08:00 UTC (10:00 GMT)
 		epoch2_beta = 26870400, // 1562630400 July 9 2019 00:00 UTC
 		epoch_far_future = 99929600, // Far in the future: 1735689600 Jan 1 2025 00:00 UTC
 	};
