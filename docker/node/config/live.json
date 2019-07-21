@@ -10,7 +10,7 @@
     },
     "node": {
         "version": "12",
-        "peering_port": "7042",
+        "peering_port": "17042",
         "bootstrap_fraction_numerator": "1",
         "receive_minimum": "10000",
         "logging": {
@@ -36,9 +36,9 @@
         },
         "work_peers": "",
         "preconfigured_peers": [
-            "node.mikron.io",
-            "node2.mikron.io",
-            "node3.mikron.io"
+            "NO_SUCH_HOST_node.mikron.io",
+            "NO_SUCH_HOST_node2.mikron.io",
+            "NO_SUCH_HOST_node3.mikron.io"
         ],
         "preconfigured_representatives": [
             "mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb",

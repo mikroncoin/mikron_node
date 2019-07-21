@@ -940,9 +940,9 @@ lmdb_max_dbs (128)
 			break;
 
 		case rai::rai_networks::rai_live_network:
-			preconfigured_peers.push_back ("node.mikron.io");
-			preconfigured_peers.push_back ("node2.mikron.io");
-			preconfigured_peers.push_back ("node3.mikron.io");
+			preconfigured_peers.push_back ("NO_SUCH_HOST_node.mikron.io");
+			preconfigured_peers.push_back ("NO_SUCH_HOST_node2.mikron.io");
+			preconfigured_peers.push_back ("NO_SUCH_HOST_node3.mikron.io");
 			preconfigured_representatives.push_back (rai::account ("80B4D482DC848426B7FC2F3D28C78C6DFC38468B7AFB450E3DA806B546380323")); // Rep1 mik_317ntk3fs3666tuzrdsx755rruhw935apyquan95uc18po55i1s53sew45tb
 			preconfigured_representatives.push_back (rai::account ("9F93A4D16CE87CDC7D141FCB9493364317F93DA575C145627C40C9D6BA29F61F")); // Rep2 mik_39wmnmapst5wujyja9ydkkbmeirqz6ytcxg3aoj9ri8bttx4mxiz3pn8rqfc
 			// 2018-09-01 UTC 00:00 in unix time
