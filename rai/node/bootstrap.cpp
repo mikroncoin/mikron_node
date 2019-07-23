@@ -3,8 +3,8 @@
 #include <rai/node/common.hpp>
 #include <rai/node/node.hpp>
 
-#include <boost/log/trivial.hpp>
 #include <boost/endian/conversion.hpp>
+#include <boost/log/trivial.hpp>
 
 constexpr double bootstrap_connection_scale_target_blocks = 50000.0;
 constexpr double bootstrap_connection_warmup_time_sec = 5.0;
@@ -496,48 +496,52 @@ void rai::bulk_pull_client::received_type ()
 
 void rai::bulk_pull_client::received_block (boost::system::error_code const & ec, size_t size_a, rai::block_type type_a)
 {
-	if (!ec)
-	{
-		rai::bufferstream stream (connection->receive_buffer->data (), size_a);
-		std::shared_ptr<rai::block> block (rai::deserialize_block (stream, type_a));
-		if (block != nullptr && !rai::work_validate (*block))
-		{
-			auto hash (block->hash ());
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				std::string block_l;
-				block->serialize_json (block_l);
-				BOOST_LOG (connection->node->log) << boost::str (boost::format ("Pulled block %1% %2%") % hash.to_string () % block_l);
-			}
-			if (hash == expected)
-			{
-				expected = block->previous ();
-			}
-			if (connection->block_count++ == 0)
-			{
-				connection->start_time = std::chrono::steady_clock::now ();
-			}
-			connection->attempt->total_blocks++;
-			connection->attempt->node->block_processor.add (block, std::chrono::steady_clock::time_point ());
-			if (!connection->hard_stop.load ())
-			{
-				receive_block ();
-			}
-		}
-		else
-		{
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
-			}
-		}
-	}
-	else
+	if (ec)
 	{
 		if (connection->node->config.logging.bulk_pull_logging ())
 		{
 			BOOST_LOG (connection->node->log) << boost::str (boost::format ("Error bulk receiving block: %1%") % ec.message ());
 		}
+		return;
+	}
+	rai::bufferstream stream (connection->receive_buffer->data (), size_a);
+	std::shared_ptr<rai::block> block (rai::deserialize_block (stream, type_a));
+	if (block == nullptr)
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
+		}
+		return;
+	}
+	if (rai::work_validate (*block))
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Block with invalid work received from pull request";
+		}
+		return;
+	}
+	auto hash (block->hash ());
+	if (connection->node->config.logging.bulk_pull_logging ())
+	{
+		std::string block_l;
+		block->serialize_json (block_l);
+		BOOST_LOG (connection->node->log) << boost::str (boost::format ("Pulled block %1% %2%") % hash.to_string () % block_l);
+	}
+	if (hash == expected)
+	{
+		expected = block->previous ();
+	}
+	if (connection->block_count++ == 0)
+	{
+		connection->start_time = std::chrono::steady_clock::now ();
+	}
+	connection->attempt->total_blocks++;
+	connection->attempt->node->block_processor.add (block, std::chrono::steady_clock::time_point ());
+	if (!connection->hard_stop.load ())
+	{
+		receive_block ();
 	}
 }
 
@@ -2304,23 +2308,30 @@ void rai::bulk_push_server::received_type ()
 
 void rai::bulk_push_server::received_block (boost::system::error_code const & ec, size_t size_a, rai::block_type type_a)
 {
-	if (!ec)
+	if (ec)
 	{
-		rai::bufferstream stream (receive_buffer->data (), size_a);
-		auto block (rai::deserialize_block (stream, type_a));
-		if (block != nullptr && !rai::work_validate (*block))
-		{
-			connection->node->process_active (std::move (block));
-			receive ();
-		}
-		else
-		{
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
-			}
-		}
+		return;
 	}
+	rai::bufferstream stream (receive_buffer->data (), size_a);
+	auto block (rai::deserialize_block (stream, type_a));
+	if (block == nullptr)
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
+		}
+		return;
+	}
+	if (rai::work_validate (*block))
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Block with invalid work received from pull request";
+		}
+		return;
+	}
+	connection->node->process_active (std::move (block));
+	receive ();
 }
 
 rai::frontier_req_server::frontier_req_server (std::shared_ptr<rai::bootstrap_server> const & connection_a, std::unique_ptr<rai::frontier_req> request_a) :
