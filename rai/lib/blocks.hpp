@@ -281,8 +281,12 @@ public:
 	rai::block_type type () const override;
 	bool operator== (rai::block const &) const override;
 	bool operator== (rai::comment_block const &) const;
+	static bool size_full (std::vector<uint8_t> &, size_t &);
 	static size_t const max_comment_length = 160;
+	/// Comment is variable length; this is the base length with 0 len comment
 	static size_t constexpr size_base = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint32_t) + sizeof (uint16_t) + sizeof (rai::signature) + sizeof (uint64_t);
+	/// Index of the comment length field in the serialized message
+	static size_t constexpr comment_length_index = sizeof (rai::account) + sizeof (rai::block_hash) + sizeof (rai::short_timestamp) + sizeof (rai::account) + sizeof (rai::amount) + sizeof (rai::uint32_t);
 	rai::comment_hashables hashables;
 };
 
