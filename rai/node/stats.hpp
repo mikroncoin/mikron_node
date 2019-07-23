@@ -202,6 +202,7 @@ public:
 		open,
 		//change,
 		state_block,
+		comment_block,
 
 		// message specific
 		keepalive,

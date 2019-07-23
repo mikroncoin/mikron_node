@@ -1,8 +1,8 @@
 #include <rai/lib/blocks.hpp>
 #include <rai/secure/common.hpp>
 
-#include <ctime>
 #include <boost/endian/conversion.hpp>
+#include <ctime>
 //#include <boost/date_time/posix_time/posix_time.hpp>
 
 /** Compare blocks, first by type, then content. This is an optimization over dynamic_cast, which is very slow on some platforms. */
@@ -114,18 +114,18 @@ rai::timestamp_t rai::epoch::epoch_start_time (rai::epoch::epoch_num epoch_num)
 	}
 }
 
-rai::short_timestamp::short_timestamp ()
-	: data (0)
+rai::short_timestamp::short_timestamp () :
+data (0)
 {
 }
 
-rai::short_timestamp::short_timestamp (rai::timestamp_t creation_time)
-	: data (creation_time)
+rai::short_timestamp::short_timestamp (rai::timestamp_t creation_time) :
+data (creation_time)
 {
 }
 
-rai::short_timestamp::short_timestamp (const short_timestamp & time_a)
-	: data (time_a.data)
+rai::short_timestamp::short_timestamp (const short_timestamp & time_a) :
+data (time_a.data)
 {
 }
 
@@ -182,14 +182,14 @@ uint64_t rai::short_timestamp::to_posix_time () const
 	return (uint64_t)rai::epoch::origin + (uint64_t)data.number ();
 }
 
-bool rai::short_timestamp::is_zero() const
+bool rai::short_timestamp::is_zero () const
 {
 	return data.is_zero ();
 }
 
 void rai::short_timestamp::clear ()
 {
-	data.clear();
+	data.clear ();
 }
 
 std::string rai::short_timestamp::to_date_string_utc () const
@@ -452,19 +452,26 @@ void rai::state_block::serialize_json (std::string & string_a) const
 bool rai::state_block::deserialize (rai::stream & stream_a)
 {
 	auto error (read (stream_a, base_hashables.account));
-	if (error) return error;
+	if (error)
+		return error;
 	error = base_hashables.creation_time.data.deserialize (stream_a);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, base_hashables.previous);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, base_hashables.representative);
-	if (error) return error;
+	if (error)
+		return error;
 	error = base_hashables.balance.deserialize (stream_a);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, hashables.link);
-	if (error) return error;
+	if (error)
+		return error;
 	error = read (stream_a, signature);
-	if (error) return error;
+	if (error)
+		return error;
 	error = work.deserialize (stream_a);
 	return error;
 }
@@ -484,19 +491,26 @@ bool rai::state_block::deserialize_json (boost::property_tree::ptree const & tre
 		auto work_l (tree_a.get<std::string> ("work"));
 		auto signature_l (tree_a.get<std::string> ("signature"));
 		error = base_hashables.account.decode_account (account_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = base_hashables.creation_time.data.decode_dec (creation_time_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = base_hashables.previous.decode_hex (previous_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = base_hashables.representative.decode_account (representative_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = base_hashables.balance.decode_dec (balance_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = hashables.link.decode_account (link_l) && hashables.link.decode_hex (link_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = work.decode_hex (work_l);
-		if (error) return error;
+		if (error)
+			return error;
 		error = signature.decode_hex (signature_l);
 	}
 	catch (std::runtime_error const &)
@@ -572,16 +586,19 @@ bool rai::state_block::is_valid_open_subtype () const
 {
 	if (base_hashables.account.is_zero ())
 		return false;
-	if (has_previous ()) return false;
+	if (has_previous ())
+		return false;
 	if (base_hashables.account != rai::genesis_account)
 	{
 		// normal accounts have link (to a send)
-		if (!has_link ()) return false;
+		if (!has_link ())
+			return false;
 	}
 	else
 	{
 		// genesis block has no link
-		if (has_link ()) return false;
+		if (has_link ())
+			return false;
 	}
 	return true;
 }
@@ -591,8 +608,10 @@ bool rai::state_block::is_valid_send_or_receive_subtype () const
 	// balance change is not known
 	if (base_hashables.account.is_zero ())
 		return false;
-	if (!has_previous ()) return false;
-	if (!has_link ()) return false;
+	if (!has_previous ())
+		return false;
+	if (!has_link ())
+		return false;
 	return true;
 }
 
@@ -600,9 +619,12 @@ bool rai::state_block::is_valid_change_subtype () const
 {
 	if (base_hashables.account.is_zero ())
 		return false;
-	if (!has_representative ()) return false;
-	if (!has_previous ()) return false;
-	if (has_link ()) return false;
+	if (!has_representative ())
+		return false;
+	if (!has_previous ())
+		return false;
+	if (has_link ())
+		return false;
 	return true;
 }
 
@@ -838,6 +860,24 @@ bool rai::comment_block::operator== (rai::block const & other_a) const
 bool rai::comment_block::operator== (rai::comment_block const & other_a) const
 {
 	return base_hashables.account == other_a.base_hashables.account && base_hashables.previous == other_a.base_hashables.previous && base_hashables.representative == other_a.base_hashables.representative && base_hashables.balance == other_a.base_hashables.balance && hashables.subtype.number () == other_a.hashables.subtype.number () && hashables.comment == other_a.hashables.comment && signature == other_a.signature && work == other_a.work;
+}
+
+/*
+ * Determine the actual size of a serialized comment block, once size_base is already available.
+ * The buffer has to have at least size_base bytes already.
+ * E.g. with comment of len 11, the base length is 186, the full is 197 (base plus 11).
+ */
+bool rai::comment_block::size_full (std::vector<uint8_t> & buffer_in, size_t & size_out)
+{
+	size_out = size_base;
+	if (buffer_in.size () < comment_length_index + 2)
+	{
+		// error, partial message is too short
+		return true;
+	}
+	// comment length is 2 bytes, big endian
+	size_out = size_base + 256 * buffer_in[comment_length_index] + buffer_in[comment_length_index + 1];
+	return false;
 }
 
 std::unique_ptr<rai::block> rai::deserialize_block_json (boost::property_tree::ptree const & tree_a)

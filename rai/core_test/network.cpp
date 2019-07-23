@@ -21,7 +21,6 @@ rai::state_block network_create_open_state_block_helper (rai::block_hash const &
 	return rai::state_block (account_a, 0, 0, representative_a, balance_a, source_a, prv_a, pub_a, work_a);
 }
 
-
 TEST (network, tcp_connection)
 {
 	boost::asio::io_service service;
@@ -211,7 +210,7 @@ TEST (network, send_valid_confirm_ack)
 	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
 	system.wallet (1)->insert_adhoc (key2.prv);
 	rai::block_hash latest1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
-	rai::state_block block2 (::network_create_send_state_block_helper (latest1, key2.pub, 50, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate(latest1)));
+	rai::state_block block2 (::network_create_send_state_block_helper (latest1, key2.pub, 50, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest1)));
 	rai::block_hash latest2 (system.nodes[1]->latest (rai::test_genesis_key.pub));
 	system.nodes[0]->process_active (std::unique_ptr<rai::block> (new rai::state_block (block2)));
 	system.deadline_set (10s);
@@ -233,7 +232,7 @@ TEST (network, send_valid_publish)
 	rai::keypair key2;
 	system.wallet (1)->insert_adhoc (key2.prv);
 	rai::block_hash latest1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
-	rai::state_block block2 (::network_create_send_state_block_helper (latest1, key2.pub, 50, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate(latest1)));
+	rai::state_block block2 (::network_create_send_state_block_helper (latest1, key2.pub, 50, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, system.work.generate (latest1)));
 	auto hash2 (block2.hash ());
 	rai::block_hash latest2 (system.nodes[1]->latest (rai::test_genesis_key.pub));
 	system.nodes[1]->process_active (std::unique_ptr<rai::block> (new rai::state_block (block2)));
@@ -616,6 +615,32 @@ TEST (bootstrap_processor, process_state)
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	ASSERT_EQ (0, node1->active.roots.size ());
+	node1->stop ();
+}
+
+TEST (bootstrap_processor, process_comment)
+{
+	rai::system system (24000, 1);
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	rai::keypair other_acc;
+	rai::block_hash hash1 (system.nodes[0]->latest (rai::test_genesis_key.pub));
+	ASSERT_NE (nullptr, system.wallet (0)->send_action (rai::test_genesis_key.pub, other_acc.pub, 50));
+	rai::block_hash hash2 (system.nodes[0]->latest (rai::test_genesis_key.pub));
+	ASSERT_NE (nullptr, system.wallet (0)->add_comment_action (rai::test_genesis_key.pub, rai::comment_block_subtype::account, "TestCommABC"));
+	rai::block_hash hash3 (system.nodes[0]->latest (rai::test_genesis_key.pub));
+	ASSERT_NE (hash1, hash2);
+	ASSERT_NE (hash1, hash3);
+	ASSERT_NE (hash2, hash3);
+	rai::node_init init1;
+	auto node1 (std::make_shared<rai::node> (init1, system.service, 24001, rai::unique_path (), system.alarm, system.logging, system.work));
+	ASSERT_FALSE (init1.error ());
+	node1->bootstrap_initiator.bootstrap (system.nodes[0]->network.endpoint ());
+	ASSERT_NE (node1->latest (rai::test_genesis_key.pub), system.nodes[0]->latest (rai::test_genesis_key.pub));
+	system.deadline_set (10s);
+	while (node1->latest (rai::test_genesis_key.pub) != system.nodes[0]->latest (rai::test_genesis_key.pub))
+	{
+		ASSERT_NO_ERROR (system.poll ());
+	}
 	node1->stop ();
 }
 
