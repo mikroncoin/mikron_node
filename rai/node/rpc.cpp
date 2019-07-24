@@ -453,7 +453,7 @@ void rai::rpc_handler::account_get ()
 	response_errors ();
 }
 
-void rai::rpc_handler::account_info_intern (rai::transaction & transaction_in, const rai::account & account_in, boost::property_tree::ptree & ptree_inout, bool representative_in, bool weight_in, bool pending_in)
+void rai::rpc_handler::account_info_intern (rai::transaction & transaction_in, const rai::account & account_in, boost::property_tree::ptree & ptree_inout, bool representative_in, bool weight_in, bool pending_in, bool comment_in)
 {
 	if (ec)
 		return;
@@ -487,6 +487,14 @@ void rai::rpc_handler::account_info_intern (rai::transaction & transaction_in, c
 		auto account_pending (node.ledger.account_pending (transaction_in, account_in));
 		ptree_inout.put ("pending", std::to_string (account_pending));
 	}
+	if (comment_in)
+	{
+		if (!info.comment_block.is_zero ())
+		{
+			auto account_comment (node.ledger.account_comment (transaction_in, account_in));
+			ptree_inout.put ("comment", account_comment);
+		}
+	}
 }
 
 void rai::rpc_handler::account_info ()
@@ -497,8 +505,9 @@ void rai::rpc_handler::account_info ()
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
+		const bool comment = request.get<bool> ("comment", false);
 		rai::transaction transaction (node.store.environment, nullptr, false);
-		account_info_intern (transaction, account, response_l, representative, weight, pending);
+		account_info_intern (transaction, account, response_l, representative, weight, pending, comment);
 	}
 	response_errors ();
 }
@@ -514,9 +523,10 @@ void rai::rpc_handler::accounts_infos ()
 			const bool representative = request.get<bool> ("representative", false);
 			const bool weight = request.get<bool> ("weight", false);
 			const bool pending = request.get<bool> ("pending", false);
+			const bool comment = request.get<bool> ("comment", false);
 			rai::transaction transaction (node.store.environment, nullptr, false);
 			boost::property_tree::ptree info_ptree;
-			account_info_intern (transaction, account, info_ptree, representative, weight, pending);
+			account_info_intern (transaction, account, info_ptree, representative, weight, pending, comment);
 			if (!ec)
 			{
 				infos_ptree.push_back (std::make_pair (account.to_account (), info_ptree));
@@ -837,6 +847,79 @@ void rai::rpc_handler::accounts_pending ()
 	}
 	response_l.add_child ("blocks", pending);
 	response_errors ();
+}
+
+void rai::rpc_handler::add_comment_account ()
+{
+	rpc_control_impl ();
+	auto wallet (wallet_impl ());
+	auto account (account_impl ());
+	if (!ec)
+	{
+		if (!wallet->valid_password ())
+		{
+			ec = nano::error_common::wallet_locked;
+		}
+		else
+		{
+			std::string comment_text (request.get<std::string> ("comment"));
+			auto work (work_optional_impl ());
+			if (!ec)
+			{
+				rai::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
+				rai::account_info info;
+				if (node.store.account_get (transaction, account, info))
+				{
+					ec = nano::error_common::account_not_found;
+				}
+				if (!ec && work)
+				{
+					if (rai::work_validate (info.head, work))
+					{
+						ec = nano::error_common::invalid_work;
+					}
+					else
+					{
+						wallet->store.work_put (transaction, account, work);
+					}
+				}
+			}
+			// optional creation_time
+			rai::timestamp_t now = rai::short_timestamp::now ();
+			if (!ec)
+			{
+				auto time_text (request.get_optional<std::string> ("creation_time"));
+				if (time_text)
+				{
+					now = std::stoi (time_text.get ());
+				}
+			}
+			if (!ec)
+			{
+				auto rpc_l (shared_from_this ());
+				auto response_a (response);
+				wallet->add_comment_async (account, rai::comment_block_subtype::account, comment_text, [response_a](std::shared_ptr<rai::block> block_a) {
+					if (block_a == nullptr)
+					{
+						error_response (response_a, "Error generating block");
+					}
+					else
+					{
+						rai::uint256_union hash (block_a->hash ());
+						boost::property_tree::ptree response_l;
+						response_l.put ("block", hash.to_string ());
+						response_a (response_l);
+					}
+				},
+				now, work == 0);
+			}
+		}
+	}
+	// Because of async
+	if (ec)
+	{
+		response_errors ();
+	}
 }
 
 void rai::rpc_handler::available_supply ()
@@ -1164,23 +1247,6 @@ void rai::rpc_handler::block_create ()
 				ec = nano::error_rpc::invalid_balance;
 			}
 		}
-		rai::uint256_union link (0);
-		boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
-		if (!ec && link_text.is_initialized ())
-		{
-			if (link.decode_account (link_text.get ()))
-			{
-				if (link.decode_hex (link_text.get ()))
-				{
-					ec = nano::error_rpc::bad_link;
-				}
-			}
-		}
-		else
-		{
-			// Retrieve link from source or destination
-			link = source.is_zero () ? destination : source;
-		}
 		if (prv.data != 0)
 		{
 			rai::uint256_union pub (rai::pub_key (prv.data));
@@ -1210,7 +1276,28 @@ void rai::rpc_handler::block_create ()
 			}
 			if (type == "state")
 			{
-				if (previous_text.is_initialized () && !representative.is_zero () && (!link.is_zero () || link_text.is_initialized ()))
+				rai::uint256_union link (0);
+				boost::optional<std::string> link_text (request.get_optional<std::string> ("link"));
+				if (!ec && link_text.is_initialized ())
+				{
+					if (link.decode_account (link_text.get ()))
+					{
+						if (link.decode_hex (link_text.get ()))
+						{
+							ec = nano::error_rpc::bad_link;
+						}
+					}
+				}
+				else
+				{
+					// Retrieve link from source or destination
+					link = source.is_zero () ? destination : source;
+				}
+				if (!previous_text.is_initialized () || representative.is_zero () || (link.is_zero () && !link_text.is_initialized ()))
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
+				}
+				else
 				{
 					if (creation_time.is_zero ())
 					{
@@ -1220,15 +1307,40 @@ void rai::rpc_handler::block_create ()
 					{
 						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
 					}
-					rai::state_block state (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
-					response_l.put ("hash", state.hash ().to_string ());
+					rai::state_block state_block (pub, previous, creation_time.number (), representative, balance, link, prv, pub, work);
+					response_l.put ("hash", state_block.hash ().to_string ());
 					std::string contents;
-					state.serialize_json (contents);
+					state_block.serialize_json (contents);
 					response_l.put ("block", contents);
+				}
+			}
+			else if (type == "comment")
+			{
+				std::string comment;
+				boost::optional<std::string> comment_text (request.get_optional<std::string> ("comment"));
+				if (comment_text.is_initialized ())
+				{
+					comment = comment_text.get ();
+				}
+				if (!previous_text.is_initialized () || representative.is_zero () || comment.length () == 0)
+				{
+					ec = nano::error_rpc::block_create_requirements_state;
 				}
 				else
 				{
-					ec = nano::error_rpc::block_create_requirements_state;
+					if (creation_time.is_zero ())
+					{
+						creation_time.set_time_now ();
+					}
+					if (work == 0)
+					{
+						work = node.work_generate_blocking (previous.is_zero () ? pub : previous);
+					}
+					rai::comment_block comment_block (pub, previous, creation_time.number (), representative, balance, rai::comment_block_subtype::account, comment, prv, pub, work);
+					response_l.put ("hash", comment_block.hash ().to_string ());
+					std::string contents;
+					comment_block.serialize_json (contents);
+					response_l.put ("block", contents);
 				}
 			}
 			else
@@ -1327,11 +1439,30 @@ void rai::rpc_handler::chain (bool successors)
 
 void rai::rpc_handler::comment_search ()
 {
-	// No real implementation, always return empty
-	boost::property_tree::ptree accounts;
-	response_l.add_child ("accounts", accounts);
-	response_l.add ("count", 0);
-	response_l.add ("error", "NotImeplemented");
+	std::string search_pattern (request.get<std::string> ("comment"));
+	if (search_pattern.length () < 3)
+	{
+		// missing pattern or too short
+		ec = nano::error_rpc::invalid_comment_search;
+	}
+	if (!ec)
+	{
+		unsigned int max_count = 100; // max count, default
+		if (request.get_optional<unsigned int> ("max_count"))
+		{
+			max_count = request.get<unsigned int> ("max_count");
+		}
+		rai::transaction transaction (node.store.environment, nullptr, false);
+		std::vector<std::pair<rai::account, std::string>> res = node.ledger.comment_search (transaction, search_pattern, max_count);
+		boost::property_tree::ptree accounts;
+		for (auto i (res.begin ()), n (res.end ()); i != n; ++i)
+		{
+			accounts.add (i->first.to_account (), i->second);
+		}
+		response_l.add_child ("accounts", accounts);
+		response_l.add ("count", res.size ());
+	}
+	response_errors ();
 }
 
 void rai::rpc_handler::confirmation_history ()
@@ -1456,9 +1587,10 @@ namespace
 class history_visitor : public rai::block_visitor
 {
 public:
-	history_visitor (rai::rpc_handler & handler_a, bool raw_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
+	history_visitor (rai::rpc_handler & handler_a, bool raw_a, bool include_account_comment_a, rai::transaction & transaction_a, boost::property_tree::ptree & tree_a, rai::block_hash const & hash_a) :
 	handler (handler_a),
 	raw (raw_a),
+	include_account_comment (include_account_comment_a),
 	transaction (transaction_a),
 	tree (tree_a),
 	hash (hash_a)
@@ -1470,14 +1602,15 @@ public:
 		if (raw)
 		{
 			tree.put ("type", "state");
-			tree.put ("representative", block_a.hashables.representative.to_account ());
-			tree.put ("link", block_a.hashables.link.to_string ());
-			tree.put ("previous", block_a.hashables.previous.to_string ());
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("link", block_a.link ().to_string ());
+			tree.put ("previous", block_a.previous ().to_string ());
 		}
-		auto cur_balance (block_a.hashables.balance.number ());
-		auto previous_balance = handler.node.ledger.balance (transaction, block_a.hashables.previous);
+		auto cur_balance (block_a.balance ().number ());
+		auto previous_balance = handler.node.ledger.balance (transaction, block_a.previous ());
 		auto amount_manna (handler.node.ledger.amount (transaction, block_a.hash ()));
 		rai::state_block_subtype subtype = handler.node.ledger.state_subtype (transaction, block_a);
+		rai::account history_account (0);
 		switch (subtype)
 		{
 			case rai::state_block_subtype::open_receive:
@@ -1489,9 +1622,9 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
-				tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
+				tree.put ("amount", block_a.balance ().to_string_dec ());
+				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
 			case rai::state_block_subtype::open_genesis:
@@ -1503,9 +1636,9 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
-				tree.put ("amount", block_a.hashables.balance.to_string_dec ());
-				tree.put ("account", block_a.hashables.account.to_account ()); // self
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				history_account = block_a.account (); // self
+				tree.put ("amount", block_a.balance ().to_string_dec ());
+				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
 			case rai::state_block_subtype::send:
@@ -1517,9 +1650,9 @@ public:
 				{
 					tree.put ("type", "send");
 				}
-				tree.put ("account", block_a.hashables.link.to_account ());
+				history_account = block_a.link ();
 				tree.put ("amount", std::to_string (amount_manna));
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				tree.put ("balance", block_a.balance ().to_string_dec ());
 				break;
 
 			case rai::state_block_subtype::receive:
@@ -1531,9 +1664,16 @@ public:
 				{
 					tree.put ("type", "receive");
 				}
-				tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.link).to_account ());
+				history_account = handler.node.ledger.account (transaction, block_a.link ());
 				tree.put ("amount", std::to_string (amount_manna));
-				tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+				tree.put ("balance", block_a.balance ().to_string_dec ());
+				break;
+
+			case rai::state_block_subtype::change:
+				if (raw)
+				{
+					tree.put ("subtype", "change");
+				}
 				break;
 
 			// epoch and undefined not handled
@@ -1541,9 +1681,34 @@ public:
 			default:
 				break;
 		}
+		if (!history_account.is_zero ())
+		{
+			tree.put ("account", history_account.to_account ());
+			if (include_account_comment)
+			{
+				auto account_comment (handler.node.ledger.account_comment (transaction, history_account));
+				if (account_comment.length () > 0)
+				{
+					tree.put ("account_comment", account_comment);
+				}
+			}
+		}
+	}
+	void comment_block (rai::comment_block const & block_a)
+	{
+		// include only in raw mode
+		if (raw)
+		{
+			tree.put ("type", "comment");
+			tree.put ("comment", block_a.comment ());
+			tree.put ("balance", block_a.balance ().to_string_dec ());
+			tree.put ("representative", block_a.representative ().to_account ());
+			tree.put ("previous", block_a.previous ().to_string ());
+		}
 	}
 	rai::rpc_handler & handler;
 	bool raw;
+	bool include_account_comment;
 	rai::transaction & transaction;
 	boost::property_tree::ptree & tree;
 	rai::block_hash const & hash;
@@ -1554,6 +1719,7 @@ void rai::rpc_handler::account_history ()
 {
 	rai::account account;
 	bool output_raw (request.get_optional<bool> ("raw") == true);
+	bool output_comment (request.get_optional<bool> ("include_comment") == true);
 	rai::block_hash hash;
 	auto head_str (request.get_optional<std::string> ("head"));
 	rai::transaction transaction (node.store.environment, nullptr, false);
@@ -1595,7 +1761,7 @@ void rai::rpc_handler::account_history ()
 				else
 				{
 					boost::property_tree::ptree entry;
-					history_visitor visitor (*this, output_raw, transaction, entry, hash);
+					history_visitor visitor (*this, output_raw, output_comment, transaction, entry, hash);
 					block->visit (visitor);
 					if (!entry.empty ())
 					{
@@ -1604,12 +1770,12 @@ void rai::rpc_handler::account_history ()
 						if (output_raw)
 						{
 							entry.put ("block_time_utc", block->creation_time ().to_date_string_utc ());
-							entry.put ("work", rai::to_string_hex (block->block_work ()));
-							entry.put ("signature", block->block_signature ().to_string ());
+							entry.put ("work", rai::to_string_hex (block->work_get ()));
+							entry.put ("signature", block->signature_get ().to_string ());
 						}
 						history.push_back (std::make_pair ("", entry));
+						--count;
 					}
-					--count;
 				}
 				hash = block->previous ();
 				block = node.store.block_get (transaction, hash);
@@ -3669,6 +3835,10 @@ void rai::rpc_handler::process_request ()
 			else if (action == "accounts_pending")
 			{
 				accounts_pending ();
+			}
+			else if (action == "add_comment_account")
+			{
+				add_comment_account ();
 			}
 			else if (action == "available_supply")
 			{

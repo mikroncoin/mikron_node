@@ -137,6 +137,7 @@ public:
 	void accounts_frontiers ();
 	void accounts_infos ();
 	void accounts_pending ();
+	void add_comment_account ();
 	void available_supply ();
 	void block ();
 	void block_confirm ();
@@ -241,7 +242,7 @@ public:
 	bool rpc_control_impl ();
 
 private:
-	void account_info_intern (rai::transaction &, const rai::account &, boost::property_tree::ptree &, bool, bool, bool);
+	void account_info_intern (rai::transaction &, const rai::account &, boost::property_tree::ptree &, bool, bool, bool, bool);
 };
 
 /** Returns the correct RPC implementation based on TLS configuration */

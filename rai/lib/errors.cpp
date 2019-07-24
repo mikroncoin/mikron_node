@@ -122,6 +122,8 @@ std::string nano::error_rpc_messages::message (int ev) const
 			return "Destination account, previous hash, current balance and amount required";
 		case nano::error_rpc::invalid_balance:
 			return "Invalid balance number";
+		case nano::error_rpc::invalid_comment_search:
+			return "Invalid or missing comment search pattern";
 		case nano::error_rpc::invalid_destinations:
 			return "Invalid destinations number";
 		case nano::error_rpc::invalid_offset:

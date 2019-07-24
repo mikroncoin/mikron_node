@@ -101,9 +101,11 @@ TEST (interface, sign_transaction)
 	rai::uint256_union pub;
 	xrb_key_account (key.data.bytes.data (), pub.bytes.data ());
 	rai::state_block send (pub, 0, 0, pub, 0, 0, key, pub, 0);
-	ASSERT_FALSE (rai::validate_message (pub, send.hash (), send.signature));
-	send.signature.bytes[0] ^= 1;
-	ASSERT_TRUE (rai::validate_message (pub, send.hash (), send.signature));
+	ASSERT_FALSE (rai::validate_message (pub, send.hash (), send.signature_get ()));
+	auto signature (send.signature_get ());
+	signature.bytes[0] ^= 1;
+	send.signature_set (signature);
+	ASSERT_TRUE (rai::validate_message (pub, send.hash (), send.signature_get ()));
 	auto transaction (xrb_sign_transaction (send.to_json ().c_str (), key.data.bytes.data ()));
 	boost::property_tree::ptree block_l;
 	std::string transaction_l (transaction);
@@ -113,7 +115,7 @@ TEST (interface, sign_transaction)
 	ASSERT_NE (nullptr, block);
 	auto send1 (dynamic_cast<rai::state_block *> (block.get ()));
 	ASSERT_NE (nullptr, send1);
-	ASSERT_FALSE (rai::validate_message (pub, send.hash (), send1->signature));
+	ASSERT_FALSE (rai::validate_message (pub, send.hash (), send1->signature_get ()));
 	free (transaction);
 }
 

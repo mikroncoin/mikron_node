@@ -1427,7 +1427,7 @@ bool rai::block_processor::full ()
 void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono::steady_clock::time_point origination)
 {
 	auto hash_l (block_a->hash ());
-	if (!rai::work_validate (block_a->root (), block_a->block_work ()))
+	if (!rai::work_validate (block_a->root (), block_a->work_get ()))
 	{
 		std::lock_guard<std::mutex> lock (mutex);
 		if (blocks_hashes.find (hash_l) == blocks_hashes.end ())
@@ -1439,7 +1439,7 @@ void rai::block_processor::add (std::shared_ptr<rai::block> block_a, std::chrono
 	}
 	else
 	{
-		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->block_work ());
+		BOOST_LOG (node.log) << "rai::block_processor::add called for hash " << hash_l.to_string () << " with invalid work " << rai::to_string_hex (block_a->work_get ());
 		assert (false && "rai::block_processor::add called with invalid work");
 	}
 }
@@ -1886,7 +1886,7 @@ stats (config.stat_config)
 			}
 		}
 	});
-	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH << ", protocol version " << (int)rai::protocol_version_min << " (" << (int)rai::protocol_version_min << " -- " << (int)rai::protocol_version << ")";
+	BOOST_LOG (log) << "Node starting, version: " << RAIBLOCKS_VERSION_MAJOR << "." << RAIBLOCKS_VERSION_MINOR << "." << RAIBLOCKS_VERSION_PATCH << ", protocol version " << (int)rai::protocol_version << " (" << (int)rai::protocol_version_min_get () << " -- " << (int)rai::protocol_version << ")";
 	BOOST_LOG (log) << boost::str (boost::format ("Node port: %1%") % config.peering_port);
 	BOOST_LOG (log) << boost::str (boost::format ("Work pool running %1% threads") % work.threads.size ());
 	if (!init_a.error ())
@@ -2868,7 +2868,7 @@ public:
 
 void rai::node::work_generate_blocking (rai::block & block_a)
 {
-	block_a.block_work_set (work_generate_blocking (block_a.root ()));
+	block_a.work_set (work_generate_blocking (block_a.root ()));
 }
 
 void rai::node::work_generate (rai::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a)
@@ -2949,7 +2949,11 @@ public:
 	}
 	void state_block (rai::state_block const & block_a) override
 	{
-		scan_receivable (block_a.hashables.link);
+		scan_receivable (block_a.link ());
+	}
+	void comment_block (rai::comment_block const &) override
+	{
+		// do nothing
 	}
 	MDB_txn * transaction;
 	rai::node & node;
@@ -2981,7 +2985,7 @@ void rai::node::process_confirmed (std::shared_ptr<rai::block> block_a)
 		if (auto state = dynamic_cast<rai::state_block *> (block_a.get ()))
 		{
 			is_state_send = (ledger.state_subtype (transaction, *state) == rai::state_block_subtype::send);
-			pending_account = state->hashables.link;
+			pending_account = state->link ();
 		}
 		observers.blocks.notify (block_a, account, amount, is_state_send);
 		if (amount > 0)
@@ -3359,7 +3363,7 @@ bool rai::peer_container::insert (rai::endpoint const & endpoint_a, rai::protoco
 	auto result (not_a_peer (endpoint_a, false));
 	if (!result)
 	{
-		if (protocol_info_a.version >= rai::protocol_version_min)
+		if (protocol_info_a.version >= rai::protocol_version_min_get ())
 		{
 			std::lock_guard<std::mutex> lock (mutex);
 			auto existing (peers.find (endpoint_a));

@@ -34,6 +34,13 @@ public:
 			fill_value (block_a);
 		}
 	}
+	void comment_block (rai::comment_block const & block_a) override
+	{
+		if (!block_a.previous ().is_zero ())
+		{
+			fill_value (block_a);
+		}
+	}
 	MDB_txn * transaction;
 	rai::block_store & store;
 };
@@ -47,6 +54,7 @@ std::pair<rai::mdb_val, rai::mdb_val> * rai::store_iterator::operator-> ()
 rai::store_iterator::store_iterator (MDB_txn * transaction_a, MDB_dbi db_a) :
 cursor (nullptr)
 {
+	assert (db_a != 0 && db_a != rai::block_store::invalid_db_handle);
 	auto status (mdb_cursor_open (transaction_a, db_a, &cursor));
 	assert (status == 0);
 	auto status2 (mdb_cursor_get (cursor, &current.first.value, &current.second.value, MDB_FIRST));
@@ -70,6 +78,7 @@ cursor (nullptr)
 rai::store_iterator::store_iterator (MDB_txn * transaction_a, MDB_dbi db_a, MDB_val const & val_a) :
 cursor (nullptr)
 {
+	assert (db_a != 0 && db_a != rai::block_store::invalid_db_handle);
 	auto status (mdb_cursor_open (transaction_a, db_a, &cursor));
 	assert (status == 0);
 	current.first.value = val_a;
@@ -213,27 +222,30 @@ rai::store_iterator rai::block_store::vote_end ()
 	return rai::store_iterator (nullptr);
 }
 
+const MDB_dbi rai::block_store::invalid_db_handle;
+
 rai::block_store::block_store (bool & error_a, boost::filesystem::path const & path_a, int lmdb_max_dbs) :
 environment (error_a, path_a, lmdb_max_dbs),
-frontiers (0),
-accounts (0),
+frontiers (invalid_db_handle),
+accounts (invalid_db_handle),
 //send_blocks (0),
 //receive_blocks (0),
 //open_blocks (0),
-state_blocks (0),
-pending (0),
-blocks_info (0),
-representation (0),
-unchecked (0),
-checksum (0),
-vote (0),
-meta (0)
+state_blocks (invalid_db_handle),
+comment_blocks (invalid_db_handle),
+pending (invalid_db_handle),
+blocks_info (invalid_db_handle),
+representation (invalid_db_handle),
+unchecked (invalid_db_handle),
+checksum (invalid_db_handle),
+vote (invalid_db_handle),
+meta (invalid_db_handle)
 {
 	if (!error_a)
 	{
 		rai::transaction transaction (environment, nullptr, true);
 		error_a |= mdb_dbi_open (transaction, "frontiers", MDB_CREATE, &frontiers) != 0;
-		error_a |= mdb_dbi_open (transaction, "accounts", MDB_CREATE, &accounts) != 0;
+		error_a |= mdb_dbi_open (transaction, "accounts_v13", MDB_CREATE, &accounts) != 0;
 		//error_a |= mdb_dbi_open (transaction, "send", MDB_CREATE, &send_blocks) != 0;
 		//error_a |= mdb_dbi_open (transaction, "receive", MDB_CREATE, &receive_blocks) != 0;
 		//error_a |= mdb_dbi_open (transaction, "open", MDB_CREATE, &open_blocks) != 0;
@@ -246,6 +258,7 @@ meta (0)
 		error_a |= mdb_dbi_open (transaction, "checksum", MDB_CREATE, &checksum) != 0;
 		error_a |= mdb_dbi_open (transaction, "vote", MDB_CREATE, &vote) != 0;
 		error_a |= mdb_dbi_open (transaction, "meta", MDB_CREATE, &meta) != 0;
+		error_a |= mdb_dbi_open (transaction, "comment", MDB_CREATE, &comment_blocks) != 0;
 		if (!error_a)
 		{
 			error_a |= do_upgrades (transaction);
@@ -347,6 +360,10 @@ int rai::block_store::do_upgrades (MDB_txn * transaction_a)
 			res = upgrade_v11_to_v12 (transaction_a);
 			if (res) return res;
 		case 12:
+			res = upgrade_v12_to_v13 (transaction_a);
+			if (res) return res;
+		case 13:
+			// current
 			break;
 		default:
 			assert (false);
@@ -600,6 +617,46 @@ int rai::block_store::upgrade_v11_to_v12 (MDB_txn * transaction_a)
 	return 0;
 }
 
+int rai::block_store::upgrade_v12_to_v13 (MDB_txn * transaction_a)
+{
+	version_put (transaction_a, 13);
+
+	// Version 13:
+	// - Add comment blocks
+	// - Upgrade accounts to include comment_block field also
+
+	// DB comment_blocks is new in v13, but it has been openend already upfront.  No action needed.
+	if (comment_blocks == 0 || comment_blocks == invalid_db_handle)
+	{
+		assert (comment_blocks != 0 && comment_blocks != invalid_db_handle);
+		return 13;
+	}
+
+	// accounts have been opened/created with v13
+	if (accounts == 0 || accounts == invalid_db_handle)
+	{
+		assert (accounts != 0 && accounts != invalid_db_handle);
+		return 13;
+	}
+	MDB_dbi accounts_v12;
+	if (0 == mdb_dbi_open (transaction_a, "accounts", 0, &accounts_v12))
+	{
+		// migrate existing accounts
+		for (auto i (iterator_begin (transaction_a, accounts_v12)), n (iterator_end (accounts_v12)); i != n; ++i)
+		{
+			rai::account account_l (i->first.uint256 ());
+			rai::account_info_v12 info_v12 (i->second);
+			// upgrade
+			rai::account_info info (info_v12);
+			account_put (transaction_a, account_l, info);
+		}
+
+		mdb_drop (transaction_a, accounts_v12, 1);
+	}
+
+	return 0;
+}
+
 void rai::block_store::clear (MDB_dbi db_a)
 {
 	rai::transaction transaction (environment, nullptr, true);
@@ -639,6 +696,9 @@ MDB_dbi rai::block_store::block_database (rai::block_type type_a)
 		case rai::block_type::state:
 			result = state_blocks;
 			break;
+		case rai::block_type::comment:
+			result = comment_blocks;
+			break;
 		default:
 			assert (false);
 			break;
@@ -670,17 +730,23 @@ void rai::block_store::block_put (MDB_txn * transaction_a, rai::block_hash const
 MDB_val rai::block_store::block_get_raw (MDB_txn * transaction_a, rai::block_hash const & hash_a, rai::block_type & type_a)
 {
 	rai::mdb_val result;
-	auto status (mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), result));
+	auto status (0);
+	status = mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), result);
 	assert (status == 0 || status == MDB_NOTFOUND);
 	if (status == 0)
 	{
 		type_a = rai::block_type::state;
+		return result;
 	}
-	else
+	status = mdb_get (transaction_a, comment_blocks, rai::mdb_val (hash_a), result);
+	assert (status == 0 || status == MDB_NOTFOUND);
+	if (status == 0)
 	{
-		// Block not found
-		// mdb_get ...
+		type_a = rai::block_type::comment;
+		return result;
 	}
+	// not found in any
+	//assert (status == 0);
 	return result;
 }
 
@@ -708,9 +774,16 @@ std::unique_ptr<rai::block> rai::block_store::block_random (MDB_txn * transactio
 	}
 	else
 	{
-		// cannot be
-		//region -= count.state;
-		//if (region < count. ...
+		region -= count.state;
+		if (region < count.comment)
+		{
+			result = block_random (transaction_a, comment_blocks);
+		}
+		else
+		{
+			// outside of block count
+			assert (region < count.comment);
+		}
 	}
 	return result;
 }
@@ -757,33 +830,52 @@ std::unique_ptr<rai::block> rai::block_store::block_get (MDB_txn * transaction_a
 
 void rai::block_store::block_del (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	auto status (mdb_del (transaction_a, state_blocks, rai::mdb_val (hash_a), nullptr));
+	auto status (0);
+	status = mdb_del (transaction_a, state_blocks, rai::mdb_val (hash_a), nullptr);
 	assert (status == 0 || status == MDB_NOTFOUND);
-	//if (status != 0)
-	//{
-	//	mdb_del ...
+	if (status == 0)
+	{
+		return;
+	}
+	status = mdb_del (transaction_a, comment_blocks, rai::mdb_val (hash_a), nullptr);
+	assert (status == 0 || status == MDB_NOTFOUND);
+	if (status == 0)
+	{
+		return;
+	}
+	assert (status == 0);
 }
 
 bool rai::block_store::block_exists (MDB_txn * transaction_a, rai::block_hash const & hash_a)
 {
-	auto exists (true);
 	rai::mdb_val junk;
-	auto status (mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), junk));
+	auto status (0);
+	status = mdb_get (transaction_a, state_blocks, rai::mdb_val (hash_a), junk);
 	assert (status == 0 || status == MDB_NOTFOUND);
-	exists = status == 0;
-	//if (!exists)
-	//{
-	//	mdb_get ...
-	return exists;
+	if (status == 0)
+	{
+		return true;
+	}
+	status = mdb_get (transaction_a, comment_blocks, rai::mdb_val (hash_a), junk);
+	assert (status == 0 || status == MDB_NOTFOUND);
+	if (status == 0)
+	{
+		return true;
+	}
+	//assert (status == 0);
+	return false;
 }
 
 rai::block_counts rai::block_store::block_count (MDB_txn * transaction_a)
 {
 	rai::block_counts result;
 	MDB_stat state_stats;
-	auto status5 (mdb_stat (transaction_a, state_blocks, &state_stats));
-	assert (status5 == 0);
+	auto status1 (mdb_stat (transaction_a, state_blocks, &state_stats));
+	assert (status1 == 0);
 	result.state = state_stats.ms_entries;
+	auto status2 (mdb_stat (transaction_a, comment_blocks, &state_stats));
+	assert (status2 == 0);
+	result.comment = state_stats.ms_entries;
 	return result;
 }
 
@@ -1222,6 +1314,18 @@ rai::store_iterator rai::block_store::latest_begin (MDB_txn * transaction_a)
 }
 
 rai::store_iterator rai::block_store::latest_end ()
+{
+	rai::store_iterator result (nullptr);
+	return result;
+}
+
+rai::store_iterator rai::block_store::iterator_begin (MDB_txn * transaction_a, MDB_dbi dbi_a)
+{
+	rai::store_iterator result (transaction_a, dbi_a);
+	return result;
+}
+
+rai::store_iterator rai::block_store::iterator_end (MDB_dbi dbi_a)
 {
 	rai::store_iterator result (nullptr);
 	return result;

@@ -904,7 +904,7 @@ TEST (rpc, frontier)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -944,7 +944,7 @@ TEST (rpc, frontier_limited)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -974,7 +974,7 @@ TEST (rpc, frontier_startpoint)
 		{
 			rai::keypair key;
 			source[key.pub] = key.prv.data;
-			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0));
+			system.nodes[0]->store.account_put (transaction, key.pub, rai::account_info (key.prv.data, 0, 0, 0, 0, 0, 0));
 		}
 	}
 	rai::keypair key;
@@ -1149,7 +1149,7 @@ TEST (rpc, process_block_no_work)
 	auto latest (system.nodes[0]->latest (rai::test_genesis_key.pub));
 	auto & node1 (*system.nodes[0]);
 	rai::state_block send (::rpc_create_send_state_block_helper (latest, key.pub, 100, rai::test_genesis_key.prv, rai::test_genesis_key.pub, node1.work_generate_blocking (latest)));
-	send.block_work_set (0);
+	send.work_set (0);
 	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
 	rpc.start ();
 	boost::property_tree::ptree request;
@@ -3051,6 +3051,7 @@ TEST (rpc, account_info)
 	request.put ("weight", "true");
 	request.put ("pending", "1");
 	request.put ("representative", "1");
+	request.put ("comment", "1");
 	test_response response2 (request, rpc, system.service);
 	while (response2.status == 0)
 	{
@@ -4093,4 +4094,252 @@ TEST (rpc, node_id)
 		// should be the same as the account
 		ASSERT_EQ (account, node_id10);
 	}
+}
+
+extern int cutoff_time_comment_epoch; // = 26870400; // should be rai::epoch::start::epoch2_beta
+
+TEST (rpc, comment_account_info)
+{
+	// Check for comment in account_info
+	rai::system system (24000, 1);
+	rai::keypair key;
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	// create new comment
+	rai::comment_block comment_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment_str1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	ASSERT_EQ (rai::process_result::progress, node1.process (comment_block).code);
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+
+	boost::property_tree::ptree request;
+	request.put ("action", "account_info");
+	request.put ("account", rai::genesis_account.to_account ());
+	request.put ("comment", "1");
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string comment (response.json.get<std::string> ("comment"));
+	ASSERT_EQ (comment_str1, comment);
+}
+
+TEST (rpc, comment_history)
+{
+	// Check for comment in account history
+	rai::system system (24000, 1);
+	auto unit (system.nodes[0]->config.receive_minimum);
+	rai::keypair other_acc;
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+	system.wallet (0)->insert_adhoc (other_acc.prv);
+
+	auto node0 (system.nodes[0]);
+	rai::state_block usend (rai::genesis_account, node0->latest (rai::genesis_account), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::genesis_amount - rai::Gxrb_ratio, other_acc.pub, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	rai::state_block ureceive (other_acc.pub, node0->latest (other_acc.pub), cutoff_time_comment_epoch - 1000, rai::genesis_account, rai::Gxrb_ratio, usend.hash (), other_acc.prv, other_acc.pub, 0);
+	std::string comment_str1 ("Comment String 1");
+	rai::comment_block ucomment (other_acc.pub, ureceive.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::Gxrb_ratio, rai::comment_block_subtype::account, comment_str1, other_acc.prv, other_acc.pub, 0);
+	{
+		rai::transaction transaction (node0->store.environment, nullptr, true);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, usend).code);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, ureceive).code);
+		ASSERT_EQ (rai::process_result::progress, node0->ledger.process (transaction, ucomment).code);
+	}
+	rai::rpc rpc (system.service, *node0, rai::rpc_config (true));
+	rpc.start ();
+	boost::property_tree::ptree request;
+	request.put ("action", "history");
+	request.put ("hash", usend.hash ().to_string ());
+	request.put ("count", 100);
+	request.put ("include_comment", 1);
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::vector<boost::property_tree::ptree> history_l;
+	auto & history_node (response.json.get_child ("history"));
+	for (auto i (history_node.begin ()), n (history_node.end ()); i != n; ++i)
+	{
+		history_l.push_back (i->second);
+	}
+	ASSERT_EQ (2, history_l.size ());
+	ASSERT_EQ ("send", history_l[0].get<std::string> ("type"));
+	ASSERT_EQ (other_acc.pub.to_account (), history_l[0].get<std::string> ("account"));
+	// check the account comment of the account (other_acc)
+	ASSERT_EQ (comment_str1, history_l[0].get<std::string> ("account_comment"));
+	ASSERT_EQ (std::to_string (rai::Gxrb_ratio), history_l[0].get<std::string> ("amount"));
+	ASSERT_EQ ("receive", history_l[1].get<std::string> ("type"));
+	ASSERT_EQ (rai::genesis_account.to_account (), history_l[1].get<std::string> ("account"));
+	ASSERT_EQ (std::to_string (rai::genesis_amount), history_l[1].get<std::string> ("amount"));
+}
+
+TEST (rpc, comment_search_one)
+{
+	// Search for a single comment, exact match
+	rai::system system (24000, 1);
+	rai::keypair key;
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	// create new comment
+	rai::comment_block comment_block (rai::genesis_account, genesis.hash (), cutoff_time_comment_epoch + 1000, rai::genesis_account, rai::genesis_amount, rai::comment_block_subtype::account, comment_str1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
+	ASSERT_EQ (rai::process_result::progress, node1.process (comment_block).code);
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+
+	{
+		// search for the comment on the genesis account
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", comment_str1);
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		// check contents
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+
+	{
+		// search for a susbstring of the comment on the genesis account
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "men");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		// check contents (full)
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+
+	{
+		// search for a non-existing comment
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "_NO_SUCH_COMMENT_");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (0, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (0, accounts_node.size ());
+	}
+
+	{
+		// search for a non-existing comment substring
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "mon");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (0, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (0, accounts_node.size ());
+	}
+
+	{
+		// search for a substring, case insensitive
+		boost::property_tree::ptree request;
+		request.put ("action", "comment_search");
+		request.put ("comment", "OMMenT");
+		test_response response (request, rpc, system.service);
+		while (response.status == 0)
+		{
+			system.poll ();
+		}
+		ASSERT_EQ (200, response.status);
+		ASSERT_EQ (1, response.json.get<int> ("count"));
+		auto & accounts_node (response.json.get_child ("accounts"));
+		ASSERT_EQ (1, accounts_node.size ());
+		ASSERT_EQ (comment_str1, accounts_node.get<std::string> (rai::genesis_account.to_account ()));
+	}
+}
+
+TEST (rpc, add_comment_account)
+{
+	// Create comment block through add_comment_account RPC
+	rai::system system (24000, 1);
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+
+	// add_comment_account
+	boost::property_tree::ptree request;
+	std::string wallet;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("action", "add_comment_account");
+	request.put ("wallet", wallet);
+	request.put ("account", rai::genesis_account.to_account ());
+	request.put ("comment", comment_str1);
+	// optional creation_time, to ensure controlled block time for test consistency
+	request.put ("creation_time", std::to_string (cutoff_time_comment_epoch + 1000));
+
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string block_text (response.json.get<std::string> ("block"));
+	rai::block_hash block;
+	ASSERT_FALSE (block.decode_hex (block_text));
+	ASSERT_TRUE (system.nodes[0]->ledger.block_exists (block));
+	ASSERT_EQ (system.nodes[0]->latest (rai::test_genesis_key.pub), block);
+}
+
+TEST (rpc, add_comment_account_on_acc_fails)
+{
+	// Try to create comment block through add_comment_account RPC, on a new, non-existing block chain
+	rai::system system (24000, 1);
+	rai::genesis genesis;
+	auto & node1 (*system.nodes[0]);
+	std::string comment_str1 ("Comment String 1");
+	rai::rpc rpc (system.service, node1, rai::rpc_config (true));
+	rpc.start ();
+	system.wallet (0)->insert_adhoc (rai::test_genesis_key.prv);
+
+	// add_comment_account
+	boost::property_tree::ptree request;
+	std::string wallet;
+	rai::keypair key;
+	system.nodes[0]->wallets.items.begin ()->first.encode_hex (wallet);
+	request.put ("action", "add_comment_account");
+	request.put ("wallet", wallet);
+	request.put ("account", key.pub.to_account ());
+	request.put ("comment", comment_str1);
+	// optional creation_time, to ensure controlled block time for test consistency
+	request.put ("creation_time", std::to_string (cutoff_time_comment_epoch + 1000));
+
+	test_response response (request, rpc, system.service);
+	while (response.status == 0)
+	{
+		system.poll ();
+	}
+	ASSERT_EQ (200, response.status);
+	std::string error (response.json.get<std::string> ("error"));
+	ASSERT_EQ ("Account not found", error);
 }

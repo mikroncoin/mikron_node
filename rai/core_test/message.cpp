@@ -55,8 +55,8 @@ TEST (message, publish_serialization)
 	ASSERT_EQ ('M', bytes[0]);
 	ASSERT_EQ ('T', bytes[1]);
 	ASSERT_EQ (rai::protocol_version, bytes[2]);
-	ASSERT_EQ (rai::protocol_version, bytes[3]);
-	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
+	ASSERT_EQ (rai::protocol_version_min_get (), bytes[3]);
+	ASSERT_EQ (rai::protocol_version, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::publish), bytes[5]);
 	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
@@ -65,7 +65,7 @@ TEST (message, publish_serialization)
 	auto error (false);
 	rai::message_header header (error, stream);
 	ASSERT_FALSE (error);
-	ASSERT_EQ (rai::protocol_version_min, header.protocol_info.version_min);
+	ASSERT_EQ (rai::protocol_version_min_get (), header.protocol_info.version_min);
 	ASSERT_EQ (rai::protocol_version, header.protocol_info.version);
 	ASSERT_EQ (rai::protocol_version, header.protocol_info.version_max);
 	rai::publish publish2 (error, stream, header);
@@ -89,8 +89,8 @@ TEST (message, confirm_req_serialization)
 	ASSERT_EQ ('M', bytes[0]);
 	ASSERT_EQ ('T', bytes[1]);
 	ASSERT_EQ (rai::protocol_version, bytes[2]);
-	ASSERT_EQ (rai::protocol_version, bytes[3]);
-	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
+	ASSERT_EQ (rai::protocol_version_min_get (), bytes[3]);
+	ASSERT_EQ (rai::protocol_version, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_req), bytes[5]);
 	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);
@@ -120,8 +120,8 @@ TEST (message, confirm_ack_serialization)
 	ASSERT_EQ ('M', bytes[0]);
 	ASSERT_EQ ('T', bytes[1]);
 	ASSERT_EQ (rai::protocol_version, bytes[2]);
-	ASSERT_EQ (rai::protocol_version, bytes[3]);
-	ASSERT_EQ (rai::protocol_version_min, bytes[4]);
+	ASSERT_EQ (rai::protocol_version_min_get (), bytes[3]);
+	ASSERT_EQ (rai::protocol_version, bytes[4]);
 	ASSERT_EQ (static_cast<uint8_t> (rai::message_type::confirm_ack), bytes[5]);
 	ASSERT_EQ (0x0C, bytes[6]);
 	ASSERT_EQ (0x00, bytes[7]);

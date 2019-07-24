@@ -171,6 +171,6 @@ TEST (peer_container, depeer)
 {
 	rai::peer_container peers (rai::endpoint{});
 	rai::endpoint endpoint0 (boost::asio::ip::address_v6::loopback (), 24000);
-	peers.contacted (endpoint0, rai::protocol_information (rai::protocol_version_min - 1, rai::protocol_version_min - 1, rai::protocol_version_min - 1, std::bitset<16> ()));
+	peers.contacted (endpoint0, rai::protocol_information (rai::protocol_version_min_get () - 1, rai::protocol_version_min_get () - 1, rai::protocol_version_min_get () - 1, std::bitset<16> ()));
 	ASSERT_EQ (0, peers.size ());
 }

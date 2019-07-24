@@ -21,7 +21,9 @@ TEST (processor_service, bad_send_signature)
 	rai::keypair key2;
 	rai::state_block send (rai::genesis_account, info1.head, 0, rai::genesis_account, 50, rai::genesis_account, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
 	rai::block_hash hash1 (send.hash ());
-	send.signature.bytes[32] ^= 0x1;
+	auto signature (send.signature_get ());
+	signature.bytes[32] ^= 0x1;
+	send.signature_set (signature);
 	ASSERT_EQ (rai::process_result::bad_signature, ledger.process (transaction, send).code);
 }
 
@@ -44,7 +46,9 @@ TEST (processor_service, bad_receive_signature)
 	rai::account_info info2;
 	ASSERT_FALSE (store.account_get (transaction, rai::test_genesis_key.pub, info2));
 	rai::state_block receive (other_acc.pub, 0, 0, rai::genesis_account, rai::genesis_amount - 50, hash1, rai::test_genesis_key.prv, rai::test_genesis_key.pub, 0);
-	receive.signature.bytes[32] ^= 0x1;
+	auto signature (receive.signature_get ());
+	signature.bytes[32] ^= 0x1;
+	receive.signature_set (signature);
 	ASSERT_EQ (rai::process_result::bad_signature, ledger.process (transaction, receive).code);
 }
 

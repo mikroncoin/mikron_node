@@ -127,7 +127,7 @@ char * xrb_work_transaction (const char * transaction)
 		{
 			rai::work_pool pool (std::thread::hardware_concurrency ());
 			auto work (pool.generate (block->root ()));
-			block->block_work_set (work);
+			block->work_set (work);
 			auto json (block->to_json ());
 			result = reinterpret_cast<char *> (malloc (json.size () + 1));
 			strncpy (result, json.c_str (), json.size () + 1);

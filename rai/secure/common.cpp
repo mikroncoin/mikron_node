@@ -25,10 +25,14 @@ const rai::amount_t live_genesis_amount = (rai::amount_t)300000000 * (rai::amoun
 const uint32_t test_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
 const uint32_t beta_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
 const uint32_t live_genesis_time = 2592000; // 2018.10.01.  1538352000 - rai::epoch::origin = 1538352000 - 1535760000 = 2592000
-const char * test_manna_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
-const char * test_manna_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
-const char * beta_manna_public_key_data = beta_genesis_public_key_data; // manna account is the genesis account
-const char * live_manna_public_key_data = live_genesis_public_key_data; // manna account is the genesis account
+const char * test_manna_ep1_private_key_data = "AB02030F53BA4527D84859DBFF13DF0A17B74706682D3621D6C8DB0912424D3D";
+const char * test_manna_ep1_public_key_data = "A8EC25B743412E09567C3363A11C0D5F5722F26236020D7BF93C9F4E0D161583"; // mik_3c9e6pun8ibg37d9reu5n6g1tqtq6ds86fi43oxzkh6zbr8je7e5eejg5r9a
+const char * test_manna_ep2_private_key_data = "36073B1142CED509B87910E0217C606991ACD2DA2B636B512EC4AEBACF9895C7";
+const char * test_manna_ep2_public_key_data = "A400F71567244A8C1A3F513D7EB61CFEEF9F3502A2231EF804FF7C3173ACB622"; // mik_3b11ywcpgb4cjif5ynbxhtu3szqhmwti7aj55uw1bzuw87stsfj4u3uh955w
+const char * beta_manna_ep1_public_key_data = beta_genesis_public_key_data; // manna account in epoch1 is the genesis account
+const char * beta_manna_ep2_public_key_data = "E1E2102C79B27BA7F35138DD2BD97525144CDDDB3FEED11F51643B8A17D64795"; // manna account starting from epoch2, mik_3rh441p9memunzso4g8x7heqcbanbmgxphzgt6ho4s3ujadxejwo3qjhbbje
+const char * live_manna_ep1_public_key_data = live_genesis_public_key_data; // manna account in epoch1 is the genesis account; mik_1yumkjq6xscowmmz6sca79sycoup1tpqabnc3zdqgpcd1756xgo1k53z7yeg
+const char * live_manna_ep2_public_key_data = "A073380E2EA7F47F4B495540BE6E6858055AB7EF429FCF66E93365A8F3EBA7EF"; // manna account starting from epoch2; mik_3a5m9194xbznhx7nkoc1qsq8ip17dcuyyinzsxmgkeu7o5syqbzhcb7uur1h
 const uint32_t test_manna_freq = 4;
 const uint32_t beta_manna_freq = 60;
 const uint32_t live_manna_freq = 86400; // 1 day
@@ -88,7 +92,8 @@ public:
 	rai_test_genesis_amount (test_genesis_amount),
 	rai_beta_genesis_amount (beta_genesis_amount),
 	rai_live_genesis_amount (live_genesis_amount),
-	test_manna_key (test_manna_private_key_data),
+	test_manna_ep1_key (test_manna_ep1_private_key_data),
+	test_manna_ep2_key (test_manna_ep2_private_key_data),
 	genesis_account (
 		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis_account :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis_account :
@@ -101,10 +106,14 @@ public:
 		rai::rai_network == rai::rai_networks::rai_test_network ? rai_test_genesis_amount :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? rai_beta_genesis_amount :
 		rai_live_genesis_amount),
-	manna_account (
-		rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_public_key_data :
-		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_public_key_data :
-		live_manna_public_key_data),
+	manna_account_epoch1 (
+		rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_ep1_public_key_data :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_ep1_public_key_data :
+		live_manna_ep1_public_key_data),
+	manna_account_epoch2 (
+		rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_ep2_public_key_data :
+		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_ep2_public_key_data :
+		live_manna_ep2_public_key_data),
 	burn_account (0)
 	{
 		CryptoPP::AutoSeededRandomPool random_pool;
@@ -123,7 +132,8 @@ public:
 	rai::amount_t rai_test_genesis_amount;
 	rai::amount_t rai_beta_genesis_amount;
 	rai::amount_t rai_live_genesis_amount;
-	rai::keypair test_manna_key;
+	rai::keypair test_manna_ep1_key;
+	rai::keypair test_manna_ep2_key;
 	rai::account genesis_account;
 	std::string genesis_block;
 	rai::amount_t genesis_amount;
@@ -131,15 +141,14 @@ public:
 		rai::rai_network == rai::rai_networks::rai_test_network ? test_genesis_time :
 		rai::rai_network == rai::rai_networks::rai_beta_network ? beta_genesis_time :
 		live_genesis_time;
-	rai::account manna_account;
+	rai::account manna_account_epoch1;
+	rai::account manna_account_epoch2;
 	rai::block_hash not_a_block;
 	rai::account not_an_account;
 	rai::account burn_account;
 };
 ledger_constants globals;
 }
-
-size_t constexpr rai::state_block::size;
 
 rai::keypair const & rai::zero_key (globals.zero_key);
 rai::keypair const & rai::test_genesis_key (globals.test_genesis_key);
@@ -149,16 +158,28 @@ rai::account const & rai::rai_live_genesis_account (globals.rai_live_genesis_acc
 std::string const & rai::rai_test_genesis (globals.rai_test_genesis);
 std::string const & rai::rai_beta_genesis (globals.rai_beta_genesis);
 std::string const & rai::rai_live_genesis (globals.rai_live_genesis);
-rai::keypair const & rai::test_manna_key (globals.test_manna_key);
+rai::keypair const & rai::test_manna_ep1_key (globals.test_manna_ep1_key);
+rai::keypair const & rai::test_manna_ep2_key (globals.test_manna_ep2_key);
 
 rai::account const & rai::genesis_account (globals.genesis_account);
 std::string const & rai::genesis_block (globals.genesis_block);
 rai::amount_t const & rai::genesis_amount (globals.genesis_amount);
 rai::timestamp_t const rai::genesis_time (globals.genesis_time);
-rai::account const & rai::manna_account (globals.manna_account);
+rai::account const & rai::manna_account_epoch1 (globals.manna_account_epoch1);
+rai::account const & rai::manna_account_epoch2 (globals.manna_account_epoch2);
 rai::block_hash const & rai::not_a_block (globals.not_a_block);
 rai::block_hash const & rai::not_an_account (globals.not_an_account);
 rai::account const & rai::burn_account (globals.burn_account);
+
+uint8_t rai::protocol_version_min_get ()
+{
+	if (rai::short_timestamp::now () >= rai::epoch::epoch_start_time (rai::epoch::epoch_num::epoch2))
+	{
+		// epoch2 has started
+		return rai::protocol_version_min_epoch_new;
+	}
+	return rai::protocol_version_min_epoch_old;
+}
 
 // Create a new random keypair
 rai::keypair::keypair ()
@@ -195,9 +216,25 @@ std::unique_ptr<rai::block> rai::deserialize_block (MDB_val const & val_a)
 	return deserialize_block (stream);
 }
 
+rai::account_info_v12::account_info_v12 (rai::mdb_val const & val_a)
+{
+	auto size (size_in_db ());
+	assert (val_a.value.mv_size == size);
+	std::copy (reinterpret_cast<uint8_t const *> (val_a.value.mv_data), reinterpret_cast<uint8_t const *> (val_a.value.mv_data) + size, reinterpret_cast<uint8_t *> (this));
+}
+
+size_t rai::account_info_v12::size_in_db () const
+{
+	// make sure class is well packed
+	assert (sizeof (rai::account_info_v12) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
+	return sizeof (rai::account_info_v12);
+}
+
 rai::account_info::account_info () :
 head (0),
 rep_block (0),
+open_block (0),
+comment_block (0),
 balance (0),
 last_block_time_intern (0),
 block_count (0)
@@ -209,20 +246,31 @@ rai::account_info::account_info (rai::mdb_val const & val_a)
 	deserialize_from_db (val_a);
 }
 
-rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a) :
+rai::account_info::account_info (rai::block_hash const & head_a, rai::block_hash const & rep_block_a, rai::block_hash const & open_block_a, rai::block_hash const & comment_block_a, rai::amount const & balance_a, rai::timestamp_t last_block_time_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
+comment_block (comment_block_a),
 balance (balance_a),
 last_block_time_intern (last_block_time_a),
 block_count (block_count_a)
 {
 }
 
+rai::account_info::account_info (rai::account_info_v12 const & info_v12) :
+head (info_v12.head),
+rep_block (info_v12.rep_block),
+open_block (info_v12.open_block),
+comment_block (0), // not in v12
+balance (info_v12.balance),
+last_block_time_intern (info_v12.last_block_time_intern),
+block_count (info_v12.block_count)
+{
+}
+
 bool rai::account_info::operator== (rai::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance &&
-		last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && comment_block == other_a.comment_block && balance == other_a.balance && last_block_time_intern == other_a.last_block_time_intern && block_count == other_a.block_count;
 }
 
 bool rai::account_info::operator!= (rai::account_info const & other_a) const
@@ -242,14 +290,14 @@ rai::amount rai::account_info::balance_with_manna (rai::account const & account_
 	{
 		now = rai::short_timestamp::now ();
 	}
-	rai::amount_t balance2 = rai::manna_control::adjust_balance_with_manna (balance1, last_block_time (), now);
+	rai::amount_t balance2 = rai::manna_control::adjust_balance_with_manna (account_a, balance1, last_block_time (), now);
 	return balance2;
 }
 
 size_t rai::account_info::size_in_db () const
 {
 	// make sure class is well packed
-	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
+	assert (sizeof (rai::account_info) == sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (comment_block) + sizeof (balance) + sizeof (last_block_time_intern) + sizeof (block_count));
 	return sizeof (rai::account_info);
 }
 
@@ -268,13 +316,14 @@ void rai::account_info::deserialize_from_db (rai::mdb_val const & val_a)
 }
 
 rai::block_counts::block_counts () :
-state (0)
+state (0),
+comment (0)
 {
 }
 
 size_t rai::block_counts::sum ()
 {
-	return state;
+	return state + comment;
 }
 
 rai::pending_info::pending_info () :
@@ -729,8 +778,8 @@ void rai::genesis::initialize (MDB_txn * transaction_a, rai::block_store & store
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put (transaction_a, hash_l, *genesis_block, rai::block_hash (0));
-	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), genesis_block->hashables.balance, genesis_block->creation_time ().number (), 1 });
-	store_a.representation_put (transaction_a, genesis_account, genesis_block->hashables.balance.number ());
+	store_a.account_put (transaction_a, genesis_account, { hash_l, genesis_block->hash (), genesis_block->hash (), 0, genesis_block->balance (), genesis_block->creation_time ().number (), 1 });
+	store_a.representation_put (transaction_a, genesis_account, genesis_block->balance ().number ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
 }
@@ -750,7 +799,8 @@ rai::block_hash rai::genesis::root () const
 	return genesis_block->root ();
 }
 
-uint32_t rai::manna_control::manna_start = rai::genesis_time;
+uint32_t rai::manna_control::manna_start_epoch1 = rai::genesis_time;
+uint32_t rai::manna_control::manna_start_epoch2 = rai::epoch::epoch_start_time (rai::epoch::epoch_num::epoch2);
 uint32_t rai::manna_control::manna_freq = 
 	rai::rai_network == rai::rai_networks::rai_test_network ? test_manna_freq :
 	rai::rai_network == rai::rai_networks::rai_beta_network ? beta_manna_freq :
@@ -762,23 +812,41 @@ rai::amount_t rai::manna_control::manna_increment =
 
 bool rai::manna_control::is_manna_account (rai::account const & account_a)
 {
-	if (account_a == rai::manna_account)
+	if (is_manna_account_epoch1 (account_a))
+		return true;
+	if (is_manna_account_epoch2 (account_a))
+		return true;
+	return false;
+}
+
+bool rai::manna_control::is_manna_account_epoch1 (rai::account const & account_a)
+{
+	if (account_a == rai::manna_account_epoch1)
 	{
 		return true;
 	}
 	return false;
 }
 
-rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::amount_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
+bool rai::manna_control::is_manna_account_epoch2 (rai::account const & account_a)
+{
+	if (account_a == rai::manna_account_epoch2)
+	{
+		return true;
+	}
+	return false;
+}
+
+rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::account const & account_a, rai::amount_t orig_balance, rai::timestamp_t from, rai::timestamp_t to)
 {
 	if (from <= to)
 	{
-		rai::amount_t manna_increment = compute_manna_increment (from, to);
+		rai::amount_t manna_increment = compute_manna_increment_account (account_a, from, to);
 		// possible overflow in the far future
 		return orig_balance + manna_increment;
 	}
 	// reverse order (e.g. due to out-of-sync clocks)
-	rai::amount_t manna_decrement = compute_manna_increment (to, from);
+	rai::amount_t manna_decrement = compute_manna_increment_account (account_a, to, from);
 	if (manna_decrement < orig_balance)
 	{
 		return orig_balance - manna_decrement;
@@ -786,13 +854,53 @@ rai::amount_t rai::manna_control::adjust_balance_with_manna (rai::amount_t orig_
 	return 0; // prevent underflow
 }
 
-rai::amount_t rai::manna_control::compute_manna_increment (rai::timestamp_t from, rai::timestamp_t to)
+rai::amount_t rai::manna_control::compute_manna_increment_account (rai::account const & account_a, rai::timestamp_t from, rai::timestamp_t to)
+{
+	rai::amount_t inc = 0;
+	if (is_manna_account_epoch1 (account_a))
+	{
+		inc = compute_manna_increment_epoch1 (from, to);
+	}
+	if (is_manna_account_epoch2 (account_a))
+	{
+		//rai::amount_t inc0 = inc;
+		inc += compute_manna_increment_epoch2 (from, to);
+		/*if (inc0 > 0 && (inc - inc0) > 0)
+		{
+			std::cerr << "Incs " << inc0 << " " << (inc-inc0) << "         " << from << " " << manna_start_epoch2 << " " << to << std::endl;
+		}*/
+	}
+	return inc;
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_epoch1 (rai::timestamp_t from, rai::timestamp_t to)
+{
+	return compute_manna_increment_within_period (from, to, manna_start_epoch1, manna_start_epoch2);
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_epoch2 (rai::timestamp_t from, rai::timestamp_t to)
+{
+	return compute_manna_increment_within_period (from, to, manna_start_epoch2, std::numeric_limits<uint32_t>::max ());
+}
+
+rai::amount_t rai::manna_control::compute_manna_increment_within_period (rai::timestamp_t from, rai::timestamp_t to, rai::timestamp_t manna_start_a, rai::timestamp_t manna_end_a)
 {
 	assert (from <= to);
-	if (from >= to) return 0;
-	if (from < manna_start)
+	if (from >= to)
 	{
-		from = manna_start; // no change before manna_start
+		return 0;
+	}
+	if (from < manna_start_a)
+	{
+		from = manna_start_a; // no change before manna_start
+	}
+	if (to > manna_end_a)
+	{
+		to = manna_end_a; // no change after manna end
+	}
+	if (from >= to)
+	{
+		return 0;
 	}
 	uint32_t t1 = (uint32_t) (from / manna_freq);
 	uint32_t t2 = (uint32_t) (to / manna_freq);

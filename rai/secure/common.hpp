@@ -25,8 +25,11 @@ struct hash<rai::uint256_union>
 }
 namespace rai
 {
-const uint8_t protocol_version = 3;
-const uint8_t protocol_version_min = 3;
+const uint8_t protocol_version = 4;
+// Accepted minimum protocol version, may be epoch-dependent, access it through rai::protocol_version_min_get()
+uint8_t protocol_version_min_get ();
+const uint8_t protocol_version_min_epoch_new = 4;
+const uint8_t protocol_version_min_epoch_old = 3; // Irrelevant after new epoch has started
 const uint8_t protocol_version_legacy_min = 1; // Not used as of version 1
 
 class block_store;
@@ -48,6 +51,23 @@ public:
 std::unique_ptr<rai::block> deserialize_block (MDB_val const &);
 
 /**
+ * Legacy account info, v12, does not yet contain comment_block
+ */
+class account_info_v12
+{
+public:
+	account_info_v12 (rai::mdb_val const &);
+	size_t size_in_db () const;
+	// members, they must be all value types
+	rai::block_hash head;
+	rai::block_hash rep_block; // to deprecate, all blocks have the representative
+	rai::block_hash open_block;
+	rai::amount balance;
+	::uint64_t last_block_time_intern; // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
+	::uint64_t block_count;
+};
+
+/**
  * Latest information about an account
  */
 class account_info
@@ -56,19 +76,27 @@ public:
 	account_info ();
 	account_info (rai::mdb_val const &);
 	account_info (rai::account_info const &) = default;
-	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
+	account_info (rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::block_hash const &, rai::amount const &, rai::timestamp_t, uint64_t);
+	account_info (rai::account_info_v12 const &);
 	bool operator== (rai::account_info const &) const;
 	bool operator!= (rai::account_info const &) const;
 	rai::amount balance_with_manna (rai::account const &, rai::timestamp_t) const;
 	rai::mdb_val serialize_to_db () const;
 	void deserialize_from_db (rai::mdb_val const &);
 	size_t size_in_db () const;
-	rai::timestamp_t last_block_time () const { return static_cast<rai::timestamp_t> (last_block_time_intern); }
-	void last_block_time_set (rai::timestamp_t t) { last_block_time_intern = t; }
+	rai::timestamp_t last_block_time () const
+	{
+		return static_cast<rai::timestamp_t> (last_block_time_intern);
+	}
+	void last_block_time_set (rai::timestamp_t t)
+	{
+		last_block_time_intern = t;
+	}
 	// members, they must be all value types
 	rai::block_hash head;
 	rai::block_hash rep_block; // to deprecate, all blocks have the representative
 	rai::block_hash open_block;
+	rai::block_hash comment_block; // last account comment block
 	rai::amount balance;
 	::uint64_t last_block_time_intern; // in fact this is a rai::timestamp_t, 4-byte, but for alignment reasons stored on 8 bytes
 	::uint64_t block_count;
@@ -123,6 +151,7 @@ public:
 	block_counts ();
 	size_t sum ();
 	size_t state;
+	size_t comment;
 };
 typedef std::vector<boost::variant<std::shared_ptr<rai::block>, rai::block_hash>>::const_iterator vote_blocks_vec_iter;
 class iterate_vote_blocks_as_hash
@@ -181,11 +210,13 @@ enum class process_result
 	gap_source = 7, // Block marked as source is unknown
 	opened_burn_account = 8, // The impossible happened, someone found the private key associated with the public key '0'.
 	balance_mismatch = 9, // Balance and amount delta don't match
-	representative_mismatch = 10, // Representative is changed when it is not allowed
-	block_position = 11, // This block cannot follow the previous block (e.g. due to epoch)
-	invalid_state_block = 12, // a state block with undefined subtype
-	invalid_block_creation_time = 13, // Out-of-order block, or invalid block creation time
-	send_same_account = 14, // send to self
+	representative_mismatch = 10, // 0x0A Representative is changed when it is not allowed
+	block_position = 11, // 0x0B This block cannot follow the previous block (e.g. due to epoch)
+	invalid_state_block = 12, // 0x0C a state block with undefined subtype
+	invalid_block_creation_time = 13, // 0x0D Out-of-order block, or invalid block creation time
+	send_same_account = 14, // 0x0E send to self
+	invalid_comment_block = 15, // 0x0F a comment block with invalid parameters
+	invalid_comment_block_legacy = 16, // 0x10 Comment block is not allowed before an epoch time
 };
 class process_return
 {
@@ -210,13 +241,15 @@ extern rai::account const & rai_live_genesis_account;
 extern std::string const & rai_test_genesis;
 extern std::string const & rai_beta_genesis;
 extern std::string const & rai_live_genesis;
-extern rai::keypair const & test_manna_key;
+extern rai::keypair const & test_manna_ep1_key;
+extern rai::keypair const & test_manna_ep2_key;
 extern std::string const & genesis_block;
 extern rai::account const & genesis_account;
 extern rai::account const & burn_account;
 extern rai::amount_t const & genesis_amount;
 extern rai::timestamp_t const genesis_time;
-extern rai::account const & manna_account;
+extern rai::account const & manna_account_epoch1;
+extern rai::account const & manna_account_epoch2;
 // A block hash that compares inequal to any real block hash
 extern rai::block_hash const & not_a_block;
 // An account number that compares inequal to any real account number
@@ -236,13 +269,25 @@ public:
 class manna_control
 {
 public:
-	static uint32_t manna_start;
+	static uint32_t manna_start_epoch1;
+	static uint32_t manna_start_epoch2;
 	static uint32_t manna_freq;
 	static rai::amount_t manna_increment;
 
+	// Check if this account is a manna account
 	static bool is_manna_account (rai::account const &);
-	static rai::amount_t adjust_balance_with_manna (rai::amount_t, rai::timestamp_t, rai::timestamp_t);
-	static rai::amount_t compute_manna_increment (rai::timestamp_t, rai::timestamp_t);
-};
+	static rai::amount_t adjust_balance_with_manna (rai::account const &, rai::amount_t, rai::timestamp_t, rai::timestamp_t);
 
+private:
+	static bool is_manna_account_epoch1 (rai::account const &);
+	static bool is_manna_account_epoch2 (rai::account const &);
+	// Compute the manna increment between time points.  Account is needed as it may influence the epoch.
+	static rai::amount_t compute_manna_increment_account (rai::account const &, rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment, within epoch1 (starting from genesis, and ending with epoch2 start)
+	static rai::amount_t compute_manna_increment_epoch1 (rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment, within epoch2 (starting with epoch2 start)
+	static rai::amount_t compute_manna_increment_epoch2 (rai::timestamp_t, rai::timestamp_t);
+	// Compute the manna increment between time points, bounded by the manna epoch period between manna_start and manna_end
+	static rai::amount_t compute_manna_increment_within_period (rai::timestamp_t, rai::timestamp_t, rai::timestamp_t, rai::timestamp_t);
+};
 }

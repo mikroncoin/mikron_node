@@ -3,8 +3,8 @@
 #include <rai/node/common.hpp>
 #include <rai/node/node.hpp>
 
-#include <boost/log/trivial.hpp>
 #include <boost/endian/conversion.hpp>
+#include <boost/log/trivial.hpp>
 
 constexpr double bootstrap_connection_scale_target_blocks = 50000.0;
 constexpr double bootstrap_connection_warmup_time_sec = 5.0;
@@ -32,12 +32,12 @@ void rai::socket::async_connect (rai::tcp_endpoint const & endpoint_a, std::func
 	});
 }
 
-void rai::socket::async_read (std::shared_ptr<std::vector<uint8_t>> buffer_a, size_t size_a, std::function<void(boost::system::error_code const &, size_t)> callback_a)
+void rai::socket::async_read (std::shared_ptr<std::vector<uint8_t>> buffer_a, size_t buf_start_index_a, size_t size_a, std::function<void(boost::system::error_code const &, size_t)> callback_a)
 {
-	assert (size_a <= buffer_a->size ());
+	assert (size_a <= buffer_a->size () - buf_start_index_a);
 	auto this_l (shared_from_this ());
 	start ();
-	boost::asio::async_read (socket_m, boost::asio::buffer (buffer_a->data (), size_a), [this_l, callback_a](boost::system::error_code const & ec, size_t size_a) {
+	boost::asio::async_read (socket_m, boost::asio::buffer (buffer_a->data () + buf_start_index_a, size_a), [this_l, callback_a](boost::system::error_code const & ec, size_t size_a) {
 		this_l->stop ();
 		callback_a (ec, size_a);
 	});
@@ -223,7 +223,7 @@ void rai::frontier_req_client::receive_frontier ()
 {
 	auto this_l (shared_from_this ());
 	size_t size_l (sizeof (rai::uint256_union) + sizeof (rai::uint256_union));
-	connection->socket->async_read (connection->receive_buffer, size_l, [this_l, size_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->socket->async_read (connection->receive_buffer, 0, size_l, [this_l, size_l](boost::system::error_code const & ec, size_t size_a) {
 		// An issue with asio is that sometimes, instead of reporting a bad file descriptor during disconnect,
 		// we simply get a size of 0.
 		if (size_a == size_l)
@@ -446,7 +446,7 @@ void rai::bulk_pull_client::request ()
 void rai::bulk_pull_client::receive_block ()
 {
 	auto this_l (shared_from_this ());
-	connection->socket->async_read (connection->receive_buffer, 1, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->socket->async_read (connection->receive_buffer, 0, 1, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		if (!ec)
 		{
 			this_l->received_type ();
@@ -469,11 +469,44 @@ void rai::bulk_pull_client::received_type ()
 	{
 		case rai::block_type::state:
 		{
-			connection->socket->async_read (connection->receive_buffer, rai::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->socket->async_read (connection->receive_buffer, 0, rai::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
+
+		case rai::block_type::comment:
+		{
+			// Comment block is variable length. First read partial message.
+			connection->socket->async_read (connection->receive_buffer, 0, rai::comment_block::size_base, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+				if (ec)
+				{
+					this_l->received_block (ec, size_a, type);
+				}
+				else
+				{
+					// Read extra chunk
+					size_t size_full = 0;
+					if (rai::comment_block::size_full (*this_l->connection->receive_buffer, size_full))
+					{
+						if (this_l->connection->node->config.logging.bulk_pull_logging ())
+						{
+							BOOST_LOG (this_l->connection->node->log) << boost::str (boost::format ("Could not determine message size"));
+						}
+					}
+					else
+					{
+						assert (size_full >= size_a);
+						assert (this_l->connection->receive_buffer->size () >= size_full);
+						this_l->connection->socket->async_read (this_l->connection->receive_buffer, size_a, size_full - size_a, [this_l, type, size_a](boost::system::error_code const & ec, size_t size2_a) {
+							this_l->received_block (ec, size_a + size2_a, type);
+						});
+					}
+				}
+			});
+			break;
+		}
+
 		case rai::block_type::not_a_block:
 		{
 			// Avoid re-using slow peers, or peers that sent the wrong blocks.
@@ -483,6 +516,7 @@ void rai::bulk_pull_client::received_type ()
 			}
 			break;
 		}
+
 		default:
 		{
 			if (connection->node->config.logging.network_packet_logging ())
@@ -496,48 +530,52 @@ void rai::bulk_pull_client::received_type ()
 
 void rai::bulk_pull_client::received_block (boost::system::error_code const & ec, size_t size_a, rai::block_type type_a)
 {
-	if (!ec)
-	{
-		rai::bufferstream stream (connection->receive_buffer->data (), size_a);
-		std::shared_ptr<rai::block> block (rai::deserialize_block (stream, type_a));
-		if (block != nullptr && !rai::work_validate (*block))
-		{
-			auto hash (block->hash ());
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				std::string block_l;
-				block->serialize_json (block_l);
-				BOOST_LOG (connection->node->log) << boost::str (boost::format ("Pulled block %1% %2%") % hash.to_string () % block_l);
-			}
-			if (hash == expected)
-			{
-				expected = block->previous ();
-			}
-			if (connection->block_count++ == 0)
-			{
-				connection->start_time = std::chrono::steady_clock::now ();
-			}
-			connection->attempt->total_blocks++;
-			connection->attempt->node->block_processor.add (block, std::chrono::steady_clock::time_point ());
-			if (!connection->hard_stop.load ())
-			{
-				receive_block ();
-			}
-		}
-		else
-		{
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
-			}
-		}
-	}
-	else
+	if (ec)
 	{
 		if (connection->node->config.logging.bulk_pull_logging ())
 		{
 			BOOST_LOG (connection->node->log) << boost::str (boost::format ("Error bulk receiving block: %1%") % ec.message ());
 		}
+		return;
+	}
+	rai::bufferstream stream (connection->receive_buffer->data (), size_a);
+	std::shared_ptr<rai::block> block (rai::deserialize_block (stream, type_a));
+	if (block == nullptr)
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
+		}
+		return;
+	}
+	if (rai::work_validate (*block))
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Block with invalid work received from pull request";
+		}
+		return;
+	}
+	auto hash (block->hash ());
+	if (connection->node->config.logging.bulk_pull_logging ())
+	{
+		std::string block_l;
+		block->serialize_json (block_l);
+		BOOST_LOG (connection->node->log) << boost::str (boost::format ("Pulled block %1% %2%") % hash.to_string () % block_l);
+	}
+	if (hash == expected)
+	{
+		expected = block->previous ();
+	}
+	if (connection->block_count++ == 0)
+	{
+		connection->start_time = std::chrono::steady_clock::now ();
+	}
+	connection->attempt->total_blocks++;
+	connection->attempt->node->block_processor.add (block, std::chrono::steady_clock::time_point ());
+	if (!connection->hard_stop.load ())
+	{
+		receive_block ();
 	}
 }
 
@@ -1296,7 +1334,7 @@ node (node_a)
 void rai::bootstrap_server::receive ()
 {
 	auto this_l (shared_from_this ());
-	socket->async_read (receive_buffer, 8, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	socket->async_read (receive_buffer, 0, 8, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		this_l->receive_header_action (ec, size_a);
 	});
 }
@@ -1317,7 +1355,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::bulk_pull, rai::stat::dir::in);
 					auto this_l (shared_from_this ());
-					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (rai::uint256_union), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
+					socket->async_read (receive_buffer, 0, sizeof (rai::uint256_union) + sizeof (rai::uint256_union), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_action (ec, size_a, header);
 					});
 					break;
@@ -1326,7 +1364,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::bulk_pull_account, rai::stat::dir::in);
 					auto this_l (shared_from_this ());
-					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (rai::uint128_struct) + sizeof (uint8_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
+					socket->async_read (receive_buffer, 0, sizeof (rai::uint256_union) + sizeof (rai::uint128_struct) + sizeof (uint8_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_account_action (ec, size_a, header);
 					});
 					break;
@@ -1335,7 +1373,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::bulk_pull_blocks, rai::stat::dir::in);
 					auto this_l (shared_from_this ());
-					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (rai::uint256_union) + sizeof (bulk_pull_blocks_mode) + sizeof (uint32_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
+					socket->async_read (receive_buffer, 0, sizeof (rai::uint256_union) + sizeof (rai::uint256_union) + sizeof (bulk_pull_blocks_mode) + sizeof (uint32_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_blocks_action (ec, size_a, header);
 					});
 					break;
@@ -1344,7 +1382,7 @@ void rai::bootstrap_server::receive_header_action (boost::system::error_code con
 				{
 					node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::frontier_req, rai::stat::dir::in);
 					auto this_l (shared_from_this ());
-					socket->async_read (receive_buffer, sizeof (rai::uint256_union) + sizeof (uint32_t) + sizeof (uint32_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
+					socket->async_read (receive_buffer, 0, sizeof (rai::uint256_union) + sizeof (uint32_t) + sizeof (uint32_t), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_frontier_req_action (ec, size_a, header);
 					});
 					break;
@@ -2257,7 +2295,7 @@ connection (connection_a)
 void rai::bulk_push_server::receive ()
 {
 	auto this_l (shared_from_this ());
-	connection->socket->async_read (receive_buffer, 1, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->socket->async_read (receive_buffer, 0, 1, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		if (!ec)
 		{
 			this_l->received_type ();
@@ -2281,16 +2319,51 @@ void rai::bulk_push_server::received_type ()
 		case rai::block_type::state:
 		{
 			connection->node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::state_block, rai::stat::dir::in);
-			connection->socket->async_read (receive_buffer, rai::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->socket->async_read (receive_buffer, 0, rai::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
+
+		case rai::block_type::comment:
+		{
+			// Comment block is variable length. First read partial message.
+			connection->node->stats.inc (rai::stat::type::bootstrap, rai::stat::detail::comment_block, rai::stat::dir::in);
+			connection->socket->async_read (receive_buffer, 0, rai::comment_block::size_base, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+				if (ec)
+				{
+					this_l->received_block (ec, size_a, type);
+				}
+				else
+				{
+					// Read extra chunk
+					size_t size_full = 0;
+					if (rai::comment_block::size_full (*this_l->receive_buffer, size_full))
+					{
+						if (this_l->connection->node->config.logging.bulk_pull_logging ())
+						{
+							BOOST_LOG (this_l->connection->node->log) << boost::str (boost::format ("Could not determine message size"));
+						}
+					}
+					else
+					{
+						assert (size_full >= size_a);
+						assert (this_l->receive_buffer->size () >= size_full);
+						this_l->connection->socket->async_read (this_l->receive_buffer, size_a, size_full - size_a, [this_l, type, size_a](boost::system::error_code const & ec, size_t size2_a) {
+							this_l->received_block (ec, size_a + size2_a, type);
+						});
+					}
+				}
+			});
+			break;
+		}
+
 		case rai::block_type::not_a_block:
 		{
 			connection->finish_request ();
 			break;
 		}
+
 		default:
 		{
 			if (connection->node->config.logging.network_packet_logging ())
@@ -2304,29 +2377,36 @@ void rai::bulk_push_server::received_type ()
 
 void rai::bulk_push_server::received_block (boost::system::error_code const & ec, size_t size_a, rai::block_type type_a)
 {
-	if (!ec)
+	if (ec)
 	{
-		rai::bufferstream stream (receive_buffer->data (), size_a);
-		auto block (rai::deserialize_block (stream, type_a));
-		if (block != nullptr && !rai::work_validate (*block))
-		{
-			connection->node->process_active (std::move (block));
-			receive ();
-		}
-		else
-		{
-			if (connection->node->config.logging.bulk_pull_logging ())
-			{
-				BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
-			}
-		}
+		return;
 	}
+	rai::bufferstream stream (receive_buffer->data (), size_a);
+	auto block (rai::deserialize_block (stream, type_a));
+	if (block == nullptr)
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Error deserializing block received from pull request";
+		}
+		return;
+	}
+	if (rai::work_validate (*block))
+	{
+		if (connection->node->config.logging.bulk_pull_logging ())
+		{
+			BOOST_LOG (connection->node->log) << "Block with invalid work received from pull request";
+		}
+		return;
+	}
+	connection->node->process_active (std::move (block));
+	receive ();
 }
 
 rai::frontier_req_server::frontier_req_server (std::shared_ptr<rai::bootstrap_server> const & connection_a, std::unique_ptr<rai::frontier_req> request_a) :
 connection (connection_a),
 current (request_a->start.number () - 1),
-info (0, 0, 0, 0, 0, 0),
+info (),
 request (std::move (request_a)),
 send_buffer (std::make_shared<std::vector<uint8_t>> ())
 {

@@ -142,6 +142,7 @@ public:
 	void upgrade_v10_to_v11 (MDB_txn *);
 	*/
 	int upgrade_v11_to_v12 (MDB_txn *);
+	int upgrade_v12_to_v13 (MDB_txn *);
 
 	rai::raw_key node_id_get (MDB_txn *);
 	// Requires a write transaction
@@ -154,6 +155,12 @@ public:
 	void clear (MDB_dbi);
 
 	rai::mdb_env environment;
+	// Denotes an uninitialized DB handle
+	static const MDB_dbi invalid_db_handle = (MDB_dbi)-1;
+
+protected:
+	rai::store_iterator iterator_begin (MDB_txn *, MDB_dbi);
+	rai::store_iterator iterator_end (MDB_dbi);
 
 	/**
 	 * Maps head block to owning account
@@ -172,6 +179,12 @@ public:
 	 * rai::block_hash -> rai::state_block
 	 */
 	MDB_dbi state_blocks;
+
+	/**
+	 * Maps block hash to comment block.
+	 * rai::block_hash -> rai::comment_block
+	 */
+	MDB_dbi comment_blocks;
 
 	/**
 	 * Maps min_version (destination account, pending block) to (source account, amount).
