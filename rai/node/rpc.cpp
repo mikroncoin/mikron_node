@@ -1014,71 +1014,87 @@ void rai::rpc_handler::blocks_info ()
 	const bool pending = request.get<bool> ("pending", false);
 	const bool source = request.get<bool> ("source", false);
 	const bool balance = request.get<bool> ("balance", false);
+	const bool include_comment = request.get<bool> ("include_comment", false);
 	std::vector<std::string> hashes;
 	boost::property_tree::ptree blocks;
 	rai::transaction transaction (node.store.environment, nullptr, false);
 	for (boost::property_tree::ptree::value_type & hashes : request.get_child ("hashes"))
 	{
-		if (!ec)
+		if (ec)
 		{
-			std::string hash_text = hashes.second.data ();
-			rai::uint256_union hash;
-			if (!hash.decode_hex (hash_text))
+			continue;
+		}
+		std::string hash_text = hashes.second.data ();
+		rai::uint256_union hash;
+		if (hash.decode_hex (hash_text))
+		{
+			ec = nano::error_blocks::bad_hash_number;
+			continue;
+		}
+		auto block (node.store.block_get (transaction, hash));
+		if (block == nullptr)
+		{
+			ec = nano::error_blocks::not_found;
+			continue;
+		}
+		boost::property_tree::ptree entry;
+		auto account (node.ledger.account (transaction, hash));
+		entry.put ("block_account", account.to_account ());
+		int amount_sign = 0;
+		auto amount (node.ledger.amount_with_sign (transaction, hash, amount_sign));
+		entry.put ("amount", std::to_string (amount));
+		entry.put ("amount_sign", std::to_string (amount_sign));
+		std::string contents;
+		block->serialize_json (contents);
+		entry.put ("contents", contents);
+		if (pending)
+		{
+			bool exists (false);
+			auto destination (node.ledger.block_destination (transaction, *block));
+			if (!destination.is_zero ())
 			{
-				auto block (node.store.block_get (transaction, hash));
-				if (block != nullptr)
-				{
-					boost::property_tree::ptree entry;
-					auto account (node.ledger.account (transaction, hash));
-					entry.put ("block_account", account.to_account ());
-					int amount_sign = 0;
-					auto amount (node.ledger.amount_with_sign (transaction, hash, amount_sign));
-					entry.put ("amount", std::to_string (amount));
-					entry.put ("amount_sign", std::to_string (amount_sign));
-					std::string contents;
-					block->serialize_json (contents);
-					entry.put ("contents", contents);
-					if (pending)
-					{
-						bool exists (false);
-						auto destination (node.ledger.block_destination (transaction, *block));
-						if (!destination.is_zero ())
-						{
-							exists = node.store.pending_exists (transaction, rai::pending_key (destination, hash));
-						}
-						entry.put ("pending", exists ? "1" : "0");
-					}
-					if (source)
-					{
-						rai::block_hash source_hash (node.ledger.block_source (transaction, *block));
-						std::unique_ptr<rai::block> block_a (node.store.block_get (transaction, source_hash));
-						if (block_a != nullptr)
-						{
-							auto source_account (node.ledger.account (transaction, source_hash));
-							entry.put ("source_account", source_account.to_account ());
-						}
-						else
-						{
-							entry.put ("source_account", "0");
-						}
-					}
-					if (balance)
-					{
-						auto balance (node.ledger.balance (transaction, hash));
-						entry.put ("balance", std::to_string (balance));
-					}
-					blocks.push_back (std::make_pair (hash_text, entry));
-				}
-				else
-				{
-					ec = nano::error_blocks::not_found;
-				}
+				exists = node.store.pending_exists (transaction, rai::pending_key (destination, hash));
+			}
+			entry.put ("pending", exists ? "1" : "0");
+		}
+		// account comment (on block account)
+		if (include_comment)
+		{
+			auto account_comment (node.ledger.account_comment (transaction, account));
+			if (!account_comment.empty ())
+			{
+				entry.put ("account_comment", account_comment);
+			}
+		}
+		if (source)
+		{
+			rai::block_hash source_hash (node.ledger.block_source (transaction, *block));
+			std::unique_ptr<rai::block> block_a (node.store.block_get (transaction, source_hash));
+			if (block_a == nullptr)
+			{
+				entry.put ("source_account", "0");
 			}
 			else
 			{
-				ec = nano::error_blocks::bad_hash_number;
+				auto source_account (node.ledger.account (transaction, source_hash));
+				entry.put ("source_account", source_account.to_account ());
+				// account comment on source
+				if (include_comment)
+				{
+					auto source_account_comment (node.ledger.account_comment (transaction, source_account));
+					if (!source_account_comment.empty ())
+					{
+						entry.put ("source_account_comment", source_account_comment);
+					}
+				}
 			}
 		}
+		if (balance)
+		{
+			auto balance (node.ledger.balance (transaction, hash));
+			entry.put ("balance", std::to_string (balance));
+		}
+		blocks.push_back (std::make_pair (hash_text, entry));
 	}
 	response_l.add_child ("blocks", blocks);
 	response_errors ();
@@ -1883,6 +1899,7 @@ void rai::rpc_handler::ledger ()
 		const bool representative = request.get<bool> ("representative", false);
 		const bool weight = request.get<bool> ("weight", false);
 		const bool pending = request.get<bool> ("pending", false);
+		const bool include_comment = request.get<bool> ("include_comment", false);
 		boost::property_tree::ptree accounts;
 		rai::transaction transaction (node.store.environment, nullptr, false);
 		if (!ec && !sorting && !sorting_by_time) // Simple unsorted
@@ -1896,7 +1913,7 @@ void rai::rpc_handler::ledger ()
 					account_infos_l.push_back (std::make_pair (i->first.uint256 (), info));
 				}
 			}
-			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending, include_comment);
 		}
 		else if (!ec && sorting) // Sorted by balance
 		{
@@ -1915,7 +1932,7 @@ void rai::rpc_handler::ledger ()
 			{
 				account_infos_l.push_back (i->second);
 			}
-			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending, include_comment);
 		}
 		else if (!ec && sorting_by_time) // Sorted by time
 		{
@@ -1934,14 +1951,14 @@ void rai::rpc_handler::ledger ()
 			{
 				account_infos_l.push_back (i->second);
 			}
-			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending);
+			ledger_helper_fill (transaction, account_infos_l, accounts, representative, weight, pending, include_comment);
 		}
 		response_l.add_child ("accounts", accounts);
 	}
 	response_errors ();
 }
 
-void rai::rpc_handler::ledger_helper_fill (rai::transaction & transaction_a, std::vector<std::pair<rai::account, rai::account_info>> const & account_list_a, boost::property_tree::ptree & accounts_a, bool representative, bool weight, bool pending)
+void rai::rpc_handler::ledger_helper_fill (rai::transaction & transaction_a, std::vector<std::pair<rai::account, rai::account_info>> const & account_list_a, boost::property_tree::ptree & accounts_a, bool representative_in, bool weight_in, bool pending_in, bool comment_in)
 {
 	for (auto i (account_list_a.begin ()), n (account_list_a.end ()); i != n; ++i)
 	{
@@ -1956,21 +1973,32 @@ void rai::rpc_handler::ledger_helper_fill (rai::transaction & transaction_a, std
 		response_a.put ("balance", balance);
 		response_a.put ("last_block_time", rai::short_timestamp::convert_to_posix_time (info.last_block_time ()));
 		response_a.put ("block_count", std::to_string (info.block_count));
-		if (representative)
+		if (representative_in)
 		{
 			auto block (node.store.block_get (transaction_a, info.rep_block));
 			assert (block != nullptr);
 			response_a.put ("representative", block->representative ().to_account ());
 		}
-		if (weight)
+		if (weight_in)
 		{
 			auto account_weight (node.ledger.weight (transaction_a, account));
 			response_a.put ("weight", std::to_string (account_weight));
 		}
-		if (pending)
+		if (pending_in)
 		{
 			auto account_pending (node.ledger.account_pending (transaction_a, account));
 			response_a.put ("pending", std::to_string (account_pending));
+		}
+		if (comment_in)
+		{
+			if (!info.comment_block.is_zero ())
+			{
+				auto account_comment (node.ledger.account_comment (transaction_a, account));
+				if (!account_comment.empty ())
+				{
+					response_a.put ("account_comment", account_comment);
+				}
+			}
 		}
 		accounts_a.push_back (std::make_pair (account.to_account (), response_a));
 	}
