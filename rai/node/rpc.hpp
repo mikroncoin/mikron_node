@@ -162,7 +162,7 @@ public:
 	void key_create ();
 	void key_expand ();
 	void ledger ();
-	void ledger_helper_fill (rai::transaction &, std::vector<std::pair<rai::account, rai::account_info>> const &, boost::property_tree::ptree &, bool, bool, bool);
+	void ledger_helper_fill (rai::transaction &, std::vector<std::pair<rai::account, rai::account_info>> const &, boost::property_tree::ptree &, bool, bool, bool, bool);
 	void mrai_to_raw (rai::amount_t = rai::Mxrb_ratio);
 	void mrai_from_raw (rai::amount_t = rai::Mxrb_ratio);
 	void node_id_get ();
